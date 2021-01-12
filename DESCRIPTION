@@ -1,0 +1,21 @@
+Package: hbal
+Type: Package
+Title: Hierarchically Regularized Entropy Balancing
+Version: 1.0
+Date: 2020-12-20
+Authors@R: c(
+  person("Yiqing", "Xu", , "yiqingxu@ucsd.edu", c("aut")),
+  person("Eddie", "Yang", , "z5yang@ucsd.edu", c("aut", "cre"))
+  )
+Maintainer: Eddie Yang <z5yang@ucsd.edu>
+Description: hbal performs hierarchically regularized entropy balancing such that the covariate distributions of the control group match those of the treatment group. hbal automatically expands the covariate space to include higher order terms and uses cross-validation to select variable penalties for the balancing conditions.
+License: GPL (>= 2)
+Depends: R (>= 3.6.0), estimatr, glmnet
+Imports: Rcpp (>= 1.0.1), RcppEigen (>= 0.3.3.5.0)
+LinkingTo: Rcpp, RcppEigen
+Encoding: UTF-8
+RoxygenNote: 7.1.0
+NeedsCompilation: yes
+Packaged: 2020-12-27 03:51:54 UTC; eddie
+Author: Yiqing Xu [aut],
+  Eddie Yang [aut, cre]
