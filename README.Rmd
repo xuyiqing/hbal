@@ -40,7 +40,7 @@ devtools::install_github("xuyiqing/hbal")
 library(hbal)
 ```
 
-powerLATE provides two main functions:
+hbal provides two main functions:
 
 * `hbal()`, which performs hierarchically regularized entropy balancing.
 

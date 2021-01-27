@@ -65,13 +65,30 @@ variables and use cross-validation to select penalities for different groupings 
 }
 \examples{
 #EXAMPLE 1
-#Given Treatment, Y, X, calculate the ATT through hbal
 set.seed(92092)
-Treat <- rbinom(1000, 1, 0.5)
-X <- data.frame(X1=rnorm(1000), X2=rnorm(1000))
-Y <- rnorm(1000)
-out <- hbal(Treatment = Treat, Y = Y, X = X)
-lin <- att(out, method="lin")
+data(Lalonde)
+xvars=c("age","black","educ","hisp","married","re74","re75","nodegr","u74","u75")
+treat <- Lalonde$nsw
+Y <- Lalonde$re78
+X <- Lalonde[,xvars]
+out.l <- hbal(Treatment=treat, X=X, Y=Y, exclude=list(c("educ", "nodegr")))
+summary(att(out.l))
+
+# Example 2
+## Simulation from Kang and Shafer (2007).
+set.seed(92092)
+n <- 500
+X <- mvrnorm(n, mu = rep(0, 4), Sigma = diag(4))
+prop <- 1 / (1 + exp(X[,1] - 0.5 * X[,2] + 0.25*X[,3] + 0.1 * X[,4]))
+# Treatment indicator
+treat <- rbinom(n, 1, prop)
+# Outcome
+y <- 210 + 27.4*X[,1] + 13.7*X[,2] + 13.7*X[,3] + 13.7*X[,4] + rnorm(n)
+# Observed covariates
+X.mis <- cbind(exp(X[,1]/2), X[,2]*(1+exp(X[,1]))^(-1)+10, 
+    (X[,1]*X[,3]/25+.6)^3, (X[,2]+X[,4]+20)^2)
+out <- hbal(Treatment = treat, Y = y, X = X.mis)
+summary(att(out))
 }
 \author{
 Yiqing Xu, Eddie Yang

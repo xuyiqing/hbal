@@ -1,0 +1,192 @@
+---
+title: "hbal"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{hbal}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+***
+
+This page demonstrates the usage of the **hbal** package. **hbal** is an implementation of the method introduced in Xu \& Yang (2021), which performs hierarchically regularized entropy balancing such that the covariate moments of the control group match those of the treatment group. **hbal** automatically expands the covariate space to include higher order terms and uses cross-validation to select variable penalties for the balancing conditions.
+
+**hbal** provides two main functions:
+
+* `hbal()`, which performs hierarchically regularized entropy balancing.
+
+* `att()`, which calculates the average treatment effect on the treated (ATT) from an `hbalobject` returned by `hbal()`. 
+
+***
+
+**Authors:** [Yiqing Xu](http://yiqingxu.org/) (Stanford); Eddie Yang (UCSD)
+
+**Date:** January 27, 2021
+
+**Version:** 1.0.0 ([Github](https://github.com/xuyiqing/hbal)); 1.0.0 ([CRAN])
+
+**Reference:** Xu, Yiqing and Eddie Yang (2021). "Hierarchically Regularized Entropy Balancing" Available at **input_url**.
+
+R code used in this demonstration can be downloaded from [here](http://yiqingxu.org/software/xuyiqing/hbal_examples.R).
+
+***
+**Updates in v.1.0.0**
+
+First release!
+
+***
+
+## Contents
+
+1. Installation
+
+2. Simplest usage
+
+3. Control covariate expansion
+
+4. Custom K-fold cross-validation
+
+5. User-supplied base weights
+
+6. Other functionalities
+
+***
+
+## Installation
+
+You can install the **hbal** package from CRAN: 
+```{r eval=FALSE}
+install.packages('hbal') 
+```
+
+You can also install the up-to-date development version from Github: 
+```{r eval=FALSE}
+install.packages('devtools', repos = 'http://cran.us.r-project.org') # if not already installed
+devtools::install_github('xuyiqing/hbal')
+```
+
+**hbal** depends on the following packages, which will be installed AUTOMATICALLY when **hbal** is being installed; you can also install them manually:  
+```{r eval=FALSE}
+require(estimatr)  
+require(glmnet) 
+```
+
+***
+## Simplest usage
+
+Given a cross-sectional data with binary treatment, we can perform covariate balancing and calculate the ATT in just two lines of code.
+
+First we simulate some data. Here we use the example from Kang and Shafer (2007).
+```{r, message=FALSE}
+library(hbal)
+library(MASS)
+## Simulation from Kang and Shafer (2007).
+set.seed(92092)
+n <- 500
+X <- mvrnorm(n, mu = rep(0, 4), Sigma = diag(4))
+prop <- 1 / (1 + exp(X[,1] - 0.5 * X[,2] + 
+			 0.25*X[,3] + 0.1 * X[,4]))
+
+# Treatment indicator
+treat <- rbinom(n, 1, prop)
+# Outcome
+y <- 210 + 27.4*X[,1] + 13.7*X[,2] + 13.7*X[,3] + 13.7*X[,4] + rnorm(n)
+# Observed covariates
+X.mis <- cbind(exp(X[,1]/2), X[,2]*(1+exp(X[,1]))^(-1)+10, 
+			  (X[,1]*X[,3]/25+.6)^3, (X[,2]+X[,4]+20)^2)
+```
+
+And viola, there you have it:
+
+```{r}
+out <- hbal(Treatment = treat, Y = y, X = X.mis)
+summary(att(out))
+```
+
+By default, `att()` uses linear regression with the Lin (2013) covariate adjustment and robust standard errors from the **estimatr** package to calculate the ATT. Alternatively, we can specify `method = "lm_robust"` to simply use linear regression with robust standard errors, without the Lin (2013) covariate adjustment.
+
+`hbal()` returns a list of 6 objects:
+
+```{r}
+ls(out)
+```
+
+1. **coefs**: Values of Lagrangian multipliers. They are used to calculate the solution `weights`.
+2. **mat**: Expanded covariates matrix. Note that the matrix is hierarchically residualized if `expand.degree > 0` or `ds=TRUE`. See Appendix D of Xu \& Yang (2021) for detals.
+3. **penalty**: This is the regularization parameter $\alpha$ in  Xu \& Yang (2021).
+4. **Treatment**: Treatment indicator. Reproduced here to be used by `att()`.
+5. **weights**: Solution weights. Can be plugged into any downstream estimator.
+6. **Y**: Outcome variable. Reproduced here to be used by `att()`.
+
+***
+## Control Covariate Expansion
+
+`hbal()` uses the R built-in function `poly()` to include higher-order polynomials of the supplied covariates in the balancing scheme. This is controled by the `expand.degree` argument. By default, it is set to `expand.degree = 3`, which expands the covariates to include polynomials up to the 3rd degree.
+
+We can ask `hbal()` to balance on less flexible functions of the covariates by increasing the value of `expand.degree`. However, note that the number of generated polynomials grows exponentially and may exhauster the computer memory when `expand.degree` is set to high. 
+
+On the other hand, setting `expand.degree = 0` will not generate any higher-order polynomials, meaning only (the means of) the supplied covariates will be balanced.
+
+#### Excluding nonsensical covariates
+
+By default, `hbal()` uses the R built-in `qr()` to check the rank of the (expanded) covariate matrix and remove columns that are not pivots when the matrix is rank-deficient. However, if a priori we know some combinations of the covariates are nonsensical, we can exclude them explicitly by using the `exclude` argument.
+
+As an example, we can take a look of the Lalonde dataset. 
+```{r}
+set.seed(92092)
+data(Lalonde)
+xvars=c("age","black","educ","hisp","married","re74","re75","nodegr","u74","u75")
+treat <- Lalonde$nsw
+Y <- Lalonde$re78
+X <- Lalonde[,xvars]
+str(X)
+```
+
+Here we may want to exclude any combinations that involve the variables *educ* and *nodegre* because they are likely to cause collinearity. We can do so by the following:
+```{r}
+out.l <- hbal(Treatment=treat, X=X, Y=Y, exclude=list(c("educ", "nodegr")))
+summary(att(out.l, method="lm_robust"))
+```
+***
+
+## Custom K-fold cross-validation
+
+By default, `hbal()` uses 4-fold cross-validation and searches over a grid of 25 values for the regularization parameter $\alpha$ for each group of covariates.
+
+We can change to K-fold cross-validation for any arbitrary K by setting `folds = K`.
+
+
+We can also disable cross-validation by setting `cv = FALSE`. No regularization will be applied in this case and `hbal()` is essentially equivalent to `ebalance()` from the **ebal** package.
+
+***
+
+## User-supplied base weights
+
+By default, `hbal()` tries to keep the solution weights for the control units as close as possible (in an entropy sense) to a set of uniform base weights to retain information. In cases where the target distribution of the weights for the control units is not uniform weights, we can incorporate this information by supplying a vector of target weights to `base.weight`. 
+
+For example, if we want to set the target weight distribution such that the first 100 control units have weights of $\frac{1}{2}$ while the rest of the control units have weights of 1, we can do:
+
+***
+
+## Other functionalities
+
+1. `max.iterations`: Maximum number of iterations that will be run for each fold and $alpha$ value. Default is set to 200.
+
+2. `ds`: The double selection method by Belloni, Chernozhukov and Hansen (2014). This screens the expanded covariates and only keeps those that are are important for the treatment assignment or the outcome. This further reduces the dimensionality of the problem. Default is set to `TRUE`.
+
+3. `constraint.tolerance`: Convergence criterion. The optimization algorithm will stop when the maximum difference in covaraite means between the treated and the control units is below `constraint.tolerance`.
+
+4. `shuffle.treat`: Whether cross-validation includes treated units. Default is set to `TRUE`. If set to `FALSE`, the covariate means of the treated units are fixed and cross-validation is done on the control units only. It may be advisable to set this argument to `FALSE` if there is only a small number of treated units or if there are many outliers in the treatment group.
+
+***
+
+Please report bugs and let us know if you have any suggestions! -> z5yang [at] ucsd.edu
+
+
