@@ -33,13 +33,9 @@ devtools::install_github("xuyiqing/hbal")
 
 ``` r
 library(hbal)
-#> Loading required package: estimatr
-#> Loading required package: glmnet
-#> Loading required package: Matrix
-#> Loaded glmnet 3.0-2
 ```
 
-powerLATE provides two main functions:
+hbal provides two main functions:
 
   - `hbal()`, which performs hierarchically regularized entropy
     balancing.

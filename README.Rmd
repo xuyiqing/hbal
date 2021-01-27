@@ -36,7 +36,7 @@ devtools::install_github("xuyiqing/hbal")
 
 ## Getting started
 
-```{r}
+```{r, message=FALSE}
 library(hbal)
 ```
 
