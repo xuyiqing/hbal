@@ -4,7 +4,7 @@
 #' @param X                 covaraite matrix
 #' @param W                 treatment indicator
 #' @param Y                 outcome variable
-#' @param penalty.position  groupings of covariates
+#' @param grouping          groupings of covariates
 #' @return resX, penalty.list, covar.keep
 #' @author Yiqing Xu, Eddie Yang
 #' @importFrom stats poly
@@ -13,14 +13,14 @@ doubleSelection <- function(
 	X, 
 	W, 
 	Y,
-	penalty.position
+	grouping
 	){
 	n <- 0
 	penalty.list <- c()
 	col.names <- colnames(X)
-	resX <- getResidual(X, pos.list=penalty.position)
-	start <- penalty.position[1] + 1
-	end <- sum(penalty.position)
+	resX <- getResidual(X, pos.list=grouping)
+	start <- grouping[1] + 1
+	end <- sum(grouping)
 	P <- resX[,start:end]
 	P.colnames <- col.names[start:end]
 	# treatment
@@ -38,23 +38,25 @@ doubleSelection <- function(
 	all.coef <- sort(union(t.coef, y.coef))[-1]
 	P <- P[,all.coef]
 	P.colnames <- P.colnames[all.coef]
-	P <- cbind(resX[,1:penalty.position[1]], P)
-	colnames(P) <- c(col.names[1:penalty.position[1]], P.colnames)
-	all.coef <- all.coef + penalty.position[1]
-	for (i in 1:length(penalty.position)){
-		nn <- n + penalty.position[i]
+	P <- cbind(resX[,1:grouping[1]], P)
+	colnames(P) <- c(col.names[1:grouping[1]], P.colnames)
+	all.coef <- all.coef + grouping[1]
+	for (i in 1:length(grouping)){
+		nn <- n + grouping[i]
 		penalty.list[i] <- sum(all.coef > n & all.coef <= nn)
 		n <- nn
 	}
+	group.assignment <- penalty.list
 	if(length(which(penalty.list==0))!=0){
 		penalty.list <- penalty.list[-which(penalty.list==0)]
 	}
-	penalty.list <- c(penalty.position[1], penalty.list)
-	covar.keep <- c(1:penalty.position[1], all.coef)
+	penalty.list <- c(grouping[1], penalty.list)
+	covar.keep <- c(1:grouping[1], all.coef)
 	out <- list(
 		resX = P,
 		penalty.list = penalty.list,
-		covar.keep = covar.keep
+		covar.keep = covar.keep,
+		select.group = group.assignment
 		)
 	return(out)
 }

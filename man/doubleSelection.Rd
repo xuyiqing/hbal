@@ -4,7 +4,7 @@
 \alias{doubleSelection}
 \title{Double Selection}
 \usage{
-doubleSelection(X, W, Y, penalty.position)
+doubleSelection(X, W, Y, grouping)
 }
 \arguments{
 \item{X}{covaraite matrix}
@@ -13,7 +13,7 @@ doubleSelection(X, W, Y, penalty.position)
 
 \item{Y}{outcome variable}
 
-\item{penalty.position}{groupings of covariates}
+\item{grouping}{groupings of covariates}
 }
 \value{
 resX, penalty.list, covar.keep

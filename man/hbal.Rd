@@ -6,8 +6,8 @@
 \usage{
 hbal(Treatment, X, Y, base.weight = NULL, coefs = NULL ,
  max.iterations = 200, cv = TRUE, folds = 4, expand.degree = 3,
- ds = TRUE, alpha = NULL, constraint.tolerance = 1e-3, print.level = -1, 
- penalty.position = NULL, shuffle.treat=TRUE, exclude=NULL)
+ ds = FALSE, alpha = NULL, constraint.tolerance = 1e-3, print.level = -1, 
+ grouping = NULL, shuffle.treat=TRUE, exclude=NULL)
 }
 \arguments{
 \item{Treatment}{a numeric, binary vector of treatment status. 1 should denote treatment observations and 0 should denote control observations.}
@@ -28,7 +28,7 @@ hbal(Treatment, X, Y, base.weight = NULL, coefs = NULL ,
 
 \item{expand.degree}{degree of series expansion. 0 means no expansion. Default is 3.}
 
-\item{ds}{whether to perform double selection prior to balancing. Default is \code{TRUE}.}
+\item{ds}{whether to perform double selection prior to balancing. Default is \code{FALSE}.}
 
 \item{alpha}{vector of ridge penalties used in grid search during cross-validation. Only used when cv is \code{TRUE}.}
 
@@ -36,7 +36,7 @@ hbal(Treatment, X, Y, base.weight = NULL, coefs = NULL ,
 
 \item{print.level}{details of printed output.}
 
-\item{penalty.position}{different groupings of the covariates. Must be specified if expand is \code{FALSE}.}
+\item{grouping}{different groupings of the covariates. Must be specified if expand is \code{FALSE}.}
 
 \item{shuffle.treat}{whether to use cross-validation on the treated units. Default is \code{TRUE}.}
 
@@ -64,18 +64,20 @@ X to include higher order terms, hierarchically residualize these terms, perform
 variables and use cross-validation to select penalities for different groupings of the covariates.
 }
 \examples{
-#EXAMPLE 1
+# Example 1
 set.seed(92092)
-data(Lalonde)
-xvars=c("age","black","educ","hisp","married","re74","re75","nodegr","u74","u75")
-treat <- Lalonde$nsw
-Y <- Lalonde$re78
-X <- Lalonde[,xvars]
-out.l <- hbal(Treatment=treat, X=X, Y=Y, exclude=list(c("educ", "nodegr")))
-summary(att(out.l))
+N <- 500
+X1 <- rnorm(N)
+X2 <- rbinom(N,size=1,prob=.5)
+X <- cbind(X1, X2)
+treat <- rbinom(N, 1, prob=0.5) # Treatment indicator
+y <- X[,1] + X[,2] + rnorm(N) # Outcome
+out <- hbal(Treatment = treat, Y = y, X = X)
+summary(hbal::att(out))
 
 # Example 2
 ## Simulation from Kang and Shafer (2007).
+library(MASS)
 set.seed(92092)
 n <- 500
 X <- mvrnorm(n, mu = rep(0, 4), Sigma = diag(4))

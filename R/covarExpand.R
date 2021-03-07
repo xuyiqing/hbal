@@ -8,6 +8,7 @@
 #' @return A matrix of serially expanded covariates
 #' @author Yiqing Xu, Eddie Yang
 #' @importFrom stats poly
+#' @importFrom stringr str_trunc
 #' @export
 
 covarExpand <- function(X, exp.degree=3, treatment=NULL, exclude=NULL){
@@ -44,6 +45,7 @@ covarExpand <- function(X, exp.degree=3, treatment=NULL, exclude=NULL){
 		X.P <- X.P[,rank$pivot[1:rank$rank]]
 		split.name <- strsplit(colnames(X.P), ".", fixed=TRUE)
 		new.name <- colnames(X)
+		new.name <- str_trunc(new.name, 5, side="right", ellipsis="")
 		for (nam in 1:ncol(X.P)){
 			sp <- as.numeric(split.name[[nam]])
 			colnames(X.P)[nam] <- paste0(rep(new.name[sp!=0], sp[sp!=0]), collapse = ".")
@@ -59,8 +61,8 @@ covarExpand <- function(X, exp.degree=3, treatment=NULL, exclude=NULL){
 		order.seq <- rep(1:3, times=unlist(lapply(pos, length)))
 		order.seq <- order.seq[rank$pivot[1:rank$rank]]
 		order.seq <- order.seq[!to.drop]
-		penalty.position <- sapply(1:3, f1, order.seq)
-		out <- list(mat=X.P, penalty.position=penalty.position)
+		grouping <- sapply(1:3, f1, order.seq)
+		out <- list(mat=X.P, grouping=grouping)
 	}
 
 	if (exp.degree==3){
@@ -82,14 +84,15 @@ covarExpand <- function(X, exp.degree=3, treatment=NULL, exclude=NULL){
 		cube.terms.cube <- cube.terms[grepl("3", col.names[cube.terms])]
 		cube.terms.interact.sq <- cube.terms[grepl("2", col.names[cube.terms])]	
 		cube.terms.interact <- cube.terms[!cube.terms%in%c(cube.terms.cube, cube.terms.interact.sq)]
-		pos <- list(linear.terms, sq.terms.sq, sq.terms.interact, 
-			cube.terms.cube, cube.terms.interact, cube.terms.interact.sq)
+		pos <- list(linear.terms, sq.terms.interact, sq.terms.sq,
+			cube.terms.interact, cube.terms.interact.sq, cube.terms.cube)
 
 		X.P <- X.P[,unlist(pos)]
 		rank <- qr(X.P[treatment==0,])
 		X.P <- X.P[,rank$pivot[1:rank$rank]]
 		split.name <- strsplit(colnames(X.P), ".", fixed=TRUE)
 		new.name <- colnames(X)
+		new.name <- str_trunc(new.name, 5, side="right", ellipsis="")
 		for (nam in 1:ncol(X.P)){
 			sp <- as.numeric(split.name[[nam]])
 			colnames(X.P)[nam] <- paste0(rep(new.name[sp!=0], sp[sp!=0]), collapse = ".")
@@ -105,8 +108,8 @@ covarExpand <- function(X, exp.degree=3, treatment=NULL, exclude=NULL){
 		order.seq <- rep(1:6, times=unlist(lapply(pos, length)))
 		order.seq <- order.seq[rank$pivot[1:rank$rank]]
 		order.seq <- order.seq[!to.drop]
-		penalty.position <- sapply(1:6, f1, order.seq)
-		out <- list(mat=X.P, penalty.position=penalty.position)
+		grouping <- sapply(1:6, f1, order.seq)
+		out <- list(mat=X.P, grouping=grouping)
 	}
 	return(out)
 }

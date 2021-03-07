@@ -7,8 +7,8 @@
 #' balancing conditions.
 #' @usage hbal(Treatment, X, Y, base.weight = NULL, coefs = NULL ,
 #'  max.iterations = 200, cv = TRUE, folds = 4, expand.degree = 3,
-#'  ds = TRUE, alpha = NULL, constraint.tolerance = 1e-3, print.level = -1, 
-#'  penalty.position = NULL, shuffle.treat=TRUE, exclude=NULL)
+#'  ds = FALSE, alpha = NULL, constraint.tolerance = 1e-3, print.level = -1, 
+#'  grouping = NULL, shuffle.treat=TRUE, exclude=NULL)
 #' @param Treatment            a numeric, binary vector of treatment status. 1 should denote treatment observations and 0 should denote control observations.
 #' @param X                    matrix of covariates. When expand = \code{TRUE}, X is serially expanded to include higher-order terms of X.
 #' @param Y                    numeric vecor of outcome variable. Used only by subsequent estimation. See \code{att}.
@@ -18,11 +18,11 @@
 #' @param cv                   whether to use cross validation. Default is \code{TRUE}.
 #' @param folds                number of folds for cross validation. Only used when cv is \code{TRUE}.
 #' @param expand.degree        degree of series expansion. 0 means no expansion. Default is 3.
-#' @param ds                   whether to perform double selection prior to balancing. Default is \code{TRUE}.
+#' @param ds                   whether to perform double selection prior to balancing. Default is \code{FALSE}.
 #' @param alpha                vector of ridge penalties used in grid search during cross-validation. Only used when cv is \code{TRUE}.
 #' @param constraint.tolerance tolerance level for overall imbalance. Default is 1e-3.
 #' @param print.level          details of printed output.
-#' @param penalty.position     different groupings of the covariates. Must be specified if expand is \code{FALSE}.
+#' @param grouping             different groupings of the covariates. Must be specified if expand is \code{FALSE}.
 #' @param shuffle.treat        whether to use cross-validation on the treated units. Default is \code{TRUE}.
 #' @param exclude              list of covariate name pairs or triplets to be excluded.
 #' @details In the simplest set-up, user can just pass in \{Treatment, X, Y\}. The default settings will serially expand
@@ -40,18 +40,20 @@
 #' @importFrom stats var
 #' @useDynLib hbal, .registration = TRUE
 #' @examples
-#' #EXAMPLE 1
+#' # Example 1
 #' set.seed(92092)
-#' data(Lalonde)
-#' xvars=c("age","black","educ","hisp","married","re74","re75","nodegr","u74","u75")
-#' treat <- Lalonde$nsw
-#' Y <- Lalonde$re78
-#' X <- Lalonde[,xvars]
-#' out.l <- hbal(Treatment=treat, X=X, Y=Y, exclude=list(c("educ", "nodegr")))
-#' summary(att(out.l))
+#' N <- 500
+#' X1 <- rnorm(N)
+#' X2 <- rbinom(N,size=1,prob=.5)
+#' X <- cbind(X1, X2)
+#' treat <- rbinom(N, 1, prob=0.5) # Treatment indicator
+#' y <- X[,1] + X[,2] + rnorm(N) # Outcome
+#' out <- hbal(Treatment = treat, Y = y, X = X)
+#' summary(hbal::att(out))
 #' 
 #' # Example 2
 #' ## Simulation from Kang and Shafer (2007).
+#' library(MASS)
 #' set.seed(92092)
 #' n <- 500
 #' X <- mvrnorm(n, mu = rep(0, 4), Sigma = diag(4))
@@ -77,11 +79,11 @@ hbal <- function(
 	cv=TRUE,
 	folds=4,
 	expand.degree=3,
-	ds=TRUE,
+	ds=FALSE,
 	alpha=NULL,
 	constraint.tolerance = 1e-3,
 	print.level=-1,
-	penalty.position=NULL,
+	grouping=NULL,
 	shuffle.treat=TRUE,
 	exclude=NULL
 	){
@@ -106,6 +108,7 @@ hbal <- function(
 	# cc: used to store final Lagrangian multipliers 
 
 	# set up elements
+	mcall <- match.call()
 	X  <- as.matrix(X)
 	if (is.null(colnames(X))) colnames(X) <- paste0("X", 1:ncol(X))
 	if (sum(is.na(X))!=0) stop("data contain missing values")
@@ -121,7 +124,8 @@ hbal <- function(
 		full <- scale(X) # need to keep a copy of the standardized X for cross-validation. Normalization so that means and variances of covariates on the same scale 
 		full.t <- full[Treatment==1,]
 		full.c <- full[Treatment==0,]
-		penalty.position <- expand$penalty.position
+		grouping <- expand$grouping
+		if (!ds) X <- scale(getResidual(X, pos.list=grouping))
 	} else{
 		full <- scale(X)
 		full.t <- full[Treatment==1,]
@@ -129,23 +133,23 @@ hbal <- function(
 	}
 
 	if (ds){
-		selected <- doubleSelection(X=X, W=Treatment, Y=Y, penalty.position=penalty.position)
-		X <- selected$resX
-		penalty.position <- selected$penalty.list
+		selected <- doubleSelection(X=X, W=Treatment, Y=Y, grouping=grouping)
+		X <- scale(selected$resX)
+		grouping <- selected$penalty.list
 		full <- full[,selected$covar.keep]
 		full.t <- full.t[,selected$covar.keep]
 		full.c <- full.c[,selected$covar.keep]
 	}
 	full.c <- cbind(1, full.c)
 
-	if(is.null(penalty.position)) penalty.position <- ncol(X)
+	if(is.null(grouping)) grouping <- ncol(X)
 	co.x <- X[Treatment==0,] # control group
 	co.x <- cbind(rep(1,ncontrols),co.x)
 	tr.total <- c(1, colMeans(X[Treatment==1,,drop=FALSE]))
-	penalty.position[1] <- penalty.position[1] + 1 # need one more for normalizing constraint
+	grouping[1] <- grouping[1] + 1 # need one more for normalizing constraint
 
 	# Checks
-	if (sum(penalty.position) != ncol(co.x)) stop("Sum of penalty.position must be equal to ncol(X)")
+	if (sum(grouping) != ncol(co.x)) stop("Sum of grouping must be equal to ncol(X)")
 	if (sum(Treatment != 1 & Treatment != 0) > 0) stop("Treatment indicator ('Treatment') must be a logical variable, TRUE (1) or FALSE (0)")
 	if (var(Treatment) == 0) stop("Treatment indicator ('Treatment') must contain both treatment and control observations")
 	if (sum(is.na(Treatment)) > 0) stop("Treatment contains missing data")
@@ -159,9 +163,9 @@ hbal <- function(
 	if (is.null(coefs)) coefs = c(log(tr.total[1]/sum(base.weight)),rep(0,(ncol(co.x)-1)))
 	if (length(coefs) != ncol(co.x)) stop("coefs needs to have same length as number of covariates plus one")
 	if (is.logical(cv)==FALSE) stop("cv needs to be of type logical")
-	if (cv==TRUE && length(penalty.position)==1){
+	if (cv==TRUE && length(grouping)==1){
 		cv <- FALSE
-		warning("length(penalty.position)==1, reverting to cv = FALSE. \nEither double selection selected 0 higher order term or the supplied penalty.position has length 1")
+		warning("length(grouping)==1, reverting to cv = FALSE. \nEither double selection selected 0 higher order term or the supplied grouping has length 1")
 	}
 	if (print.level >= 1){
 	  cat("Data Setup\nCovariate Adjustment:", colnames(X), "\n" )
@@ -171,17 +175,17 @@ hbal <- function(
 
 	# Main
 	if (cv==FALSE){
-	z <- hb(
-		tr_total=as.matrix(tr.total),
-		co_x=co.x,
-		coefs=as.matrix(coefs),
-		base_weight=as.matrix(base.weight),
-		alpha=as.matrix(rep(0, length(coefs))), # need to add 1 for the normalizing constraint
-		max_iterations=max.iterations,
-		constraint_tolerance=constraint.tolerance,
-		print_level=print.level
-		)
-	hyperpara <- list(hyperpara = NULL)
+		z <- hb(
+			tr_total=as.matrix(tr.total),
+			co_x=co.x,
+			coefs=as.matrix(coefs),
+			base_weight=as.matrix(base.weight),
+			alpha=as.matrix(rep(0, length(coefs))), 
+			max_iterations=max.iterations,
+			constraint_tolerance=constraint.tolerance,
+			print_level=print.level
+			)
+		hyperpara <- list(hyperpara = NULL)
 	} else{
 		fold.num.co <- rep(1:folds, ceiling(ncontrols/folds))
 		fold.co <- sample(fold.num.co, ncontrols, replace=F) 
@@ -191,13 +195,13 @@ hbal <- function(
 		#initilize penalty vector to max(alpha), except for penalty for linear terms
 		lambda <- coefs
 		penalty <- rep(max(alpha), length(coefs))
-		penalty[1:penalty.position[1]] <- 0
-		n.group <- length(penalty.position) - 1 # no. of higher order groups
+		penalty[1:grouping[1]] <- 0
+		n.group <- length(grouping) - 1 # no. of higher order groups
 
 		for (i in 1:n.group){
 			i <- i + 1 # not regularizing linear terms
-			end <- sum(penalty.position[1:i])
-			start <- end - penalty.position[i] +1
+			end <- sum(grouping[1:i])
+			start <- end - grouping[i] +1
 			p <- start:end #positions to apply penalty
 			res <- crossValidate(
 				folds=folds,
@@ -231,11 +235,32 @@ hbal <- function(
 		weights <- weights/sum(weights)
 		cc <- res$lambda
 	}
-	out <- list(weights=weights, coefs=cc, Treatment=Treatment, Y=Y, mat=X)
+	if (expand.degree>1 & ds){
+		out.mat <- expand$mat[,selected$covar.keep]
+	}
+	if (expand.degree>1 & !ds){
+		out.mat <- expand$mat
+	}
+	if (expand.degree<1 & !ds){
+		out.mat <- X
+	}
+	if (ds){
+		group.assignment <- selected$select.group
+	}else{
+		grouping[1] <- grouping[1]-1
+		group.assignment <- grouping
+	}
+	out <- list(weights=weights, 
+				coefs=cc, 
+				Treatment=Treatment, 
+				Y=Y, 
+				mat=out.mat, 
+				group.assignment=group.assignment,
+				penalty=NULL,
+				call=mcall)
 
 	if (cv==TRUE){
-		pp <- list(penalty = penalty[-1])
-		out <- c(out, pp)
+		out[["penalty"]] <- penalty[-1]
 	}
 
 	class(out) <- "hbal"

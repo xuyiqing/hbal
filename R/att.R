@@ -2,9 +2,10 @@
 #' @aliases att
 #' @description \code{att} estimates the average treatment effect on the treated (ATT) from an 
 #' hbal object returned by \code{hbal}. 
-#' @usage att(hbalobject, method="lin")
+#' @usage att(hbalobject, method="lm_robust", ...)
 #' @param hbalobject  an object of class \code{hbal} as returned by \code{hbal}.
 #' @param method      estimation method for the ATT. Default is the Lin (2016) estimator. 
+#' @param ...         arguments passed to lm_lin or  lm_robust
 #' @details This is a wrapper for \code{lm_robust} and \code{lm_lin} from the \link{estimatr} package. 
 #' @return A matrix of estimates with their robust standard errors
 #' @importFrom estimatr lm_lin lm_robust
@@ -23,7 +24,8 @@
 
 att <- function(
 	hbalobject,
-	method="lin"
+	method="lm_robust",
+	...
 	){
 	if(class(hbalobject)!= "hbal" ){
      stop("hbalobject must be an hbal object from a call to hbal()")
@@ -35,12 +37,12 @@ att <- function(
 	if (method=="lin"){
 		assignment <- as.formula(Y~Treat)
 		covariates <- as.formula(paste0("~ ", paste0(colnames(hbalobject$mat), collapse=" + ")))
-		out <- lm_lin(formula=assignment, covariates=covariates, weights=w, data=dat)
+		out <- lm_lin(formula=assignment, covariates=covariates, weights=w, se_type="stata", data=dat, ...)
 	}
 
 	if (method=="lm_robust"){
 		ff <- as.formula(paste0("Y~Treat+", paste0(colnames(hbalobject$mat), collapse=" + ")))
-		out <- lm_robust(ff, weights=w, data=dat)
+		out <- lm_robust(ff, weights=w, se_type="stata", data=dat, ...)
 	}
 	return(out)
 }
