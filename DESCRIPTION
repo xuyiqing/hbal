@@ -8,7 +8,7 @@ Authors@R: c(
   person("Eddie", "Yang", , "z5yang@ucsd.edu", c("aut", "cre"))
   )
 Maintainer: Eddie Yang <z5yang@ucsd.edu>
-Description: hbal performs hierarchically regularized entropy balancing such that the covariate distributions of the control group match those of the treatment group. hbal automatically expands the covariate space to include higher order terms and uses cross-validation to select variable penalties for the balancing conditions.
+Description: Implements hierarchically regularized entropy balancing (hbal) proposed by Xu and Yang (2021). The method adjusts the covariate distributions of the control group to match those of the treatment group. hbal automatically expands the covariate space to include higher order terms and uses cross-validation to select variable penalties for the balancing conditions.
 License: GPL (>= 2)
 Depends: R (>= 3.6.0)
 Imports: Rcpp (>= 1.0.1), RcppEigen (>= 0.3.3.5.0), estimatr, glmnet, gtable, gridExtra, ggplot2, stringr

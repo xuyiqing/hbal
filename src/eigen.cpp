@@ -1,5 +1,5 @@
 #include <RcppEigen.h>
-#include <math.h>
+#include <cmath>
 #include <float.h>
 // [[Rcpp::depends(RcppEigen)]]
 // [[Rcpp::plugins(cpp11)]]
@@ -32,7 +32,7 @@ double line_searcher_internal (double& ss,
 	Co_x_agg += penalty ; 
 	dif = (Co_x_agg - Tr_total).cwiseAbs() ;
 	maxdif = dif.array().maxCoeff() ;
-    if (isnan(maxdif) or isinf(maxdif)){
+    if (std::isnan(maxdif) or std::isinf(maxdif)){
         maxdif = DBL_MAX;
     }
 	return(maxdif) ;
@@ -68,7 +68,7 @@ double line_searcher (Eigen::MatrixXd Co_x, // Nco * (1+p)
     Co_x_agg = Co_x_agg + penalty ; 
 	dif = (Co_x_agg - Tr_total).cwiseAbs() ;
 	maxdif = dif.array().maxCoeff() ;
-    if (isnan(maxdif) or isinf(maxdif)){
+    if (std::isnan(maxdif) or std::isinf(maxdif)){
         maxdif = DBL_MAX;
     }
 	return(maxdif) ;
@@ -253,7 +253,7 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
         	converged = 1 ;
         };
 
-        if(isinf(dif.array().maxCoeff()) or isnan(dif.array().maxCoeff())){
+        if(std::isinf(dif.array().maxCoeff()) or std::isnan(dif.array().maxCoeff())){
             coefs = last_coefs;
             weights_temp = (co_x * coefs).array().exp().matrix() ;
             weights_ebal = (weights_temp.array() * base_weight.array()).matrix() ;
@@ -275,7 +275,7 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
         newton = hessian.llt().solve(gradient) ;
         double relative_error = (hessian*newton - gradient).norm() / newton.norm();
 //        Rcout<< "error =  " << (hessian*newton - gradient).norm() << "; " << " relative error = " << relative_error << std::endl;
-        if (relative_error > err_tol or isnan(relative_error)){
+        if (relative_error > err_tol or std::isnan(relative_error)){
             newton = hessian.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(gradient) ;
 //            Rcout<<"lldterror =  " << (hessian*newton - gradient).norm() << "; " << "lldt error =  " << (hessian*newton - gradient).norm()/ newton.norm()<< std::endl;
         }
@@ -284,7 +284,7 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
         loss_new = line_searcher(co_x, tr_total, coefs, newton, base_weight, alpha, 0.0) ;
         loss_old = line_searcher(co_x, tr_total, Coefs, newton, base_weight, alpha, 0.0) ;
 
-        if(isinf(loss_new) or isnan(loss_new)){
+        if(std::isinf(loss_new) or std::isnan(loss_new)){
         	coefs = Coefs;
         	break;
         }

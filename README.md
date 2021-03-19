@@ -5,6 +5,7 @@
 
 <!-- badges: start -->
 
+[![Travis build status](https://travis-ci.com/xuyiqing/hbal.svg?branch=master)](https://travis-ci.com/xuyiqing/hbal)
 <!-- badges: end -->
 
 hbal performs hierarchically regularized entropy balancing such that the
