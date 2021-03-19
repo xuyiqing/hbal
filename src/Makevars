@@ -1,5 +1,7 @@
 VER=-10
 CC=gcc$(VER)
 CXX=g++$(VER)
-CFLAGS=-mtune=native -g -O2 -Wall -pedantic -Wconversion
-CXXFLAGS=-mtune=native -g -O2 -Wall -pedantic -Wconversion
+CXX_STD = CXX11
+
+PKG_CXXFLAGS = $(SHLIB_CXXFLAGS) 
+PKG_LIBS = $(SHLIB_CFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
