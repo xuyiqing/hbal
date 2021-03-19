@@ -1,5 +1,8 @@
 
 ## optional
+VER=-10
+CC=gcc$(VER)
+CXX=g++$(VER)
 CXX_STD = CXX11
 
 PKG_CXXFLAGS = $(SHLIB_CXXFLAGS) 
