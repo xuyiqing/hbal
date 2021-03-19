@@ -1,0 +1,15 @@
+# R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
+
+language: R
+cache: packages
+warnings_are_errors: true
+osx_image: xcode12.2
+
+os:
+  - linux
+  - osx
+
+r:
+  - 3.6
+  - release
+  - devel

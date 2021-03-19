@@ -5,7 +5,7 @@
 
 <!-- badges: start -->
 
-[![Travis build status](https://travis-ci.com/xuyiqing/hbal.svg?branch=master)](https://travis-ci.com/xuyiqing/hbal)
+[![Travis build status](https://travis-ci.com/xuyiqing/hbal.svg?branch=main)](https://travis-ci.com/xuyiqing/hbal)
 <!-- badges: end -->
 
 hbal performs hierarchically regularized entropy balancing such that the
@@ -27,7 +27,7 @@ Or the development version from GitHub:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("xuyiqing/hbal")
+devtools::install_github("xuyiqing/hbal", ref="main")
 ```
 
 ## Getting started
