@@ -120,12 +120,12 @@ hbal <- function(
 	if (expand.degree > 0) {# series expansion of the covariates
 		# need to residualize here actually so that (expand=TRUE, ds=FALSE) also residualize the covariates
 		expand <- covarExpand(X, exp.degree=expand.degree, treatment=Treatment, exclude=exclude)
-		X <- expand$mat
-		full <- scale(X) # need to keep a copy of the standardized X for cross-validation. Normalization so that means and variances of covariates on the same scale 
+		X <- scale(expand$mat)
+		full <- X # need to keep a copy of the standardized X for cross-validation. Normalization so that means and variances of covariates on the same scale 
 		full.t <- full[Treatment==1,]
 		full.c <- full[Treatment==0,]
 		grouping <- expand$grouping
-		if (!ds) X <- scale(getResidual(X, pos.list=grouping))
+		#if (!ds) X <- scale(getResidual(X, pos.list=grouping))
 	} else{
 		full <- scale(X)
 		full.t <- full[Treatment==1,]
