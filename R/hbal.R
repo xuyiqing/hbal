@@ -127,7 +127,8 @@ hbal <- function(
 		grouping <- expand$grouping
 		#if (!ds) X <- scale(getResidual(X, pos.list=grouping))
 	} else{
-		full <- scale(X)
+		X <- scale(X)
+		full <- X
 		full.t <- full[Treatment==1,]
 		full.c <- full[Treatment==0,]
 	}
