@@ -112,7 +112,7 @@ hbal <- function(
 	X  <- as.matrix(X)
 	if (is.null(colnames(X))) colnames(X) <- paste0("X", 1:ncol(X))
 	if (sum(is.na(X))!=0) stop("data contain missing values")
-	if (is.null(alpha)) alpha <- c(0,exp(seq(log(0.01), log(1000), length.out = 24))) # 25 alpha values distributed exponentially (0, 100) for grid search, this controls the degree of regularization for each group
+	if (is.null(alpha) & cv==TRUE) alpha <- c(0,exp(seq(log(0.01), log(1000), length.out = 24))) # 25 alpha values distributed exponentially (0, 100) for grid search, this controls the degree of regularization for each group
 	if (!is.numeric(Treatment)) stop("Treatment indicator needs to be numeric")
 	ntreated  <- sum(Treatment==1)
 	ncontrols <- sum(Treatment==0)  
@@ -162,6 +162,7 @@ hbal <- function(
 	if (qr(co.x)$rank != ncol(co.x)) stop("collinearity in covariate matrix for controls (remove collinear covariates)")
 	if (is.null(coefs)) coefs = c(log(tr.total[1]/sum(base.weight)),rep(0,(ncol(co.x)-1)))
 	if (length(coefs) != ncol(co.x)) stop("coefs needs to have same length as number of covariates plus one")
+	if (is.null(alpha) & cv==FALSE) alpha <- c(0,length(coefs))
 	if (is.logical(cv)==FALSE) stop("cv needs to be of type logical")
 	if (cv==TRUE && length(grouping)==1){
 		cv <- FALSE
@@ -180,7 +181,7 @@ hbal <- function(
 			co_x=co.x,
 			coefs=as.matrix(coefs),
 			base_weight=as.matrix(base.weight),
-			alpha=as.matrix(rep(0, length(coefs))), 
+			alpha=alpha, 
 			max_iterations=max.iterations,
 			constraint_tolerance=constraint.tolerance,
 			print_level=print.level
