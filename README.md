@@ -47,8 +47,8 @@ hbal provides two main functions:
 ## Example
 
 For examples on how to use the package, see
-[here](https://github.com/xuyiqing/hbal)
+[here](https://yiqingxu.org/software/hbal/hbal.html)
 
 ## Reference
 
-For a detailed description of the method see:
+For a detailed description of the method see: [Xu and Yang (2021)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3807620)
