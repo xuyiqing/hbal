@@ -63,7 +63,7 @@ plot.hbal <- function(x, ...){
 #' @usage \method{summary}{hbal}(object, ...)
 #' @param object  an object of class \code{hbalobject} as returned by \code{hbal}.
 #' @param ...     Further arguments to be passed to \code{summary.hbal()}.
-#' @return a summary
+#' @return a summary table
 #' @importFrom stats sd
 #' @author Yiqing Xu, Eddie Yang
 #' @export

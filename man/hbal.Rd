@@ -8,7 +8,7 @@
 hbal(Treatment, X, Y, base.weight = NULL, coefs = NULL ,
  max.iterations = 200, cv = TRUE, folds = 4, expand.degree = 3,
  ds = FALSE, alpha = NULL, constraint.tolerance = 1e-3, print.level = -1, 
- grouping = NULL, shuffle.treat=TRUE, exclude=NULL)
+ grouping = NULL, shuffle.treat=TRUE, exclude=NULL, seed=NULL)
 }
 \arguments{
 \item{Treatment}{a numeric, binary vector of treatment status. 1 should denote treatment observations and 0 should denote control observations.}
@@ -42,6 +42,8 @@ hbal(Treatment, X, Y, base.weight = NULL, coefs = NULL ,
 \item{shuffle.treat}{whether to use cross-validation on the treated units. Default is \code{TRUE}.}
 
 \item{exclude}{list of covariate name pairs or triplets to be excluded.}
+
+\item{seed}{random seed to be set. Set random seed when cv=\code{TRUE} for reproducibility.}
 }
 \value{
 An list object of class \code{hbal} with the following elements:
@@ -94,6 +96,9 @@ X.mis <- cbind(exp(X[,1]/2), X[,2]*(1+exp(X[,1]))^(-1)+10,
     (X[,1]*X[,3]/25+.6)^3, (X[,2]+X[,4]+20)^2)
 out <- hbal(Treatment = treat, Y = y, X = X.mis)
 summary(att(out))
+}
+\references{
+Xu, Y., & Yang, E. (2021). Hierarchically Regularized Entropy Balancing.
 }
 \author{
 Yiqing Xu, Eddie Yang

@@ -13,7 +13,7 @@
 \item{...}{Further arguments to be passed to \code{summary.hbal()}.}
 }
 \value{
-a summary
+a summary table
 }
 \description{
 This function prints a summary from an \code{hbal} Object.

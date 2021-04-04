@@ -8,7 +8,7 @@
 #' @usage hbal(Treatment, X, Y, base.weight = NULL, coefs = NULL ,
 #'  max.iterations = 200, cv = TRUE, folds = 4, expand.degree = 3,
 #'  ds = FALSE, alpha = NULL, constraint.tolerance = 1e-3, print.level = -1, 
-#'  grouping = NULL, shuffle.treat=TRUE, exclude=NULL)
+#'  grouping = NULL, shuffle.treat=TRUE, exclude=NULL, seed=NULL)
 #' @param Treatment            a numeric, binary vector of treatment status. 1 should denote treatment observations and 0 should denote control observations.
 #' @param X                    matrix of covariates. When expand = \code{TRUE}, X is serially expanded to include higher-order terms of X.
 #' @param Y                    numeric vecor of outcome variable. Used only by subsequent estimation. See \code{att}.
@@ -25,6 +25,7 @@
 #' @param grouping             different groupings of the covariates. Must be specified if expand is \code{FALSE}.
 #' @param shuffle.treat        whether to use cross-validation on the treated units. Default is \code{TRUE}.
 #' @param exclude              list of covariate name pairs or triplets to be excluded.
+#' @param seed                 random seed to be set. Set random seed when cv=\code{TRUE} for reproducibility.
 #' @details In the simplest set-up, user can just pass in \{Treatment, X, Y\}. The default settings will serially expand
 #' X to include higher order terms, hierarchically residualize these terms, perform double selection to only keep the relevant
 #' variables and use cross-validation to select penalities for different groupings of the covariates. 
@@ -39,6 +40,7 @@
 #' @author Yiqing Xu, Eddie Yang
 #' @importFrom stats var
 #' @useDynLib hbal, .registration = TRUE
+#' @references Xu, Y., & Yang, E. (2021). Hierarchically Regularized Entropy Balancing.
 #' @examples
 #' # Example 1
 #' set.seed(92092)
@@ -85,7 +87,8 @@ hbal <- function(
 	print.level=-1,
 	grouping=NULL,
 	shuffle.treat=TRUE,
-	exclude=NULL
+	exclude=NULL,
+	seed=NULL
 	){
 
 	# ntreated: number of treated units
@@ -109,29 +112,26 @@ hbal <- function(
 
 	# set up elements
 	mcall <- match.call()
+	if(!is.null(seed)) set.seed(seed)
+
 	X  <- as.matrix(X)
 	if (is.null(colnames(X))) colnames(X) <- paste0("X", 1:ncol(X))
 	if (sum(is.na(X))!=0) stop("data contain missing values")
-	if (is.null(alpha) & cv==TRUE) alpha <- c(0,exp(seq(log(0.01), log(1000), length.out = 24))) # 25 alpha values distributed exponentially (0, 100) for grid search, this controls the degree of regularization for each group
 	if (!is.numeric(Treatment)) stop("Treatment indicator needs to be numeric")
 	ntreated  <- sum(Treatment==1)
 	ncontrols <- sum(Treatment==0)  
 	
 	if (expand.degree > 0) {# series expansion of the covariates
-		# need to residualize here actually so that (expand=TRUE, ds=FALSE) also residualize the covariates
 		expand <- covarExpand(X, exp.degree=expand.degree, treatment=Treatment, exclude=exclude)
 		X <- scale(expand$mat)
-		full <- X # need to keep a copy of the standardized X for cross-validation. Normalization so that means and variances of covariates on the same scale 
-		full.t <- full[Treatment==1,]
-		full.c <- full[Treatment==0,]
 		grouping <- expand$grouping
-		#if (!ds) X <- scale(getResidual(X, pos.list=grouping))
 	} else{
 		X <- scale(X)
-		full <- X
-		full.t <- full[Treatment==1,]
-		full.c <- full[Treatment==0,]
 	}
+
+	full <- X # need to keep a copy of the standardized X for cross-validation. Normalization so that means and variances of covariates on the same scale 
+	full.t <- full[Treatment==1,]
+	full.c <- full[Treatment==0,]
 
 	if (ds){
 		selected <- doubleSelection(X=X, W=Treatment, Y=Y, grouping=grouping)
@@ -141,9 +141,9 @@ hbal <- function(
 		full.t <- full.t[,selected$covar.keep]
 		full.c <- full.c[,selected$covar.keep]
 	}
-	full.c <- cbind(1, full.c)
+	full.c <- cbind(rep(1,ncontrols), full.c)
 
-	if(is.null(grouping)) grouping <- ncol(X)
+	if(is.null(grouping) & cv==FALSE) grouping <- ncol(X)
 	co.x <- X[Treatment==0,] # control group
 	co.x <- cbind(rep(1,ncontrols),co.x)
 	tr.total <- c(1, colMeans(X[Treatment==1,,drop=FALSE]))
@@ -163,7 +163,8 @@ hbal <- function(
 	if (qr(co.x)$rank != ncol(co.x)) stop("collinearity in covariate matrix for controls (remove collinear covariates)")
 	if (is.null(coefs)) coefs = c(log(tr.total[1]/sum(base.weight)),rep(0,(ncol(co.x)-1)))
 	if (length(coefs) != ncol(co.x)) stop("coefs needs to have same length as number of covariates plus one")
-	if (is.null(alpha) & cv==FALSE) alpha <- c(0,length(coefs))
+	if (is.null(alpha) & cv==TRUE) alpha <- c(0,exp(seq(log(0.01), log(1000), length.out = 24))) # 25 alpha values distributed exponentially (0, 100) for grid search, this controls the degree of regularization for each group
+	if (is.null(alpha) & cv==FALSE) alpha <- rep(0,length(coefs))
 	if (is.logical(cv)==FALSE) stop("cv needs to be of type logical")
 	if (cv==TRUE && length(grouping)==1){
 		cv <- FALSE
