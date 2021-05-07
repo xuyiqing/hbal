@@ -1,98 +1,99 @@
-#include <RcppEigen.h>
-#include <cmath>
-#include <float.h>
-// [[Rcpp::depends(RcppEigen)]]
+#define ARMA_DONT_PRINT_ERRORS
+# include <RcppArmadillo.h>
+// [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(cpp11)]]
 
 using namespace Rcpp ;
 
-/*  sub function  */
+
 double line_searcher_internal (double& ss,
-                               Eigen::MatrixXd& Co_x, // Nco * (1+p)
-	                           Eigen::VectorXd& Tr_total, // Ntr * 1
-	                           Eigen::VectorXd& coefs, // (1+p) * 1
-	                           Eigen::VectorXd& Newton, // (1+p) * 1
-	                           Eigen::VectorXd& Base_weight, // Nco * 1
-	                           Eigen::VectorXd& alpha) {  
-	Eigen::VectorXd weights_temp ;
-	Eigen::VectorXd weights_ebal ;
-	Eigen::VectorXd Co_x_agg ; 
-	Eigen::VectorXd dif ; 
-	Eigen::VectorXd penalty ;
-	double maxdif ;
+                               arma::mat& Co_x, // Nco * (1+p)
+                               arma::colvec& Tr_total, // Ntr * 1
+                               arma::colvec& coefs, // (1+p) * 1
+                               arma::colvec& Newton, // (1+p) * 1
+                               arma::colvec& Base_weight,
+                               arma::colvec& alpha) {  
+    arma::colvec weights_temp ;
+    arma::mat weights_ebal ;
+    arma::mat Co_x_agg ; 
+    arma::colvec dif ;
+    double maxdif ;
+    arma::colvec penalty ;
 
-	weights_temp = (Co_x * (coefs - ss * Newton)).array().exp().matrix() ;
+    weights_temp = Co_x * (coefs - ss * Newton) ; // column vector
+    //int n = weights_temp.n_rows ;
+    //for (int i = 0; i < n; i++) {
+    //  weights_temp(i, 0) = exp(weights_temp(i, 0)) ;
+    //}
+    weights_temp = arma::exp(weights_temp) ;
     // point wise product
-	weights_ebal = (weights_temp.array() * Base_weight.array()).matrix() ;
-	//weights_ebal = weights_ebal.transpose() ;
-	penalty = (2 * alpha.array() * coefs.array()).matrix() ;
+    weights_ebal = weights_temp % Base_weight ;
+    weights_ebal = weights_ebal.t() ;
+    penalty = 2 * alpha % coefs ;
 
-	Co_x_agg = Co_x.transpose() * weights_ebal;
-    //Co_x_agg = Co_x_agg.transpose() ;
-	Co_x_agg += penalty ; 
-	dif = (Co_x_agg - Tr_total).cwiseAbs() ;
-	maxdif = dif.array().maxCoeff() ;
-    if (std::isnan(maxdif) or std::isinf(maxdif)){
+    Co_x_agg = weights_ebal * Co_x ;
+    Co_x_agg = Co_x_agg.t() ;
+    Co_x_agg += penalty ; 
+    dif = abs(Co_x_agg - Tr_total) ;
+    maxdif = dif.max() ;
+    if (!isfinite(maxdif)){
         maxdif = DBL_MAX;
     }
-	return(maxdif) ;
+    return(maxdif) ;
 
 }
-
 
 /*  sub function  */
 // [[Rcpp::export]]
-double line_searcher (Eigen::MatrixXd Co_x, // Nco * (1+p)
-	                  Eigen::VectorXd Tr_total, // Ntr * 1
-	                  Eigen::VectorXd coefs, // (1+p) * 1
-	                  Eigen::VectorXd Newton, // (1+p) * 1
-	                  Eigen::VectorXd Base_weight, // Nco * 1
-	                  Eigen::VectorXd alpha,
-	                  double ss) {  
-	Eigen::VectorXd weights_temp ;
-	Eigen::VectorXd weights_ebal ;
-	Eigen::VectorXd Co_x_agg ; 
-	Eigen::VectorXd dif ; 
-	Eigen::VectorXd penalty ;
-	double maxdif ;
+double line_searcher (arma::mat Co_x, // Nco * (1+p)
+                      arma::colvec Tr_total, // Ntr * 1
+                      arma::colvec coefs, // (1+p) * 1
+                      arma::colvec Newton, // (1+p) * 1
+                      arma::colvec Base_weight, // Nco * 1
+                      arma::colvec alpha, 
+                      double ss) {
 
-	weights_temp = (Co_x * (coefs - ss * Newton)).array().exp().matrix() ; // column vector
-	
+    arma::mat weights_temp ;
+    arma::mat weights_ebal ;
+    arma::mat Co_x_agg ; 
+    arma::colvec dif ; 
+    double maxdif ;
+    arma::colvec penalty ;
+
+    weights_temp = Co_x * (coefs - ss * Newton) ; // column vector
+    //int n = weights_temp.n_rows ;
+    //for (int i = 0; i < n; i++) {
+    //  weights_temp(i, 0) = exp(weights_temp(i, 0)) ;
+    //}
+    weights_temp = arma::exp(weights_temp) ;
     // point wise product
-    weights_ebal = (weights_temp.array() * Base_weight.array()).matrix() ;
-	//weights_ebal = weights_ebal.transpose() ;
-	penalty = (2 * alpha.array() * coefs.array()).matrix() ;
+    weights_ebal = weights_temp % Base_weight ;
+    weights_ebal = weights_ebal.t() ;
+    penalty = 2 * alpha % coefs ;
 
-    Co_x_agg = Co_x.transpose() * weights_ebal;
-	//Co_x_agg = Co_x_agg.transpose() ;
-    Co_x_agg = Co_x_agg + penalty ; 
-	dif = (Co_x_agg - Tr_total).cwiseAbs() ;
-	maxdif = dif.array().maxCoeff() ;
-    if (std::isnan(maxdif) or std::isinf(maxdif)){
+    Co_x_agg = weights_ebal * Co_x ;
+    Co_x_agg = Co_x_agg.t() ;
+    Co_x_agg += penalty ; 
+    dif = abs(Co_x_agg - Tr_total) ;
+    maxdif = dif.max() ;
+    if (!isfinite(maxdif)){
         maxdif = DBL_MAX;
     }
-	return(maxdif) ;
+    return(maxdif) ;
+
 }
 
-/*  sub function  */
-/*  barebone implementation of R's optimize(), adapted from optimize.c
-    https://github.com/SurajGupta/r-source/blob/master/src/library/stats/src/optimize.c  */
+/* optimize  line_searacher */
 
 double Brent_fmin(double ax, 
                   double bx, 
-                  double (*f)(double&, 
-                              Eigen::MatrixXd&, 
-                              Eigen::VectorXd&, 
-                              Eigen::VectorXd&, 
-                              Eigen::VectorXd&, 
-                              Eigen::VectorXd&, 
-                              Eigen::VectorXd&), 
-                  Eigen::MatrixXd co, 
-                  Eigen::VectorXd tr, 
-                  Eigen::VectorXd coef, 
-                  Eigen::VectorXd newton, 
-                  Eigen::VectorXd base, 
-                  Eigen::VectorXd alpha, 
+                  double (*f)(double&, arma::mat&, arma::colvec&, arma::colvec&, arma::colvec&, arma::colvec&, arma::colvec&), 
+                  arma::mat co, 
+                  arma::colvec tr, 
+                  arma::colvec coef, 
+                  arma::colvec newton, 
+                  arma::colvec base,
+                  arma::colvec alpha, 
                   double tol){
 
     /*  c is the squared inverse of the golden ratio */
@@ -195,102 +196,100 @@ double Brent_fmin(double ax,
     return x;
 }
 
+
 /*  main function  */
 // [[Rcpp::export]]
-List hb (Eigen::VectorXd tr_total, // Ntr * 1
-	     Eigen::MatrixXd co_x, // Nco * (P+1) 
-	     Eigen::VectorXd coefs, // (P+1) * 1
-	     Eigen::VectorXd base_weight,
-	     Eigen::VectorXd alpha,
-	     int max_iterations,
-	     double constraint_tolerance,
-	     int print_level) {
+List hb (arma::colvec tr_total, // Ntr * 1
+         arma::mat co_x, // Nco * (P+1) 
+         arma::colvec coefs, // (P+1) * 1
+         arma::colvec base_weight,
+         arma::colvec alpha,
+         int max_iterations,
+         double constraint_tolerance,
+         int print_level) {
 
-	int converged = 0 ;
-	int iter = 0 ;
+    int converged = 0 ;
+    int iter = 0 ;
 
-	Eigen::VectorXd weights_temp ;
-	Eigen::VectorXd weights_ebal ;
-	Eigen::VectorXd co_x_agg ;
-	Eigen::VectorXd gradient ;
-	Eigen::VectorXd dif ;
-	Eigen::MatrixXd hessian ;
-	Eigen::VectorXd Coefs ;
-	Eigen::VectorXd newton ;
-	Eigen::VectorXd penalty ;
-	//mat diag_penalty;
-	Eigen::MatrixXd penalty_hessian ;
-	Eigen::VectorXd diag;
-	//Eigen::VectorXd w;
-    Eigen::VectorXd last_coefs;
-	//double counter = 0 ;
-	double loss_new ;
-	double loss_old ;
-	double minimum ;
+    arma::colvec weights_temp ;
+    arma::mat weights_ebal ;
+    arma::mat co_x_agg ;
+    arma::colvec gradient ;
+    arma::colvec dif ;
+    arma::mat hessian ;
+    arma::colvec Coefs ;
+    arma::colvec newton ;
+    arma::colvec penalty ;
+    arma::mat penalty_hessian ;
+    arma::colvec diag;
+    arma::colvec last_coefs;
+
+    arma::colvec best_coef ; // store coef with lowest loss
+    double best_maxdif ; 
+    double counter = 0 ;
+    double loss_new ;
+    double loss_old ;
     double tol = pow(DBL_EPSILON, 0.25) ;
-    double err_tol = 1e-6 ;
+
+    double minimum ;
     double maxx = 1;
     double minn = 0.001;
 //  double objective ;
-	List ss_out ;
+
+    List ss_out ;
 
 
-	while (iter <= max_iterations && converged == 0) {
+    while (iter <= max_iterations && converged == 0) {
         
-        weights_temp = (co_x * coefs).array().exp().matrix() ;
-        
-        weights_ebal = (weights_temp.array() * base_weight.array()).matrix() ;
-        //w = weights_ebal.transpose();
-        //weights_ebal = weights_ebal.transpose() ; // 1 * Nco
+        weights_temp = arma::exp(co_x * coefs) ;
+        weights_ebal = weights_temp %  base_weight ; // Nco * 1
+        weights_ebal = weights_ebal.t() ; // 1 * Nco
 
-        co_x_agg = co_x.transpose() * weights_ebal; // 1 * (p+1)
-		penalty = (2 * alpha.array() * coefs.array()).matrix() ;
-		//co_x_agg = co_x_agg.transpose() ;
-        gradient = co_x_agg - tr_total ;
-        gradient +=  penalty ;
-        dif = (gradient).cwiseAbs() ;
-        if (dif.array().maxCoeff() < constraint_tolerance) {
-        	converged = 1 ;
+        co_x_agg = weights_ebal * co_x ; // 1 * (p+1)
+        penalty = 2 * alpha % coefs;
+        gradient = co_x_agg.t() - tr_total ;
+        gradient += penalty ;
+        dif = arma::abs(gradient) ;
+
+        if (dif.max() < constraint_tolerance) {
+            converged = 1 ;
         };
 
-        if(std::isinf(dif.array().maxCoeff()) or std::isnan(dif.array().maxCoeff())){
+
+        if(isinf(dif.max())){
             coefs = last_coefs;
-            weights_temp = (co_x * coefs).array().exp().matrix() ;
-            weights_ebal = (weights_temp.array() * base_weight.array()).matrix() ;
-            weights_ebal = weights_ebal.transpose() ;
+            weights_temp = arma::exp(co_x * coefs) ;
+            weights_ebal = weights_temp %  base_weight ; // Nco * 1
+            weights_ebal = weights_ebal.t() ; // 1 * Nco
             break;
         } 
 
         if(print_level>=2){
-        	Rcpp::Rcout.precision(4);
-        	Rcpp::Rcout<< "Iteration " << iter << ":" << " Max difference = " << dif.array().maxCoeff() << std::fixed << std::endl;};
+            Rcpp::Rcout.precision(4);
+            Rcpp::Rcout<< "Iteration " << iter << ":" << " Max difference = " << dif.max() << std::fixed << std::endl;};
 
-        diag = (2*alpha).transpose() ;
-        penalty_hessian = (diag).asDiagonal() ;
-        hessian = co_x.transpose() * (co_x.array().colwise() * weights_ebal.array()).matrix() + penalty_hessian ;	
-
-        last_coefs = coefs ;      
+        diag = 2*alpha ;
+        penalty_hessian = diagmat(diag) ;
+        hessian = co_x.t() * (co_x.each_col() % weights_ebal.t()) + penalty_hessian ;
+        last_coefs = coefs ; 
 
         Coefs = coefs ;
-        newton = hessian.llt().solve(gradient) ;
-        double relative_error = (hessian*newton - gradient).norm() / newton.norm();
-//        Rcout<< "error =  " << (hessian*newton - gradient).norm() << "; " << " relative error = " << relative_error << std::endl;
-        if (relative_error > err_tol or std::isnan(relative_error)){
-            newton = hessian.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(gradient) ;
-//            Rcout<<"lldterror =  " << (hessian*newton - gradient).norm() << "; " << "lldt error =  " << (hessian*newton - gradient).norm()/ newton.norm()<< std::endl;
-        }
+        newton = arma::solve(hessian, gradient) ;
         coefs = coefs - maxx * newton ;
 
         loss_new = line_searcher(co_x, tr_total, coefs, newton, base_weight, alpha, 0.0) ;
         loss_old = line_searcher(co_x, tr_total, Coefs, newton, base_weight, alpha, 0.0) ;
 
-        if(std::isinf(loss_new) or std::isnan(loss_new)){
-        	coefs = Coefs;
-        	break;
-        }
+//        Rcout << "loss_old= " << loss_old << std::endl;
 
         if(print_level>=3){
-        	Rcout << "new loss= " << loss_new << ","<< " old loss= " << loss_old << std::endl;}
+            Rcout << "new loss= " << loss_new << ","<< " old loss= " << loss_old << std::endl;}
+
+        if (loss_old <= loss_new) {
+            minimum = Brent_fmin(0.0001, 1.0, &line_searcher_internal, co_x, tr_total, Coefs, newton, base_weight, alpha, tol) ;
+            if(print_level>=3){Rcpp::Rcout << "LS Step Length is " << minimum << std::endl;};
+            coefs = Coefs - minimum * newton ;
+        }
 
         if (loss_old <= loss_new) {
             if (maxx <= minn){
@@ -303,15 +302,22 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
         }
 
         iter = iter + 1 ;
-	} 
+    }
 
-	List out ;
+    if(converged != 1){
+        coefs = best_coef ;
+        weights_temp = arma::exp(co_x * coefs) ;
+        weights_ebal = weights_temp %  base_weight ;
+        weights_ebal = weights_ebal.t() ;
+    } 
 
-	out["maxdiff"] = dif.array().maxCoeff() ;
-	out["coefs"] = coefs ;
-	out["Weights_ebal"] = weights_ebal ;
-	out["converged"] = converged ;
+    List out ;
 
-	return(out) ;
+    out["maxdiff"] = dif.max() ;
+    out["coefs"] = coefs ;
+    out["Weights_ebal"] = weights_ebal.t() ;
+    out["converged"] = converged ;
+
+    return(out) ;
 
 }

@@ -6,27 +6,26 @@
 \title{Ridge Penalty Selection through Cross Validation}
 \usage{
 crossValidate(
-  folds = NULL,
   alpha = NULL,
+  grouping = NULL,
+  folds = NULL,
   treatment = NULL,
   fold.co = NULL,
   fold.tr = NULL,
   coefs = NULL,
   control = NULL,
-  penalty = NULL,
   constraint.tolerance = NULL,
   print.level = NULL,
   base.weight = NULL,
   full.t = NULL,
   full.c = NULL,
-  p = NULL,
   shuffle.treat = NULL
 )
 }
 \arguments{
-\item{folds}{number of folds to perform cross validation.}
-
 \item{alpha}{alpha. Controls degree of regularization.}
+
+\item{folds}{number of folds to perform cross validation.}
 
 \item{treatment}{covariate matrix for treatment group.}
 
@@ -38,8 +37,6 @@ crossValidate(
 
 \item{control}{covariate matrix for control group.}
 
-\item{penalty}{list of hierarchical penalties.}
-
 \item{constraint.tolerance}{tolerance level for imbalance.}
 
 \item{print.level}{details of printed output.}
@@ -50,9 +47,11 @@ crossValidate(
 
 \item{full.c}{(unresidualized) ovariate matrix for control group.}
 
-\item{p}{positions to apply alpha}
-
 \item{shuffle.treat}{whether to create folds for the treated units}
+
+\item{penalty}{list of hierarchical penalties.}
+
+\item{p}{positions to apply alpha}
 }
 \value{
 alpha, lambda
