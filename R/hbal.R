@@ -39,6 +39,7 @@
 #' \item{Y}{vector of outcome}
 #' @author Yiqing Xu, Eddie Yang
 #' @importFrom stats var
+#' @importFrom nloptr nloptr
 #' @useDynLib hbal, .registration = TRUE
 #' @references Xu, Y., & Yang, E. (2021). Hierarchically Regularized Entropy Balancing.
 #' @examples
@@ -125,6 +126,9 @@ hbal <- function(
 		expand <- covarExpand(X, exp.degree=expand.degree, treatment=Treatment, exclude=exclude)
 		X <- scale(expand$mat)
 		grouping <- expand$grouping
+		if (0 %in% grouping){
+    		grouping <- grouping[-which(grouping==0)]
+		}
 	} else{
 		X <- scale(X)
 	}
@@ -195,49 +199,46 @@ hbal <- function(
 		fold.num.tr <- rep(1:folds, ceiling(ntreated/folds))
 		fold.tr <- sample(fold.num.tr, ntreated, replace=F)
 
-		#initilize penalty vector to max(alpha), except for penalty for linear terms
-		lambda <- coefs
-		penalty <- rep(max(alpha), length(coefs))
-		penalty[1:grouping[1]] <- 0
-		n.group <- length(grouping) - 1 # no. of higher order groups
-
-		for (i in 1:n.group){
-			i <- i + 1 # not regularizing linear terms
-			end <- sum(grouping[1:i])
-			start <- end - grouping[i] +1
-			p <- start:end #positions to apply penalty
-			res <- crossValidate(
-				folds=folds,
-				alpha=alpha,
-				fold.co=fold.co,
-				fold.tr=fold.tr,
-				treatment = X[Treatment==1,],
-				control=co.x,
-				coefs = lambda,
-				penalty=penalty,
-				base.weight=base.weight,
-				constraint.tolerance=constraint.tolerance,
-				print.level=print.level,
-				full.t=full.t,
-				full.c=full.c,
-				p=p,
-				shuffle.treat=shuffle.treat
-				)
-
-			lambda <- res$lambda
-			penalty[p] <- res$best.alpha
-		} #end of for loop
+		min.c <- nloptr(x0 = rep(1e3, length(grouping)-1),
+                eval_f = crossValidate,
+                lb = rep(0, length(grouping)-1),
+                ub = rep(1e3, length(grouping)-1),
+                opts = list('algorithm'='NLOPT_LN_AUGLAG',
+                            'xtol_rel'=1.0e-8,
+                            'maxeval' =200,
+                            'print_level'=print.level,
+                            local_opts = list('algorithm'='NLOPT_LN_SBPLX',
+                                              'xtol_rel'=1.0e-8,
+                                              'maxeval' =200)),
+                grouping=grouping,
+                folds=folds,
+                treatment = X[Treatment==1,],
+                fold.co = fold.co,
+                fold.tr=fold.tr,
+                coefs=coefs,
+                control = co.x,
+                constraint.tolerance = constraint.tolerance,
+                print.level = print.level,
+                base.weight = base.weight,
+                full.t=full.t,
+                full.c=full.c,
+                shuffle.treat=shuffle.treat)
+		z <- hb(
+			tr_total=as.matrix(tr.total),
+			co_x=co.x,
+			coefs=as.matrix(coefs),
+			base_weight=as.matrix(base.weight),
+			alpha=rep(c(0, min.c$solution), times=grouping), 
+			max_iterations=max.iterations,
+			constraint_tolerance=constraint.tolerance,
+			print_level=print.level
+			)
 	} #end of if, else
 
-	if (cv==FALSE){
-		weights<-z$Weights_ebal
-		cc <- z$coefs
-	}else{
-		weights <- c(exp(co.x%*%res$lambda))
-		weights <- weights * base.weight
-		weights <- weights/sum(weights)
-		cc <- res$lambda
-	}
+
+	weights<-z$Weights_ebal
+	cc <- z$coefs
+
 	if (expand.degree>1 & ds){
 		out.mat <- expand$mat[,selected$covar.keep]
 	}
@@ -263,7 +264,7 @@ hbal <- function(
 				call=mcall)
 
 	if (cv==TRUE){
-		out[["penalty"]] <- penalty[-1]
+		out[["penalty"]] <- c(0, min.c$solution)
 	}
 
 	class(out) <- "hbal"
