@@ -25,6 +25,8 @@ crossValidate(
 \arguments{
 \item{alpha}{alpha. Controls degree of regularization.}
 
+\item{grouping}{different groupings of the covariates.}
+
 \item{folds}{number of folds to perform cross validation.}
 
 \item{treatment}{covariate matrix for treatment group.}
@@ -48,10 +50,6 @@ crossValidate(
 \item{full.c}{(unresidualized) ovariate matrix for control group.}
 
 \item{shuffle.treat}{whether to create folds for the treated units}
-
-\item{penalty}{list of hierarchical penalties.}
-
-\item{p}{positions to apply alpha}
 }
 \value{
 alpha, lambda
