@@ -1,20 +1,19 @@
 #' @title Ridge Penalty Selection through Cross Validation
 #' @aliases CrossValidate
 #' @description Internal function called by \code{hbal} to select ridge penalties through cross-validation.
-#' @param folds                   number of folds to perform cross validation. 
 #' @param alpha                   alpha. Controls degree of regularization.
+#' @param grouping                different groupings of the covariates.
+#' @param folds                   number of folds to perform cross validation. 
 #' @param treatment               covariate matrix for treatment group.
 #' @param fold.co                 fold assignments for control units.
 #' @param fold.tr                 fold assignments for treated units.
 #' @param coefs                   starting coefficients (lambda).
 #' @param control                 covariate matrix for control group.
-#' @param penalty                 list of hierarchical penalties.
 #' @param constraint.tolerance    tolerance level for imbalance.
 #' @param print.level             details of printed output.
 #' @param base.weight             target weight distribution for the control units.
 #' @param full.t                  (unresidualized) ovariate matrix for treatment group.
 #' @param full.c                  (unresidualized) ovariate matrix for control group.
-#' @param p                       positions to apply alpha
 #' @param shuffle.treat           whether to create folds for the treated units
 #' @return alpha, lambda
 #' @importFrom stats na.omit coef
