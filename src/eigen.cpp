@@ -39,7 +39,7 @@ double line_searcher_internal (double& ss,
     Co_x_agg += penalty ; 
     dif = abs(Co_x_agg - Tr_total) ;
     maxdif = dif.max() ;
-    if (!isfinite(maxdif)){
+    if (std::isnan(maxdif) or std::isinf(maxdif)){
         maxdif = DBL_MAX;
     }
     return(maxdif) ;
@@ -79,7 +79,7 @@ double line_searcher (arma::mat Co_x, // Nco * (1+p)
     Co_x_agg += penalty ; 
     dif = abs(Co_x_agg - Tr_total) ;
     maxdif = dif.max() ;
-    if (!isfinite(maxdif)){
+    if (std::isnan(maxdif) or std::isinf(maxdif)){
         maxdif = DBL_MAX;
     }
     return(maxdif) ;
@@ -257,7 +257,7 @@ List hb (arma::colvec tr_total, // Ntr * 1
         };
 
 
-        if(isinf(dif.max())){
+        if(std::isinf(dif.max()) or std::isnan(dif.max())){
             coefs = last_coefs;
             weights_temp = arma::exp(co_x * coefs) ;
             weights_ebal = weights_temp %  base_weight ; // Nco * 1
@@ -286,11 +286,11 @@ List hb (arma::colvec tr_total, // Ntr * 1
         if(print_level>=3){
             Rcout << "new loss= " << loss_new << ","<< " old loss= " << loss_old << std::endl;}
 
-        if (loss_old <= loss_new) {
-            minimum = Brent_fmin(0.0001, 1.0, &line_searcher_internal, co_x, tr_total, Coefs, newton, base_weight, alpha, tol) ;
-            if(print_level>=3){Rcpp::Rcout << "LS Step Length is " << minimum << std::endl;};
-            coefs = Coefs - minimum * newton ;
-        }
+//        if (loss_old <= loss_new) {
+//            minimum = Brent_fmin(0.0001, 1.0, &line_searcher_internal, co_x, tr_total, Coefs, newton, base_weight, alpha, tol) ;
+//            if(print_level>=3){Rcpp::Rcout << "LS Step Length is " << minimum << std::endl;};
+//            coefs = Coefs - minimum * newton ;
+//        }
 
         if (loss_old <= loss_new) {
             if (maxx <= minn){
