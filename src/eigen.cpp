@@ -1,5 +1,7 @@
 #define ARMA_DONT_PRINT_ERRORS
-# include <RcppArmadillo.h>
+#include <RcppArmadillo.h>
+#include <cmath>
+#include <float.h>
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(cpp11)]]
 

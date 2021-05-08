@@ -26,7 +26,7 @@ plot.hbal <- function(x, ...){
 	var.names <- colnames(x$mat)
 	T <- x$Treatment # treatment
 	treat <- x$mat[T==1,] # treated
-	control <- x$mat[T==0,] * x$weights * sum(T==0) # control
+	control <- x$mat[T==0,] * c(x$weights) * sum(T==0) # control
 	denom <- apply(rbind(treat, control), 2, sd)
 	std.diff.after <- (apply(treat, 2, mean) - apply(control, 2, mean))/denom
 	denom <- apply(rbind(treat, x$mat[T==0,]), 2, sd)
@@ -99,9 +99,7 @@ summary.hbal <- function(object, ...){
 		penalty <- matrix(NA, 1, length(groups))
 		colnames(penalty) <- groups
 		rownames(penalty) <- "penalty value"
-		for (i in 1:length(groups)){
-			penalty[i] <- object$penalty[sum(object$group.assignment[1:i])]
-		}
+		penalty[1,] <- object$penalty
 		print(round(penalty, 2))
 	}
 	cat("\nSummary of Balance for Matched Data:\n")
