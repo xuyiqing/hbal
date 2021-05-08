@@ -199,17 +199,13 @@ hbal <- function(
 		fold.num.tr <- rep(1:folds, ceiling(ntreated/folds))
 		fold.tr <- sample(fold.num.tr, ntreated, replace=F)
 
-		min.c <- nloptr(x0 = rep(1e3, length(grouping)-1),
+		min.c <- nloptr(x0 = rep(500, length(grouping)-1),
                 eval_f = crossValidate,
                 lb = rep(0, length(grouping)-1),
-                ub = rep(1e3, length(grouping)-1),
-                opts = list('algorithm'='NLOPT_LN_AUGLAG',
-                            'xtol_rel'=1.0e-8,
+                ub = rep(500, length(grouping)-1),
+                opts = list('algorithm'='NLOPT_LN_COBYLA',
                             'maxeval' =200,
-                            'print_level'=print.level,
-                            local_opts = list('algorithm'='NLOPT_LN_SBPLX',
-                                              'xtol_rel'=1.0e-8,
-                                              'maxeval' =200)),
+                            'print_level'=print.level),
                 grouping=grouping,
                 folds=folds,
                 treatment = X[Treatment==1,],
@@ -223,6 +219,7 @@ hbal <- function(
                 full.t=full.t,
                 full.c=full.c,
                 shuffle.treat=shuffle.treat)
+
 		z <- hb(
 			tr_total=as.matrix(tr.total),
 			co_x=co.x,

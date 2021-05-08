@@ -287,7 +287,7 @@ List hb (arma::colvec tr_total, // Ntr * 1
             Rcout << "new loss= " << loss_new << ","<< " old loss= " << loss_old << std::endl;}
 
 //        if (loss_old <= loss_new) {
-//            minimum = Brent_fmin(0.0001, 1.0, &line_searcher_internal, co_x, tr_total, Coefs, newton, base_weight, alpha, tol) ;
+//            minimum = Brent_fmin(minn, maxx, &line_searcher_internal, co_x, tr_total, Coefs, newton, base_weight, alpha, tol) ;
 //            if(print_level>=3){Rcpp::Rcout << "LS Step Length is " << minimum << std::endl;};
 //            coefs = Coefs - minimum * newton ;
 //        }

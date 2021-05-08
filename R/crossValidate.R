@@ -94,8 +94,8 @@ crossValidate <- function(
 	}#end of inner loop
 
 
-
-	return(mean(res))
+	oo <- ifelse(is.finite(mean(res)), mean(res), Inf)
+	return(oo)
 }
 
 
