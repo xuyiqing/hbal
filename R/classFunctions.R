@@ -105,7 +105,7 @@ summary.hbal <- function(object, ...){
 	cat("\nSummary of Balance for Matched Data:\n")
 	T <- object$Treatment # treatment
 	treat <- object$mat[T==1,] # treated
-	control <- object$mat[T==0,] * object$weights * sum(T==0) # control
+	control <- object$mat[T==0,] * c(object$weights) * sum(T==0) # control
 	balance.tab[,1] <- apply(treat, 2, mean)
 	balance.tab[,2] <- apply(control, 2, mean)
 	denom <- apply(rbind(treat, control), 2, sd)

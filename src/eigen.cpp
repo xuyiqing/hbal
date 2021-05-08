@@ -1,3 +1,4 @@
+#define ARMA_USE_CXX11
 #define ARMA_DONT_PRINT_ERRORS
 #include <RcppArmadillo.h>
 #include <cmath>
@@ -227,8 +228,6 @@ List hb (arma::colvec tr_total, // Ntr * 1
     arma::colvec last_coefs;
 
     arma::colvec best_coef ; // store coef with lowest loss
-    double best_maxdif ; 
-    double counter = 0 ;
     double loss_new ;
     double loss_old ;
     double tol = pow(DBL_EPSILON, 0.25) ;
