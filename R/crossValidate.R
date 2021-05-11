@@ -84,7 +84,7 @@ crossValidate <- function(
 			if(test.weight && test.coef){
 				test.cr.mean <- c(weights %*% test.cc)
 				tr.t <- c(1, colMeans(test.treat))
-				dif <- mean((tr.t-test.cr.mean)^2)
+				dif <- mean(abs(tr.t-test.cr.mean))
 				res[k] <- dif
 				counter <- counter + 1
 			}
