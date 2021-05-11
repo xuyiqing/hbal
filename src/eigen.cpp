@@ -238,7 +238,7 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
 //    double err_tol = 1e-6 ;
     double max_diff ;
     double maxx = 1;
-    double minn = 0.001;
+    double minn = 0.0001;
     double best_objective = DBL_MAX ;
 	List ss_out ;
 
@@ -319,13 +319,13 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
 
             if(print_level>=3){Rcpp::Rcout << "LS Step Length is " << minimum << std::endl;};
 
-//            if(minimum <= 0.0025){
-//                counter += 1;
-//                if (counter >= 5){
-//                    coefs = Coefs;
-//                    break;
-//                }
-//            };
+            if(minimum <= 0.001){
+                counter += 1;
+                if (counter >= 5){
+                    coefs = Coefs;
+                    break;
+                }
+            };
 
             coefs = Coefs - minimum * newton ;
             }
