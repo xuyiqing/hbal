@@ -241,7 +241,7 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
 	double loss_old ;
 	double minimum ;
     double tol = pow(DBL_EPSILON, 0.25) ;
-    double err_tol = 1e-6 ;
+//    double err_tol = 1e-6 ;
     double maxx = 1;
     double minn = 0.001;
 //  double objective ;
@@ -285,14 +285,14 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
         last_coefs = coefs ;      
 
         Coefs = coefs ;
-        newton = hessian.ldlt().solve(gradient) ;
+        newton = hessian.colPivHouseholderQr().solve(gradient) ;
         
-        double relative_error = (hessian*newton - gradient).norm() / newton.norm();
+//        double relative_error = (hessian*newton - gradient).norm() / newton.norm();
 //        Rcout<< "error =  " << (hessian*newton - gradient).norm() << "; " << " relative error = " << relative_error << std::endl;
-        if (relative_error > err_tol or std::isnan(relative_error)){
-            newton = hessian.colPivHouseholderQr().solve(gradient) ;
+//        if (relative_error > err_tol or std::isnan(relative_error)){
+//            newton = hessian.colPivHouseholderQr().solve(gradient) ;
 //            Rcout<<"lldterror =  " << (hessian*newton - gradient).norm() << "; " << "lldt error =  " << (hessian*newton - gradient).norm()/ newton.norm()<< std::endl;
-        }
+//        }
         coefs = coefs - maxx * newton ;
 //        if(std::isinf(coefs.sum()) or std::isinf(Coefs.sum())){
 //            coefs = Coefs;
