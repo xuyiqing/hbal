@@ -36,6 +36,10 @@ crossValidate <- function(
 	full.c=NULL,
 	shuffle.treat=NULL){
 
+	if (any(!is.finite(alpha))){
+		return(Inf)
+	}
+	
 	res <- rep(NA, folds) #store cross validation results
 	coe <- NULL
 

@@ -230,7 +230,7 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
 	Eigen::VectorXd diag;
 	//Eigen::VectorXd w;
     Eigen::VectorXd best_coefs;
-//	double counter = 0 ;
+	double counter = 0 ;
 	double loss_new ;
 	double loss_old ;
 	double minimum ;
@@ -238,10 +238,9 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
 //    double err_tol = 1e-6 ;
     double max_diff ;
     double maxx = 1.;
-    double minn = 0.001;
+    double minn = 1e-3;
     double best_objective = DBL_MAX ;
 	List ss_out ;
-
 
 	while (iter <= max_iterations && converged == 0) {
         
@@ -286,10 +285,14 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
         hessian = co_x.transpose() * (co_x.array().colwise() * weights_ebal.array()).matrix() + penalty_hessian ;	
         
         Coefs = coefs ;
-        newton = hessian.colPivHouseholderQr().solve(gradient) ;
-        
-//        double relative_error = (hessian*newton - gradient).norm() / newton.norm();
-//        Rcout<< "error =  " << (hessian*newton - gradient).norm() << "; " << " relative error = " << relative_error << std::endl;
+        newton = hessian.fullPivLu().solve(gradient);
+
+        double abs_error = (hessian*newton - gradient).norm()/gradient.norm();
+        if (abs_error > 0.1){
+            break;
+//            newton = hessian.fullPivLu().solve(gradient) ;
+//            Rcout<<"LU error =  " << (hessian*newton - gradient).norm() << "; " << "lldt error =  " << relative_error<< std::endl;
+        }
 //        if (relative_error > err_tol or std::isnan(relative_error)){
 //            newton = hessian.colPivHouseholderQr().solve(gradient) ;
 //            Rcout<<"lldterror =  " << (hessian*newton - gradient).norm() << "; " << "lldt error =  " << (hessian*newton - gradient).norm()/ newton.norm()<< std::endl;
@@ -310,7 +313,6 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
 
         if (loss_old <= loss_new) {
             if (maxx <= minn){
-                coefs = Coefs;
                 break;
             }
 
@@ -319,9 +321,12 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
 
             if(print_level>=3){Rcpp::Rcout << "LS Step Length is " << minimum << std::endl;};
 
-            if(minimum <= 0.0025){
-                break;
-            };
+//            if(minimum <= 0.005){
+//                counter += 1;
+//                if (counter > 2){
+//                    break;
+//                }  
+//            };
 
             coefs = Coefs - minimum * newton ;
             }
