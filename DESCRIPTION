@@ -1,7 +1,7 @@
 Package: hbal
 Type: Package
 Title: Hierarchically Regularized Entropy Balancing
-Version: 1.1.1
+Version: 1.2.1
 Date: 2020-12-20
 Authors@R: c(
   person("Yiqing", "Xu", , "yiqingxu@ucsd.edu", c("aut")),

@@ -285,14 +285,14 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
         last_coefs = coefs ;      
 
         Coefs = coefs ;
-        newton = hessian.llt().solve(gradient) ;
+        newton = hessian.ldlt().solve(gradient) ;
         
         double relative_error = (hessian*newton - gradient).norm() / newton.norm();
 //        Rcout<< "error =  " << (hessian*newton - gradient).norm() << "; " << " relative error = " << relative_error << std::endl;
-        if (relative_error > err_tol or std::isnan(relative_error)){
-            newton = hessian.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(gradient) ;
+//        if (relative_error > err_tol or std::isnan(relative_error)){
+//            newton = hessian.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(gradient) ;
 //            Rcout<<"lldterror =  " << (hessian*newton - gradient).norm() << "; " << "lldt error =  " << (hessian*newton - gradient).norm()/ newton.norm()<< std::endl;
-        }
+//        }
         coefs = coefs - maxx * newton ;
 //        if(std::isinf(coefs.sum()) or std::isinf(Coefs.sum())){
 //            coefs = Coefs;
@@ -318,7 +318,9 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
             maxx /= 2 ;
             if(print_level>=3){Rcpp::Rcout << "LS Step Length is " << minimum << std::endl;};
 
-            if(minimum <= 0.001){break;};
+            if(minimum <= 0.0025){
+                coefs = Coefs;
+                break;};
 
             coefs = Coefs - minimum * newton ;
             }

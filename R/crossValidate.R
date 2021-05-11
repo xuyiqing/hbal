@@ -60,7 +60,7 @@ crossValidate <- function(
 			train.total <- c(1, colMeans(treatment))
 			test.treat <- full.t
 		}
-		if(!is.null(sub.coef) && all(is.finite(sub.coef))) Coefs <- sub.coef
+		if(!is.null(sub.coef) && all(is.finite(sub.coef)) && max(abs(sub.coef))<=10) Coefs <- sub.coef
 		out <- try(
 			hb(
 				tr_total=as.matrix(train.total),
