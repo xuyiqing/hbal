@@ -199,7 +199,7 @@ hbal <- function(
 		fold.num.tr <- rep(1:folds, ceiling(ntreated/folds))
 		fold.tr <- sample(fold.num.tr, ntreated, replace=F)
 
-		min.c <- nloptr(x0 = rep(500, length(grouping)-1),
+		min.c <- nloptr(x0 = rep(500,length(grouping)-1),
                 eval_f = crossValidate,
                 lb = rep(0, length(grouping)-1),
                 ub = rep(500, length(grouping)-1),
