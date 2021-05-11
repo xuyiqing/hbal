@@ -237,8 +237,8 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
     double tol = pow(DBL_EPSILON, 0.25) ;
 //    double err_tol = 1e-6 ;
     double max_diff ;
-    double maxx = 1;
-    double minn = 0.0001;
+    double maxx = 1.;
+    double minn = 0.;
     double best_objective = DBL_MAX ;
 	List ss_out ;
 
@@ -322,7 +322,6 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
             if(minimum <= 0.001){
                 counter += 1;
                 if (counter >= 5){
-                    coefs = Coefs;
                     break;
                 }
             };
