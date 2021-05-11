@@ -241,7 +241,7 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
 	double loss_old ;
 	double minimum ;
     double tol = pow(DBL_EPSILON, 0.25) ;
-    double err_tol = 1e-5 ;
+    double err_tol = 1e-6 ;
     double maxx = 1;
     double minn = 0.001;
 //  double objective ;
@@ -318,7 +318,7 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
             maxx /= 2 ;
             if(print_level>=3){Rcpp::Rcout << "LS Step Length is " << minimum << std::endl;};
 
-            if(minimum <= 0.001){
+            if(minimum <= 0.0025){
                 coefs = Coefs;
                 break;};
 
