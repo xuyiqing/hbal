@@ -238,7 +238,7 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
 //    double err_tol = 1e-6 ;
     double max_diff ;
     double maxx = 1.;
-    double minn = 1e-4;
+    double minn = 1e-3;
     double best_objective = DBL_MAX ;
 	List ss_out ;
 
@@ -285,10 +285,10 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
         hessian = co_x.transpose() * (co_x.array().colwise() * weights_ebal.array()).matrix() + penalty_hessian ;	
         
         Coefs = coefs ;
-        newton = hessian.ldlt().solve(gradient);
+        newton = hessian.fullPivLu().solve(gradient);
 
         double abs_error = (hessian*newton - gradient).norm()/gradient.norm();
-        if (abs_error > 0.001){
+        if (abs_error > 0.01){
             break;
 //            newton = hessian.fullPivLu().solve(gradient) ;
 //            Rcout<<"LU error =  " << (hessian*newton - gradient).norm() << "; " << "lldt error =  " << relative_error<< std::endl;
@@ -321,9 +321,9 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
 
             if(print_level>=3){Rcpp::Rcout << "LS Step Length is " << minimum << std::endl;};
 
-            if(minimum <= 0.001){
+            if(minimum <= 0.002){
                 counter += 1;
-                if (counter > 2){
+                if (counter > 1){
                     break;
                 }  
             };
