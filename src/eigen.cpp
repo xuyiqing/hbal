@@ -238,7 +238,7 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
 //    double err_tol = 1e-6 ;
     double max_diff ;
     double maxx = 1.;
-    double minn = 1e-3;
+    double minn = 1e-4;
     double best_objective = DBL_MAX ;
 	List ss_out ;
 
@@ -285,10 +285,10 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
         hessian = co_x.transpose() * (co_x.array().colwise() * weights_ebal.array()).matrix() + penalty_hessian ;	
         
         Coefs = coefs ;
-        newton = hessian.fullPivLu().solve(gradient);
+        newton = hessian.ldlt().solve(gradient);
 
         double abs_error = (hessian*newton - gradient).norm()/gradient.norm();
-        if (abs_error > 0.1){
+        if (abs_error > 0.001){
             break;
 //            newton = hessian.fullPivLu().solve(gradient) ;
 //            Rcout<<"LU error =  " << (hessian*newton - gradient).norm() << "; " << "lldt error =  " << relative_error<< std::endl;
@@ -312,21 +312,21 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
         };
 
         if (loss_old <= loss_new) {
-            if (maxx <= minn){
-                break;
-            }
+//            if (maxx <= minn){
+//                break;
+//            }
 
             minimum = Brent_fmin(minn, maxx, &line_searcher_internal, co_x, tr_total, Coefs, newton, base_weight, alpha, tol) ;
-            maxx /= 2 ;
+//            maxx /= 2 ;
 
             if(print_level>=3){Rcpp::Rcout << "LS Step Length is " << minimum << std::endl;};
 
-//            if(minimum <= 0.005){
-//                counter += 1;
-//                if (counter > 2){
-//                    break;
-//                }  
-//            };
+            if(minimum <= 0.001){
+                counter += 1;
+                if (counter > 2){
+                    break;
+                }  
+            };
 
             coefs = Coefs - minimum * newton ;
             }
