@@ -323,7 +323,7 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
 
             if(minimum <= 0.005){
                 counter += 1;
-                if (counter > 1){
+                if (counter > 2){
                     break;
                 }  
             };
