@@ -321,7 +321,7 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
 
             if(print_level>=3){Rcpp::Rcout << "LS Step Length is " << minimum << std::endl;};
 
-            if(minimum <= 0.002){
+            if(minimum <= 0.005){
                 counter += 1;
                 if (counter > 1){
                     break;
