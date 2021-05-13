@@ -230,7 +230,7 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
 	Eigen::VectorXd diag;
 	//Eigen::VectorXd w;
     Eigen::VectorXd best_coefs;
-	double counter = 0 ;
+//	double counter = 0 ;
 	double loss_new ;
 	double loss_old ;
 	double minimum ;
@@ -321,11 +321,8 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
 
             if(print_level>=3){Rcpp::Rcout << "LS Step Length is " << minimum << std::endl;};
 
-            if(minimum <= 0.005){
-                counter += 1;
-                if (counter > 2){
-                    break;
-                }  
+            if(minimum <= 0.002){
+                break; 
             };
 
             coefs = Coefs - minimum * newton ;
