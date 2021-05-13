@@ -11,36 +11,36 @@ using namespace Rcpp ;
 /*  sub function  */
 double line_searcher_internal (double& ss,
                                Eigen::MatrixXd& Co_x, // Nco * (1+p)
-	                           Eigen::VectorXd& Tr_total, // Ntr * 1
-	                           Eigen::VectorXd& coefs, // (1+p) * 1
-	                           Eigen::VectorXd& Newton, // (1+p) * 1
-	                           Eigen::VectorXd& Base_weight, // Nco * 1
-	                           Eigen::VectorXd& alpha) {  
-	Eigen::VectorXd weights_temp ;
-	Eigen::VectorXd weights_ebal ;
-	Eigen::VectorXd Co_x_agg ; 
-	Eigen::VectorXd dif ; 
-	Eigen::VectorXd penalty ;
-	double maxdif ;
+                               Eigen::VectorXd& Tr_total, // Ntr * 1
+                               Eigen::VectorXd& coefs, // (1+p) * 1
+                               Eigen::VectorXd& Newton, // (1+p) * 1
+                               Eigen::VectorXd& Base_weight, // Nco * 1
+                               Eigen::VectorXd& alpha) {  
+    Eigen::VectorXd weights_temp ;
+    Eigen::VectorXd weights_ebal ;
+    Eigen::VectorXd Co_x_agg ; 
+    Eigen::VectorXd dif ; 
+    Eigen::VectorXd penalty ;
+    double maxdif ;
 
-	weights_temp = (Co_x * (coefs - ss * Newton)).array().exp().matrix() ;
+    weights_temp = (Co_x * (coefs - ss * Newton)).array().exp().matrix() ;
     // point wise product
-	weights_ebal = (weights_temp.array() * Base_weight.array()).matrix() ;
-	//weights_ebal = weights_ebal.transpose() ;
-	penalty = (2 * alpha.array() * coefs.array()).matrix() ;
+    weights_ebal = (weights_temp.array() * Base_weight.array()).matrix() ;
+    //weights_ebal = weights_ebal.transpose() ;
+    penalty = (2 * alpha.array() * coefs.array()).matrix() ;
  //   if (weights_ebal.array().maxCoeff()>=pow(10, 10)){
  //       printf("big");
  //       return(DBL_MAX);
  //   }; 
-	Co_x_agg = Co_x.transpose() * weights_ebal;
+    Co_x_agg = Co_x.transpose() * weights_ebal;
     //Co_x_agg = Co_x_agg.transpose() ;
-	Co_x_agg += penalty ; 
-	dif = (Co_x_agg - Tr_total).cwiseAbs() ;
-	maxdif = dif.array().maxCoeff() ;
+    Co_x_agg += penalty ; 
+    dif = (Co_x_agg - Tr_total).cwiseAbs() ;
+    maxdif = dif.array().maxCoeff() ;
     if (std::isnan(maxdif) or std::isinf(maxdif)){
         maxdif = DBL_MAX;
     }
-	return(maxdif) ;
+    return(maxdif) ;
 
 }
 
@@ -48,37 +48,37 @@ double line_searcher_internal (double& ss,
 /*  sub function  */
 // [[Rcpp::export]]
 double line_searcher (Eigen::MatrixXd Co_x, // Nco * (1+p)
-	                  Eigen::VectorXd Tr_total, // Ntr * 1
-	                  Eigen::VectorXd coefs, // (1+p) * 1
-	                  Eigen::VectorXd Newton, // (1+p) * 1
-	                  Eigen::VectorXd Base_weight, // Nco * 1
-	                  Eigen::VectorXd alpha,
-	                  double ss) {  
-	Eigen::VectorXd weights_temp ;
-	Eigen::VectorXd weights_ebal ;
-	Eigen::VectorXd Co_x_agg ; 
-	Eigen::VectorXd dif ; 
-	Eigen::VectorXd penalty ;
-	double maxdif ;
+                      Eigen::VectorXd Tr_total, // Ntr * 1
+                      Eigen::VectorXd coefs, // (1+p) * 1
+                      Eigen::VectorXd Newton, // (1+p) * 1
+                      Eigen::VectorXd Base_weight, // Nco * 1
+                      Eigen::VectorXd alpha,
+                      double ss) {  
+    Eigen::VectorXd weights_temp ;
+    Eigen::VectorXd weights_ebal ;
+    Eigen::VectorXd Co_x_agg ; 
+    Eigen::VectorXd dif ; 
+    Eigen::VectorXd penalty ;
+    double maxdif ;
 
-	weights_temp = (Co_x * (coefs - ss * Newton)).array().exp().matrix() ; // column vector
+    weights_temp = (Co_x * (coefs - ss * Newton)).array().exp().matrix() ; // column vector
     // point wise product
     weights_ebal = (weights_temp.array() * Base_weight.array()).matrix() ;
-	//weights_ebal = weights_ebal.transpose() ;
-	penalty = (2 * alpha.array() * coefs.array()).matrix() ;
+    //weights_ebal = weights_ebal.transpose() ;
+    penalty = (2 * alpha.array() * coefs.array()).matrix() ;
 //    if (weights_ebal.array().maxCoeff()>=pow(10, 10)){
 //        printf("big");
 //        return(DBL_MAX);
 //    };
     Co_x_agg = Co_x.transpose() * weights_ebal;
-	//Co_x_agg = Co_x_agg.transpose() ;
+    //Co_x_agg = Co_x_agg.transpose() ;
     Co_x_agg += penalty ; 
-	dif = (Co_x_agg - Tr_total).cwiseAbs() ;   
-	maxdif = dif.array().maxCoeff() ;
+    dif = (Co_x_agg - Tr_total).cwiseAbs() ;   
+    maxdif = dif.array().maxCoeff() ;
     if (std::isnan(maxdif) or std::isinf(maxdif)){
         maxdif = DBL_MAX;
     }
-	return(maxdif) ;
+    return(maxdif) ;
 }
 
 /*  sub function  */
@@ -205,44 +205,44 @@ double Brent_fmin(double ax,
 /*  main function  */
 // [[Rcpp::export]]
 List hb (Eigen::VectorXd tr_total, // Ntr * 1
-	     Eigen::MatrixXd co_x, // Nco * (P+1) 
-	     Eigen::VectorXd coefs, // (P+1) * 1
-	     Eigen::VectorXd base_weight,
-	     Eigen::VectorXd alpha,
-	     int max_iterations,
-	     double constraint_tolerance,
-	     int print_level) {
+         Eigen::MatrixXd co_x, // Nco * (P+1) 
+         Eigen::VectorXd coefs, // (P+1) * 1
+         Eigen::VectorXd base_weight,
+         Eigen::VectorXd alpha,
+         int max_iterations,
+         double constraint_tolerance,
+         int print_level) {
 
-	int converged = 0 ;
-	int iter = 0 ;
+    int converged = 0 ;
+    int iter = 0 ;
 
-	Eigen::VectorXd weights_temp ;
-	Eigen::VectorXd weights_ebal ;
-	Eigen::VectorXd co_x_agg ;
-	Eigen::VectorXd gradient ;
-	Eigen::VectorXd dif ;
-	Eigen::MatrixXd hessian ;
-	Eigen::VectorXd Coefs ;
-	Eigen::VectorXd newton ;
-	Eigen::VectorXd penalty ;
-	//mat diag_penalty;
-	Eigen::MatrixXd penalty_hessian ;
-	Eigen::VectorXd diag;
-	//Eigen::VectorXd w;
+    Eigen::VectorXd weights_temp ;
+    Eigen::VectorXd weights_ebal ;
+    Eigen::VectorXd co_x_agg ;
+    Eigen::VectorXd gradient ;
+    Eigen::VectorXd dif ;
+    Eigen::MatrixXd hessian ;
+    Eigen::VectorXd Coefs ;
+    Eigen::VectorXd newton ;
+    Eigen::VectorXd penalty ;
+    //mat diag_penalty;
+    Eigen::MatrixXd penalty_hessian ;
+    Eigen::VectorXd diag;
+    //Eigen::VectorXd w;
     Eigen::VectorXd best_coefs;
-//	double counter = 0 ;
-	double loss_new ;
-	double loss_old ;
-	double minimum ;
+    double counter = 0 ;
+    double loss_new ;
+    double loss_old ;
+    double minimum ;
     double tol = pow(DBL_EPSILON, 0.25) ;
 //    double err_tol = 1e-6 ;
     double max_diff ;
     double maxx = 1.;
     double minn = 1e-3;
     double best_objective = DBL_MAX ;
-	List ss_out ;
+    List ss_out ;
 
-	while (iter <= max_iterations && converged == 0) {
+    while (iter <= max_iterations && converged == 0) {
         
         weights_temp = (co_x * coefs).array().exp().matrix() ;
         
@@ -251,15 +251,15 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
         //weights_ebal = weights_ebal.transpose() ; // 1 * Nco
         
         co_x_agg = co_x.transpose() * weights_ebal; // 1 * (p+1)
-		penalty = (2 * alpha.array() * coefs.array()).matrix() ;
-		//co_x_agg = co_x_agg.transpose() ;
+        penalty = (2 * alpha.array() * coefs.array()).matrix() ;
+        //co_x_agg = co_x_agg.transpose() ;
         gradient = co_x_agg - tr_total ;
         gradient +=  penalty ;
         dif = (gradient).cwiseAbs() ;
         max_diff = dif.array().maxCoeff();
 
         if (max_diff < constraint_tolerance) {
-        	converged = 1 ;
+            converged = 1 ;
             break;
         };
 
@@ -277,12 +277,12 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
         } 
 
         if(print_level>=2){
-        	Rcpp::Rcout.precision(4);
-        	Rcpp::Rcout<< "Iteration " << iter << ":" << " Max difference = " << max_diff << std::fixed << std::endl;};
+            Rcpp::Rcout.precision(4);
+            Rcpp::Rcout<< "Iteration " << iter << ":" << " Max difference = " << max_diff << std::fixed << std::endl;};
         
         diag = (2*alpha).transpose() ;
         penalty_hessian = (diag).asDiagonal() ;
-        hessian = co_x.transpose() * (co_x.array().colwise() * weights_ebal.array()).matrix() + penalty_hessian ;	
+        hessian = co_x.transpose() * (co_x.array().colwise() * weights_ebal.array()).matrix() + penalty_hessian ;   
         
         Coefs = coefs ;
         newton = hessian.fullPivLu().solve(gradient);
@@ -308,7 +308,7 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
 
         if(print_level>=3){
             Rcpp::Rcout.precision(8);
-       	    Rcout << "new loss= " << loss_new << ","<< " old loss= " << loss_old << std::endl;
+            Rcout << "new loss= " << loss_new << ","<< " old loss= " << loss_old << std::endl;
         };
 
         if (loss_old <= loss_new) {
@@ -322,20 +322,23 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
             if(print_level>=3){Rcpp::Rcout << "LS Step Length is " << minimum << std::endl;};
 
             if(minimum <= 0.002){
-                break; 
+                counter += 1;
+                if (counter > 1){
+                    break;
+                }  
             };
 
             coefs = Coefs - minimum * newton ;
             }
 
         if (coefs.cwiseAbs().array().maxCoeff() >= 100){
-        	coefs = Eigen::VectorXd::Zero(tr_total.size());
-        	coefs(0,0) = tr_total(0, 0);
+            coefs = Eigen::VectorXd::Zero(tr_total.size());
+            coefs(0,0) = tr_total(0, 0);
         };
 
         iter = iter + 1 ;
 
-	} 
+    } 
 
     if(converged!=1){
         coefs = best_coefs;
@@ -345,13 +348,13 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
         max_diff = best_objective;
     } 
 
-	List out ;
+    List out ;
 
-	out["maxdiff"] = max_diff ;
-	out["coefs"] = coefs ;
-	out["Weights_ebal"] = weights_ebal ;
-	out["converged"] = converged ;
+    out["maxdiff"] = max_diff ;
+    out["coefs"] = coefs ;
+    out["Weights_ebal"] = weights_ebal ;
+    out["converged"] = converged ;
 
-	return(out) ;
+    return(out) ;
 
 }
