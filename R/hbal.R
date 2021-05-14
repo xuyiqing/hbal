@@ -252,7 +252,8 @@ hbal <- function(
 		grouping[1] <- grouping[1]-1
 		group.assignment <- grouping
 	}
-	out <- list(weights=weights, 
+	out <- list(converged=z$converged,
+				weights=weights, 
 				coefs=cc, 
 				Treatment=Treatment, 
 				Y=Y, 
