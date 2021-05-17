@@ -47,6 +47,7 @@ crossValidate <- function(
 
 	penalty <- rep(c(0, alpha), times=grouping)
 	sub.coef <- coefs
+	Coefs <- coefs
 
 	counter <- 0
 	# loop over each fold for each alpha
@@ -95,7 +96,6 @@ crossValidate <- function(
 		}
 		sub.coef <- coe
 	}#end of inner loop
-
 
 	oo <- ifelse(is.finite(mean(res)), mean(res), Inf)
 	return(oo)

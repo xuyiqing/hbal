@@ -141,9 +141,9 @@ hbal <- function(
 		selected <- doubleSelection(X=X, W=Treatment, Y=Y, grouping=grouping)
 		X <- scale(selected$resX)
 		grouping <- selected$penalty.list
-		full <- full[,selected$covar.keep]
-		full.t <- full.t[,selected$covar.keep]
-		full.c <- full.c[,selected$covar.keep]
+#		full <- full[,selected$covar.keep]
+#		full.t <- full.t[,selected$covar.keep]
+#		full.c <- full.c[,selected$covar.keep]
 	}
 	full.c <- cbind(rep(1,ncontrols), full.c)
 
