@@ -124,11 +124,12 @@ hbal <- function(
 	
 	if (expand.degree > 0) {# series expansion of the covariates
 		expand <- covarExpand(X, exp.degree=expand.degree, treatment=Treatment, exclude=exclude)
-		X <- scale(expand$mat)
 		grouping <- expand$grouping
 		if (0 %in% grouping){
     		grouping <- grouping[-which(grouping==0)]
 		}
+		res_X <- getResidual(expand$mat, pos.list=grouping)
+		X <- scale(res_X)
 	} else{
 		X <- scale(X)
 	}
