@@ -128,7 +128,7 @@ hbal <- function(
 		if (0 %in% grouping){
     		grouping <- grouping[-which(grouping==0)]
 		}
-		res_X <- getResidual(expand$mat, pos.list=grouping)
+		#res_X <- getResidual(expand$mat, pos.list=grouping)
 		X <- scale(res_X)
 	} else{
 		X <- scale(X)
