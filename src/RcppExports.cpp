@@ -6,6 +6,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // line_searcher
 double line_searcher(Eigen::MatrixXd Co_x, Eigen::VectorXd Tr_total, Eigen::VectorXd coefs, Eigen::VectorXd Newton, Eigen::VectorXd Base_weight, Eigen::VectorXd alpha, double ss);
 RcppExport SEXP _hbal_line_searcher(SEXP Co_xSEXP, SEXP Tr_totalSEXP, SEXP coefsSEXP, SEXP NewtonSEXP, SEXP Base_weightSEXP, SEXP alphaSEXP, SEXP ssSEXP) {

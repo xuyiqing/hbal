@@ -26,14 +26,8 @@ double line_searcher_internal (double& ss,
     weights_temp = (Co_x * (coefs - ss * Newton)).array().exp().matrix() ;
     // point wise product
     weights_ebal = (weights_temp.array() * Base_weight.array()).matrix() ;
-    //weights_ebal = weights_ebal.transpose() ;
     penalty = (2 * alpha.array() * coefs.array()).matrix() ;
- //   if (weights_ebal.array().maxCoeff()>=pow(10, 10)){
- //       printf("big");
- //       return(DBL_MAX);
- //   }; 
     Co_x_agg = Co_x.transpose() * weights_ebal;
-    //Co_x_agg = Co_x_agg.transpose() ;
     Co_x_agg += penalty ; 
     dif = (Co_x_agg - Tr_total).cwiseAbs() ;
     maxdif = dif.array().maxCoeff() ;
@@ -64,14 +58,8 @@ double line_searcher (Eigen::MatrixXd Co_x, // Nco * (1+p)
     weights_temp = (Co_x * (coefs - ss * Newton)).array().exp().matrix() ; // column vector
     // point wise product
     weights_ebal = (weights_temp.array() * Base_weight.array()).matrix() ;
-    //weights_ebal = weights_ebal.transpose() ;
     penalty = (2 * alpha.array() * coefs.array()).matrix() ;
-//    if (weights_ebal.array().maxCoeff()>=pow(10, 10)){
-//        printf("big");
-//        return(DBL_MAX);
-//    };
     Co_x_agg = Co_x.transpose() * weights_ebal;
-    //Co_x_agg = Co_x_agg.transpose() ;
     Co_x_agg += penalty ; 
     dif = (Co_x_agg - Tr_total).cwiseAbs() ;   
     maxdif = dif.array().maxCoeff() ;
@@ -225,17 +213,14 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
     Eigen::VectorXd Coefs ;
     Eigen::VectorXd newton ;
     Eigen::VectorXd penalty ;
-    //mat diag_penalty;
     Eigen::MatrixXd penalty_hessian ;
     Eigen::VectorXd diag;
-    //Eigen::VectorXd w;
     Eigen::VectorXd best_coefs;
     double counter = 0 ;
     double loss_new ;
     double loss_old ;
     double minimum ;
     double tol = pow(DBL_EPSILON, 0.25) ;
-//    double err_tol = 1e-6 ;
     double max_diff ;
     double maxx = 1.;
     double minn = 1e-3;
@@ -245,14 +230,9 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
     while (iter <= max_iterations && converged == 0) {
         
         weights_temp = (co_x * coefs).array().exp().matrix() ;
-        
         weights_ebal = (weights_temp.array() * base_weight.array()).matrix() ;
-        //w = weights_ebal.transpose();
-        //weights_ebal = weights_ebal.transpose() ; // 1 * Nco
-        
         co_x_agg = co_x.transpose() * weights_ebal; // 1 * (p+1)
         penalty = (2 * alpha.array() * coefs.array()).matrix() ;
-        //co_x_agg = co_x_agg.transpose() ;
         gradient = co_x_agg - tr_total ;
         gradient +=  penalty ;
         dif = (gradient).cwiseAbs() ;
@@ -290,19 +270,9 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
         double abs_error = (hessian*newton - gradient).norm()/gradient.norm();
         if (abs_error > 0.01){
             break;
-//            newton = hessian.fullPivLu().solve(gradient) ;
-//            Rcout<<"LU error =  " << (hessian*newton - gradient).norm() << "; " << "lldt error =  " << relative_error<< std::endl;
         }
-//        if (relative_error > err_tol or std::isnan(relative_error)){
-//            newton = hessian.colPivHouseholderQr().solve(gradient) ;
-//            Rcout<<"lldterror =  " << (hessian*newton - gradient).norm() << "; " << "lldt error =  " << (hessian*newton - gradient).norm()/ newton.norm()<< std::endl;
-//        }
-        coefs = coefs - maxx * newton ;
-//        if(std::isinf(coefs.sum()) or std::isinf(Coefs.sum())){
-//            coefs = Coefs;
-//            break;
-//        }
 
+        coefs = coefs - maxx * newton ;
         loss_new = line_searcher(co_x, tr_total, coefs, newton, base_weight, alpha, 0.0) ;
         loss_old = line_searcher(co_x, tr_total, Coefs, newton, base_weight, alpha, 0.0) ;
 
@@ -312,13 +282,8 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
         };
 
         if (loss_old <= loss_new) {
-//            if (maxx <= minn){
-//                break;
-//            }
-
             minimum = Brent_fmin(minn, maxx, &line_searcher_internal, co_x, tr_total, Coefs, newton, base_weight, alpha, tol) ;
-//            maxx /= 2 ;
-
+            
             if(print_level>=3){Rcpp::Rcout << "LS Step Length is " << minimum << std::endl;};
 
             if(minimum <= 0.002){

@@ -34,18 +34,18 @@ This page demonstrates the usage of the **hbal** package. **hbal** is an impleme
 
 **Authors:** [Yiqing Xu](http://yiqingxu.org/) (Stanford); [Eddie Yang](https://www.eddieyang.net/) (UCSD)
 
-**Date:** January 27, 2021
+**Date:** November 19, 2021
 
-**Version:** 1.1.1 ([Github](https://github.com/xuyiqing/hbal)); 1.1.1 ([CRAN])
+**Version:** 1.2.2 ([Github](https://github.com/xuyiqing/hbal)); 1.2.2 ([CRAN])
 
 **Reference:** Xu, Yiqing and Eddie Yang (2021). "Hierarchically Regularized Entropy Balancing" Available at [SSRN](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3807620).
 
 R code used in this demonstration can be downloaded from [here](http://yiqingxu.org/software/xuyiqing/hbal_examples.R).
 
 ***
-**Updates in v.1.1.1**
+**Updates in v.1.2.2**
 
-First release!
+First CRAN release!
 
 ***
 
@@ -110,7 +110,7 @@ out <- hbal(Treatment = treat, Y = y, X = X)
 summary(hbal::att(out))
 ```
 
-We can see that, by default, `hbal()` balances on an expanded covariate set that addtionally includes second- and third-order polynomials of the covariates. 
+We can see that, by default, `hbal()` balances on an expanded covariate set that includes second- and third-order polynomials of the covariates. 
 
 `att()` uses linear regression with robust standard errors (`lm_robust()`) from the **estimatr** package to calculate the ATT. Additional arguments accepted by `lm_robust()` (such as clusters) can be passed to `att()`. Alternatively, we can specify `method = "lin"` to use the Lin (2013) covariate adjustment with robust standard errors.
 

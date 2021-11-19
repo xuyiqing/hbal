@@ -40,7 +40,7 @@ plot.hbal <- function(x, ...){
 	for (i in 1:length(groups)){
 		end <- start+x$group.assignment[i]-1
 		out.sub[[i]] <- rbind(out[start:end,], out[(start+length(std.diff.before)):(end+length(std.diff.before)),])
-		l <- max(abs(out.sub[[i]]$val))
+		l <- max(abs(out.sub[[i]]$val), 0.15)
 		plots[[i]] <- ggplot(aes_string(x="val", y="y"), data=out.sub[[i]]) + geom_point(size=3, shape = 21, colour = "black", aes_string(fill="group")) + 
 						scale_y_discrete(limits=rev(var.names[start:end]), labels=str_pad(rev(var.names[start:end]),max_length, side = "left")) + xlim(-l, l) + scale_fill_manual(values=c("black", "white")) +
 						geom_vline(xintercept = -0.1, lty=2) + geom_vline(xintercept = 0.1, lty=2) + theme_bw() + labs(x="Standardized Difference", y="") + 

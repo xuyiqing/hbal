@@ -1,8 +1,8 @@
 Package: hbal
 Type: Package
 Title: Hierarchically Regularized Entropy Balancing
-Version: 1.2.1
-Date: 2020-12-20
+Version: 1.2.2
+Date: 2021-11-19
 Authors@R: c(
   person("Yiqing", "Xu", , "yiqingxu@ucsd.edu", c("aut")),
   person("Eddie", "Yang", , "z5yang@ucsd.edu", c("aut", "cre"))
@@ -21,6 +21,7 @@ Suggests:
     ebal
 LinkingTo: Rcpp, RcppEigen
 Encoding: UTF-8
+LazyData: true
 RoxygenNote: 7.1.1
 NeedsCompilation: yes
 Packaged: 2020-12-27 03:51:54 UTC; eddie

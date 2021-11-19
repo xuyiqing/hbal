@@ -20,15 +20,3 @@ covarExclude <- function(colname, exclude){
 	}
 	return(out)
 }
-
-#covarExclude <- function(colname, exclude){
-#	out <- FALSE
-#	for (i in 1:length(exclude)){
-#		drop.element <- combinat::permn(exclude[[i]])
-#		drop.name <- sapply(drop.element, paste0, sep="", collapse=".")	
-#		if (colname%in%drop.name){
-#			out <- TRUE
-#		}
-#	}
-#	return(out)
-#}

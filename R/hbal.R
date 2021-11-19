@@ -76,15 +76,15 @@ hbal <- function(
 	Treatment,
 	X,
 	Y,
-	base.weight = NULL,
-	coefs = NULL ,
-	max.iterations = 200,
+	base.weight=NULL,
+	coefs=NULL ,
+	max.iterations=200,
 	cv=TRUE,
 	folds=4,
 	expand.degree=3,
 	ds=FALSE,
 	alpha=NULL,
-	constraint.tolerance = 1e-3,
+	constraint.tolerance=1e-3,
 	print.level=-1,
 	grouping=NULL,
 	shuffle.treat=TRUE,
@@ -128,7 +128,6 @@ hbal <- function(
 		if (0 %in% grouping){
     		grouping <- grouping[-which(grouping==0)]
 		}
-		#res_X <- getResidual(expand$mat, pos.list=grouping)
 		X <- scale(expand$mat)
 	} else{
 		X <- scale(X)
@@ -142,9 +141,6 @@ hbal <- function(
 		selected <- doubleSelection(X=X, W=Treatment, Y=Y, grouping=grouping)
 		X <- scale(selected$resX)
 		grouping <- selected$penalty.list
-#		full <- full[,selected$covar.keep]
-#		full.t <- full.t[,selected$covar.keep]
-#		full.c <- full.c[,selected$covar.keep]
 	}
 	full.c <- cbind(rep(1,ncontrols), full.c)
 
