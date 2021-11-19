@@ -4,8 +4,7 @@
 # hbal
 
 <!-- badges: start -->
-
-[![Travis build status](https://travis-ci.com/xuyiqing/hbal.svg?branch=main)](https://travis-ci.com/xuyiqing/hbal)
+[![R-CMD-check](https://github.com/xuyiqing/hbal/workflows/R-CMD-check/badge.svg)](https://github.com/xuyiqing/hbal/actions)
 <!-- badges: end -->
 
 hbal performs hierarchically regularized entropy balancing such that the
