@@ -122,7 +122,8 @@ hbal <- function(
 	ntreated  <- sum(Treatment==1)
 	ncontrols <- sum(Treatment==0)  
 	
-	if (expand.degree > 0) {# series expansion of the covariates
+	if (expand.degree%%1L!=0 | expand.degree<1) stop("expand.degree needs to be another integer greater than or equal to 1")
+	if (expand.degree > 1) {# series expansion of the covariates
 		expand <- covarExpand(X, exp.degree=expand.degree, treatment=Treatment, exclude=exclude)
 		grouping <- expand$grouping
 		if (0 %in% grouping){
@@ -263,7 +264,9 @@ hbal <- function(
 				call=mcall)
 
 	if (cv==TRUE){
+		groups <- c("linear terms", "two-way interactions", "square terms", "three-way interactions", "linear-squre interactions", "cubic terms")
 		out[["penalty"]] <- c(0, min.c$solution)
+		names(out[["penalty"]]) <- groups[1:length(out[["penalty"]])]
 	}
 
 	class(out) <- "hbal"

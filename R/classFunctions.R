@@ -3,6 +3,7 @@
 #' @description This function plots the covariate difference between the control and treatment groups in standardized means before and after weighting.
 #' @usage \method{plot}{hbal}(x, ...)
 #' @param x       an object of class \code{hbalobject} as returned by \code{hbal}.
+#' @param type    type of graph to plot.
 #' @param ...     Further arguments to be passed to \code{plot.hbal()}.
 #' @return A matrix of ggplots of covariate balance by group
 #' @import ggplot2
@@ -13,47 +14,54 @@
 #' @author Yiqing Xu, Eddie Yang
 #' @export
 #' @method plot hbal
-plot.hbal <- function(x, ...){
-	plots <- list()
-	out.sub <- list()
-	width <- list()
-	groups <- c("linear terms", "two-way interactions", "square terms", "three-way interactions", "linear-squre interactions", "cubic terms")
-	groups <- groups[1:length(x$group.assignment)]
-	if(length(which(x$group.assignment==0))!=0){
-		groups <- groups[-which(x$group.assignment==0)]
-		x$group.assignment <- x$group.assignment[-which(x$group.assignment==0)]
+plot.hbal <- function(x, 
+	type = 'balance',
+	...){
+	if (type == 'weight'){
+		cat('sum(weights) normalized to the number of control units: ', length(x$weights), '\n')
+		dat <- data.frame(weights = x$weights * length(x$weights))
+		ggplot(data=dat, aes(x=weights, y=..scaled..)) + geom_density() + theme_bw() + labs(y='density')
+	}else{
+		plots <- list()
+		out.sub <- list()
+		width <- list()
+		groups <- c("linear terms", "two-way interactions", "square terms", "three-way interactions", "linear-squre interactions", "cubic terms")
+		groups <- groups[1:length(x$group.assignment)]
+		if(length(which(x$group.assignment==0))!=0){
+			groups <- groups[-which(x$group.assignment==0)]
+			x$group.assignment <- x$group.assignment[-which(x$group.assignment==0)]
+		}
+		var.names <- colnames(x$mat)
+		T <- x$Treatment # treatment
+		treat <- x$mat[T==1,] # treated
+		control <- x$mat[T==0,] * c(x$weights) * sum(T==0) # control
+		denom <- apply(rbind(treat, control), 2, sd)
+		std.diff.after <- (apply(treat, 2, mean) - apply(control, 2, mean))/denom
+		denom <- apply(rbind(treat, x$mat[T==0,]), 2, sd)
+		std.diff.before <- (apply(treat, 2, mean) - apply(x$mat[T==0,], 2, mean))/denom
+		out <- data.frame(val=c(std.diff.before, std.diff.after),
+						  y=rep(var.names, 2),
+						  group=factor(rep(c("before adjustment", "after adjustment"), each=length(std.diff.before))),
+						  covar.group=rep(rep(groups, x$group.assignment),2))
+		start <- 1
+		max_length <- max(str_length(var.names))
+		for (i in 1:length(groups)){
+			end <- start+x$group.assignment[i]-1
+			out.sub[[i]] <- rbind(out[start:end,], out[(start+length(std.diff.before)):(end+length(std.diff.before)),])
+			l <- max(abs(out.sub[[i]]$val), 0.15)
+			plots[[i]] <- ggplot(aes_string(x="val", y="y"), data=out.sub[[i]]) + geom_point(size=3, shape = 21, colour = "black", aes_string(fill="group")) + 
+							scale_y_discrete(limits=rev(var.names[start:end]), labels=str_pad(rev(var.names[start:end]),max_length, side = "left")) + xlim(-l, l) + scale_fill_manual(values=c("black", "white")) +
+							geom_vline(xintercept = -0.1, lty=2) + geom_vline(xintercept = 0.1, lty=2) + theme_bw() + labs(x="Standardized Difference", y="") + 
+							theme(legend.title = element_blank()) + ggtitle(groups[i]) + theme(axis.text.y = element_text(family = "mono")) +theme(legend.position="bottom")
+			
+			start <- end+1
+		}
+		legend <- gtable_filter(ggplot_gtable(ggplot_build(plots[[1]])), "guide-box")
+		for (i in 1:length(groups)){
+			plots[[i]] <- plots[[i]] + theme(legend.position="none")
+		}
+		grid.arrange(do.call("arrangeGrob", c(plots, ncol=ceiling(length(plots)/2))),  nrow=2, legend, heights=c(1.1, 0.1))
 	}
-	var.names <- colnames(x$mat)
-	T <- x$Treatment # treatment
-	treat <- x$mat[T==1,] # treated
-	control <- x$mat[T==0,] * c(x$weights) * sum(T==0) # control
-	denom <- apply(rbind(treat, control), 2, sd)
-	std.diff.after <- (apply(treat, 2, mean) - apply(control, 2, mean))/denom
-	denom <- apply(rbind(treat, x$mat[T==0,]), 2, sd)
-	std.diff.before <- (apply(treat, 2, mean) - apply(x$mat[T==0,], 2, mean))/denom
-	out <- data.frame(val=c(std.diff.before, std.diff.after),
-					  y=rep(var.names, 2),
-					  group=factor(rep(c("before adjustment", "after adjustment"), each=length(std.diff.before))),
-					  covar.group=rep(rep(groups, x$group.assignment),2))
-	start <- 1
-	max_length <- max(str_length(var.names))
-	for (i in 1:length(groups)){
-		end <- start+x$group.assignment[i]-1
-		out.sub[[i]] <- rbind(out[start:end,], out[(start+length(std.diff.before)):(end+length(std.diff.before)),])
-		l <- max(abs(out.sub[[i]]$val), 0.15)
-		plots[[i]] <- ggplot(aes_string(x="val", y="y"), data=out.sub[[i]]) + geom_point(size=3, shape = 21, colour = "black", aes_string(fill="group")) + 
-						scale_y_discrete(limits=rev(var.names[start:end]), labels=str_pad(rev(var.names[start:end]),max_length, side = "left")) + xlim(-l, l) + scale_fill_manual(values=c("black", "white")) +
-						geom_vline(xintercept = -0.1, lty=2) + geom_vline(xintercept = 0.1, lty=2) + theme_bw() + labs(x="Standardized Difference", y="") + 
-						theme(legend.title = element_blank()) + ggtitle(groups[i]) + theme(axis.text.y = element_text(family = "mono")) +theme(legend.position="bottom")
-		
-		start <- end+1
-	}
-	legend <- gtable_filter(ggplot_gtable(ggplot_build(plots[[1]])), "guide-box")
-	for (i in 1:length(groups)){
-		plots[[i]] <- plots[[i]] + theme(legend.position="none")
-	}
-	grid.arrange(do.call("arrangeGrob", c(plots, ncol=ceiling(length(plots)/2))),  nrow=2, legend, heights=c(1.1, 0.1))
-
 }
 
 
