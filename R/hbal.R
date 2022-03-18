@@ -122,7 +122,7 @@ hbal <- function(
 	ntreated  <- sum(Treatment==1)
 	ncontrols <- sum(Treatment==0)  
 	
-	if (expand.degree%%1L!=0 | expand.degree<1) stop("expand.degree needs to be another integer greater than or equal to 1")
+	if (expand.degree%%1L!=0 | expand.degree<0) stop("expand.degree needs to be a non-negative integer")
 	if (expand.degree > 1) {# series expansion of the covariates
 		expand <- covarExpand(X, exp.degree=expand.degree, treatment=Treatment, exclude=exclude)
 		grouping <- expand$grouping

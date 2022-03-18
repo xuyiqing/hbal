@@ -5,10 +5,12 @@
 \alias{plot}
 \title{Plotting Covariate Balance from an \code{hbal} Object}
 \usage{
-\method{plot}{hbal}(x, ...)
+\method{plot}{hbal}(x, type = 'balance', ...)
 }
 \arguments{
 \item{x}{an object of class \code{hbalobject} as returned by \code{hbal}.}
+
+\item{type}{type of graph to plot.}
 
 \item{...}{Further arguments to be passed to \code{plot.hbal()}.}
 }

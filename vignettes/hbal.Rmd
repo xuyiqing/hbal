@@ -18,25 +18,26 @@ knitr::opts_chunk$set(
 )
 library(ggplot2)
 library(estimatr)
+require(ebal)
 ```
 
 ***
 
-This page demonstrates the usage of the **hbal** package. **hbal** is an implementation of the method introduced in Xu \& Yang (2021), which performs hierarchically regularized entropy balancing such that the covariate moments of the control group match those of the treatment group. **hbal** automatically expands the covariate space to include higher order terms and uses cross-validation to select variable penalties for the balancing conditions.
+This page demonstrates the usage of the **hbal** package. **hbal** is an implementation of the method introduced in [Xu \& Yang (2021)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3807620), which performs hierarchically regularized entropy balancing such that the covariate moments of the control group match those of the treatment group. **hbal** automatically expands the covariate space to include higher order terms and uses cross-validation to select variable penalties for the balancing conditions.
 
 **hbal** provides two main functions:
 
-* `hbal()`, which performs hierarchically regularized entropy balancing.
+* `hbal`, which performs hierarchically regularized entropy balancing.
 
-* `att()`, which calculates the average treatment effect on the treated (ATT) from an `hbalobject` returned by `hbal()`. 
+* `att`, which calculates the average treatment effect on the treated (ATT) from an `hbalobject` returned by `hbal`. 
 
 ***
 
 **Authors:** [Yiqing Xu](http://yiqingxu.org/) (Stanford); [Eddie Yang](https://www.eddieyang.net/) (UCSD)
 
-**Date:** November 19, 2021
+**Date:** March 17, 2022
 
-**Version:** 1.2.2 ([Github](https://github.com/xuyiqing/hbal)); 1.2.2 ([CRAN])
+**Version:** 1.2.2 ([Github](https://github.com/xuyiqing/hbal)); coming soon ([CRAN])
 
 **Reference:** Xu, Yiqing and Eddie Yang (2021). "Hierarchically Regularized Entropy Balancing" Available at [SSRN](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3807620).
 
@@ -53,29 +54,30 @@ First CRAN release!
 
 1. Installation
 
-2. Simulated Dataset
+2. Balancing Covariates
 
-3. Simplest Usage
-
-3. Main Usage \& Comaprison w/ **ebal**
+3. Visualizing Results
 
 4. More Options
 
+5. Relation to **ebal**
+
 ***
 
-## Installation
+## 1. Installation
 
 You can install the **hbal** package from CRAN: 
 ```{r eval=FALSE}
-install.packages('hbal') 
+install.packages('hbal') # Not run. Not yet on CRAN.
 ```
 
 You can also install the up-to-date development version from Github: 
 ```{r eval=FALSE}
 install.packages('devtools', repos = 'http://cran.us.r-project.org') # if not already installed
-devtools::install_github('EddieYang211/hbal', ref="main")
+devtools::install_github('xuyiqing/hbal', ref="main")
 ```
 
+<!--
 **hbal** depends on the following packages, which will be installed AUTOMATICALLY when **hbal** is being installed; you can also install them manually:  
 ```{r eval=FALSE}
 require(estimatr)  
@@ -83,10 +85,14 @@ require(glmnet)
 require(ggplot2)
 require(gridExtra)
 require(gtable)
-```
+require(nloptr)
+require(Rcpp)
+require(RcppEigen)
+require(stringr)
+```-->
 
 ***
-## 1. Simulated Dataset
+## 2. Balancing Covariates
 
 We simulate a toy cross-sectional dataset with binary treatment before showing how to use **hbal**. 
 ```{r, message=FALSE}
@@ -95,145 +101,96 @@ set.seed(92092)
 N <- 500
 X1 <- rnorm(N)
 X2 <- rbinom(N,size=1,prob=.5)
-X <- cbind(X1, X2)
+X <- cbind(X1, X2) # Covariates
 treat <- rbinom(N, 1, prob=0.5) # Treatment indicator
 y <- X[,1] + X[,2] + rnorm(N) # Outcome
 ```
 
-***
-## 2. Simplest Usage
+In the simplest use case, we can use the following two lines of code to:
 
-In the simplest use case, we can use the following two lines of code to get an estimate of the Average Treatment Effect on the Treated (ATT) after covariate balancing with **hbal**:
+1. Bbalance the covariates (up to the third moments) between the treatmeant and control groups.
+
+2. estimate the Average Treatment Effect on the Treated (ATT).
 
 ```{r}
-out <- hbal(Treatment = treat, Y = y, X = X)
+out <- hbal(Treatment = treat, X = X,  Y = y)
 summary(hbal::att(out))
 ```
 
-We can see that, by default, `hbal()` balances on an expanded covariate set that includes second- and third-order polynomials of the covariates. 
+We can see that, by default, `hbal` balances on an expanded covariate set that includes second- and third-order polynomials of the covariates. 
 
-`att()` uses linear regression with robust standard errors (`lm_robust()`) from the **estimatr** package to calculate the ATT. Additional arguments accepted by `lm_robust()` (such as clusters) can be passed to `att()`. Alternatively, we can specify `method = "lin"` to use the Lin (2013) covariate adjustment with robust standard errors.
+`att` uses linear regression with robust standard errors (`lm_robust` from the **estimatr** package) to calculate the ATT. Additional arguments accepted by `lm_robust`, such as clusters, can be passed to `att()`.
 
-`hbal()` returns a list of 8 objects:
+`hbal` returns a list of 9 objects:
 
 ```{r}
 objects(out)
 ```
-1. **weights**: Solution weights. Can be plugged into any downstream estimator.
+1. **call**: A string of the function call
 2. **coefs**: Values of Lagrangian multipliers. They are used to calculate the solution `weights`.
-3. **Treatment**: Treatment indicator. Reproduced here to be used by `att()`.
-4. **Y**: Outcome variable. Reproduced here to be used by `att()`.
+3. **converged**: Binary indicator of whether the algorithm has converged.
+4. **group.assignment**: A vector of the number of variabels in each covariate group.
 5. **mat**: Expanded covariates matrix.
-6. **group.assignment**: A vector of the number of variabels in each covariate group.
-7. **penalty**: This is the regularization parameter $\alpha$ in  Xu \& Yang (2021).
-8. **call**: A string of the function call
+6. **penalty**: This is the regularization parameter $\alpha$ in  Xu \& Yang (2021).
+7. **Treatment**: Treatment indicator. Reproduced here to be used by `att()`.
+8. **weights**: Solution weights. Can be plugged into any downstream estimator.
+9. **Y**: Outcome variable. Reproduced here to be used by `att()`.
 
 
 ***
-## 3. Comaprison w/ **ebal** \& Main Usage
+## 3. Visualizing Results
 
-Here we dive more in detail the functionalities of the **hbal** package.
+`hbal` has a build-in `plot` method that allows us to visualize covariate balance before and after balancing.
 
-As an example, we can take a look at the `contenderJudges` dataset, which ships with the **hbal** package. The dataset is from [Black \& Owens (2016)](https://onlinelibrary.wiley.com/doi/full/10.1111/ajps.12132?casa_token=Y1UN_SvgaMwAAAAA%3Ae-lt_TGSlK57_I3WaynDZiqb-X5ssQv9Q8fVt35ojPNCQiezrmd_zajyyL8S5bZGEveWl4N4HiDbV1o) and contains information about contending judges for the Supreme Court.
-
-The outcome variable `presIdeoVot` is a binary indicator for wether the judge's vote aligned with the President's ideology. The treatment variable `treatFinal0` is a binary indicator for whether the Supreme Court had a vacancy. Additionally, the dataset contains 7 covariates to be used as controls.
-
-```{r}
-set.seed(92092)
-data(contenderJudges)
-str(contenderJudges)
+```{r, fig.height = 5.5, fig.width = 9, fig.align = "left"}
+plot(out)
 ```
 
-### 3.1 Relation to **ebal**
-By setting `expand.degree=0` and `cv=FALSE`, which tells `hbal()` to not expand the covariate space and not use cross validation to search for regularization hyperparameters, `hbal()` is equivalent to entropy balancing (Hainmueller, 2012). We can demonstrate this equivalence by showing the hbal weights are exactly the same to the ebal weights from the **ebal** package in this case, as seen in the plot below.
+We can see that the linear terms (mean) of the covariates are exactly balanced between the treatment and the control groups. We can check the penalties applied to different groups of covariates. In this case, the higher-order terms have relatively high penalties, meaning that `hbal` determines that they are not informative of the treatment assignment process (which is true of the actual treatment assignment) and some imbalance can be tolerated. 
 
 ```{r}
-library(ggplot2)
-library(ebal) # load the ebal package
-
-xvars=c("judgeJCS", "presDist", "panelDistJCS", "circmed", "sctmed", "coarevtc", "casepub") # controls
-treat <- contenderJudges$treatFinal0
-Y <- contenderJudges$presIdeoVote
-X <- contenderJudges[,xvars]
-
-ebal_judge_mean <- ebalance(Treatment=treat, X=X) # mean balancing only
-hbal_judge_mean <- hbal(Treatment=treat, X=X, Y=Y, expand.degree=0, cv=FALSE) # mean balancing only
-W <- data.frame(x=hbal_judge_mean$weights*sum(treat), 
-                y=ebal_judge_mean$w) # store weights as x-y coordinates
-ggplot(aes(x=x, y=y), data=W) + geom_point() + theme_bw() + 
-  labs(x="ebal weights", y="hbal weights", title="correlation between ebal and hbal weights")
+out$penalty
 ```
 
-### 3.2 Main Usage
-In contrast, just as our first example, we can let `hbal()` automatically expand the covariate space and balance on the expanded set:
-```{r}
-hbal_judge <- hbal(Treatment=treat, X=X, Y=Y)
-```
-
-We can visually check the covariate balance improvement using the `plot()` method. We can see that the linear terms of the covariates are exactly balanced for the treatment and the control group. Balance for the higher-order terms is also improved, with the majority of the terms having absolute standardized mean difference smaller than 0.1 .
-
-```{r, fig.height=9, fig.width=13}
-plot(hbal_judge)
-```
-
-We can also use the `summary()` method to get more details. It outputs the function call, the list of covariates (by group) included in the balancing specification, the penalty level for each group of covariates, as well as the balance table for each group.
-```{r}
-summary(hbal_judge)
-```
-***
-
-Finally, we can compare the ATT estimates from using `hbal()` on the expanded covariate space and `ebal()` on mean balancing of the covariates. We can see that we have a more precise estimate from `hbal+`, thus enabling us to reject the hypothesis that the contending judges are equally likely to vote with the President in Supreme Court vacancy period and non-vacancy period. 
+We can also plot the weight distribution for the control units by specifying `type = 'weight'` in `plot`. We can see that the weights are quite evenly distributed around the unit weight.
 
 ```{r}
-library(dotwhisker)
-library(broom)
-contenderJudges$ebal_w[treat==0] <- ebal_judge_mean$w
-contenderJudges$ebal_w[treat==1] <- 1
-
-mod_hbal <- broom::tidy(hbal::att(hbal_judge, cluster = contenderJudges$judge)) # clustering on individual judge
-mod_form <- as.formula(paste0("presIdeoVote~ treatFinal0 + ", paste0(xvars, collapse=" + ")))
-mod_ebal <- broom::tidy(lm_robust(formula=mod_form, data=contenderJudges, weights=ebal_w, se_type="stata", cluster = judge))
-
-contender <- rbind(mod_hbal[2,], mod_ebal[2,])
-contender[,1]<-c("hbal+", "ebal")
-dotwhisker::dwplot(contender) + coord_flip() + theme_bw() + xlab("Presidential ideological vote") + ylab("") +
-  geom_vline(xintercept = 0, linetype = 2, size=1) + 
-  theme(text = element_text(size=15), axis.text.x = element_text(size=15, color="black")) + 
-  theme(legend.position = "none")
+plot(out, type='weight')
 ```
 
 ***
-## 4. Other Options
+## 4. More Options
 
 ### 4.1 Setting Series Expansion
 
-`hbal()` uses the R built-in function `poly()` to include higher-order polynomials of the supplied covariates in the balancing scheme. This is controled by the `expand.degree` argument. By default, it is set to `expand.degree = 3`, which expands the covariates to include polynomials up to the 3rd degree.
+`hbal` uses the R built-in function `poly` to include higher-order polynomials of the supplied covariates in the balancing scheme. This is controlled by the `expand.degree` argument. By default, it is set to `expand.degree = 3`, which expands the covariates to include polynomials up to the 3rd degree.
 
-We can ask `hbal()` to balance on less flexible functions of the covariates by increasing the value of `expand.degree`. However, note that the number of generated polynomials grows exponentially and may exhauster the computer memory when `expand.degree` is set to high. 
-
-On the other hand, setting `expand.degree <= 1` will not generate any higher-order polynomials, meaning only (the means of) the supplied covariates will be balanced.
+We can ask `hbal` to balance on less flexible functions of the covariates by decreasing the value of `expand.degree`, e.g. by setting `expand.degree = 2`. This may be useful when balancing on third order terms is infeasible.
 
 ***
 
-### 4.2 Excluding Nonsensical Covariates
+### 4.2 Excluding Covariates
 
-By default, `hbal()` uses the R built-in `qr()` to check the rank of the (expanded) covariate matrix and remove columns that are not pivots when the matrix is rank-deficient. However, if a priori we know some combinations of the covariates are nonsensical, we can exclude them explicitly by using the `exclude` argument.
+By default, `hbal` uses the R built-in `qr` to check the rank of the (expanded) covariate matrix and remove columns that are not pivots when the matrix is rank-deficient. However, if a priori we know some combinations of the covariates are nonsensical, we can exclude them explicitly by using the `exclude` argument. For example, we can exclude any interaction that involves **X1** and **X2**:
+
+```{r}
+out <- hbal(Treatment = treat, Y = y, X = X, exclude=list(c("X1", "X2")))
+summary(att(out)) # X1.X2 and X1.X1.X2 removed from balancing scheme
+```
 
 ***
 
 ### 4.3 Custom K-fold cross-validation
 
-By default, `hbal()` uses 4-fold cross-validation and searches over a grid of 25 values for the regularization parameter $\alpha$ for each group of covariates.
+By default, `hbal` uses 4-fold cross-validation. We can change to K-fold cross-validation for any arbitrary K by setting `folds = K`.
 
-We can change to K-fold cross-validation for any arbitrary K by setting `folds = K`.
-
-We can also disable cross-validation by setting `cv = FALSE`. No regularization will be applied in this case and `hbal()` is essentially equivalent to `ebalance()` from the **ebal** package.
+We can also disable cross-validation by setting `cv = FALSE`. No regularization will be applied in this case and `hbal` is essentially equivalent to `ebalance` from the **ebal** package.
 
 ***
 
 ### 4.4 User-supplied base weights
 
-By default, `hbal()` tries to keep the solution weights for the control units as close as possible (in an entropy sense) to a set of uniform base weights to retain information. In cases where the target distribution of the weights for the control units is not uniform weights, we can incorporate this information by supplying a vector of target weights to `base.weight`. 
+By default, `hbal` tries to keep the solution weights for the control units as close as possible (in an entropy sense) to a set of uniform base weights to retain information. In cases where the target distribution of the weights for the control units is not uniform weights, we can incorporate this information by supplying a vector of target weights to `base.weight`. 
 
 For example, if we want to set the target weight distribution such that the first 100 control units have weights of $\frac{1}{2}$ while the rest of the control units have weights of 1, we can do:
 
@@ -241,13 +198,27 @@ For example, if we want to set the target weight distribution such that the firs
 
 ### 4.5 Other functionalities
 
-1. `max.iterations`: Maximum number of iterations that will be run for each fold and $alpha$ value. Default is set to 200.
+1. `ds`: The double selection method by Belloni, Chernozhukov and Hansen (2014). This screens the expanded covariates and only keeps those that are are predictive for the treatment assignment or the outcome. This further reduces the dimensionality of the problem. Default is set to `FALSE`.
 
-2. `ds`: The double selection method by Belloni, Chernozhukov and Hansen (2014). This screens the expanded covariates and only keeps those that are are important for the treatment assignment or the outcome. This further reduces the dimensionality of the problem. Default is set to `TRUE`.
+2. `constraint.tolerance`: Convergence criterion. The optimization algorithm will stop when the maximum difference in covaraite means between the treated and the control units is below `constraint.tolerance`.
 
-3. `constraint.tolerance`: Convergence criterion. The optimization algorithm will stop when the maximum difference in covaraite means between the treated and the control units is below `constraint.tolerance`.
+3. `shuffle.treat`: Whether treated units should be partitioned in cross-validation. Default is set to `FALSE`. If set to `TRUE`, the covariate means of the treated units will vary from fold to fold. It may be advisable to set this argument to `FALSE` if there is only a small number of treated units or if there are many outliers in the treatment group.
 
-4. `shuffle.treat`: Whether cross-validation includes treated units. Default is set to `TRUE`. If set to `FALSE`, the covariate means of the treated units are fixed and cross-validation is done on the control units only. It may be advisable to set this argument to `FALSE` if there is only a small number of treated units or if there are many outliers in the treatment group.
+4. `max.iterations`: Maximum number of iterations that will be run in finding the solution weights. Default is set to 200.
+
+## 5. Relation to **ebal**
+By setting `expand.degree=0` and `cv=FALSE`, which tells `hbal` to not expand the covariate space and not use cross validation to search for regularization hyperparameters, `hbal` is equivalent to entropy balancing (Hainmueller, 2012). We can demonstrate this equivalence by showing the hbal weights are exactly the same to the ebal weights from the **ebal** package in this case, as seen in the plot below.
+
+```{r}
+library(ebal)
+
+ebal_mean_balance <- ebalance(Treatment=treat, X=X) # mean balancing only
+hbal_mean_balance <- hbal(Treatment=treat, X=X, Y=y, expand.degree=0, cv=FALSE) # mean balancing only
+W <- data.frame(x=hbal_mean_balance$weights*sum(treat), 
+                y=ebal_mean_balance$w) # store weights as x-y coordinates
+ggplot(aes(x=x, y=y), data=W) + geom_point() + theme_bw() + 
+  labs(x="hbal weights", y="ebal weights", title="correlation between ebal and hbal weights")
+```
 
 ***
 ## Reference
@@ -262,5 +233,3 @@ Lin, W. (2013). Agnostic notes on regression adjustments to experimental data: R
 
 ***
 Please report bugs and let us know if you have any suggestions! -> z5yang [at] ucsd.edu
-
-

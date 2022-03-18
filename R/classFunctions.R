@@ -1,7 +1,7 @@
 #' @title Plotting Covariate Balance from an \code{hbal} Object
 #' @aliases plot
 #' @description This function plots the covariate difference between the control and treatment groups in standardized means before and after weighting.
-#' @usage \method{plot}{hbal}(x, ...)
+#' @usage \method{plot}{hbal}(x, type = 'balance', ...)
 #' @param x       an object of class \code{hbalobject} as returned by \code{hbal}.
 #' @param type    type of graph to plot.
 #' @param ...     Further arguments to be passed to \code{plot.hbal()}.
