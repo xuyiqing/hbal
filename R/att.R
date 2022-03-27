@@ -5,7 +5,7 @@
 #' @usage att(hbalobject, method="lm_robust", ...)
 #' @param hbalobject  an object of class \code{hbal} as returned by \code{hbal}.
 #' @param method      estimation method for the ATT. Default is the Lin (2016) estimator. 
-#' @param ...         arguments passed to lm_lin or  lm_robust
+#' @param ...         arguments passed to lm_lin or lm_robust
 #' @details This is a wrapper for \code{lm_robust} and \code{lm_lin} from the \link{estimatr} package. 
 #' @return A matrix of estimates with their robust standard errors
 #' @importFrom estimatr lm_lin lm_robust

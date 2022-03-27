@@ -11,7 +11,7 @@ att(hbalobject, method="lm_robust", ...)
 
 \item{method}{estimation method for the ATT. Default is the Lin (2016) estimator.}
 
-\item{...}{arguments passed to lm_lin or  lm_robust}
+\item{...}{arguments passed to lm_lin or lm_robust}
 }
 \value{
 A matrix of estimates with their robust standard errors
