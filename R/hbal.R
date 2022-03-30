@@ -9,10 +9,10 @@
 #'  max.iterations = 200, cv = TRUE, folds = 4, expand.degree = 3,
 #'  ds = FALSE, alpha = NULL, constraint.tolerance = 1e-3, print.level = -1, 
 #'  grouping = NULL, shuffle.treat=TRUE, exclude=NULL, seed=NULL)
+#' @param data                 a dataframe that contains the treatment, outcome, and covariates.   
 #' @param Treat            	   a character string of the treatment variable.
 #' @param X                    a character vector of covariate names to balance on.
 #' @param Y                    a character string of the outcome variable.
-#' @param data                 a dataframe that contains the treatment, outcome, and covariates.   
 #' @param base.weight          target weight distribution for the control units.
 #' @param coefs                initial coefficients for the reweighting algorithm (lambdas).
 #' @param max.iterations       maximum number of iterations. Default is 200.
@@ -76,10 +76,10 @@
 #' @export
 
 hbal <- function(
+	data,
 	Treat,
 	X,
 	Y,
-	data,
 	base.weight=NULL,
 	coefs=NULL ,
 	max.iterations=200,

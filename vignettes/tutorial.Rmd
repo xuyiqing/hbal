@@ -47,19 +47,25 @@ This page demonstrates the usage of the **hbal** package, which implements hiera
 
 ***
 
-## 1. Balancing Covariates
+## Basic Usage
 
 We simulate a toy cross-sectional dataset with a binary treatment to illustrate the basic usage of **hbal**. 
 ```{r, message=FALSE}
-library(hbal)
 set.seed(1984)
 N <- 500
 X1 <- rnorm(N)
 X2 <- rbinom(N,size=1,prob=.5)
-X <- cbind(X1, X2) # Covariates
-D <- rbinom(N, 1, prob=0.5) # Treatment indicator
-y <- 0.5 * D + X[,1] + X[,2] + rnorm(N) # Outcome
-dat <- data.frame(D=D, X, Y=y)
+D_star <- 0.7 * X1 + 0.3 * X2
+D <- ifelse(D_star > rnorm(N), 1, 0) # Treatment indicator
+y <- 0.5 * D + X1 + X2 + rnorm(N) # Outcome
+dat <- data.frame(D=D, X1 = X1, X2= X2, Y=y)
+head(dat)
+```
+
+Without balancing, the coefficient for the treatment is 0.425 even when the outcome model is correctly specified.
+```{r}
+library(estimatr)
+summary(lm_robust(Y ~ D + X1 + X2, data = dat, se_type = "stata"))
 ```
 
 In the simplest use case, we can use the following two lines of code to:
@@ -69,8 +75,9 @@ In the simplest use case, we can use the following two lines of code to:
 2. estimate the Average Treatment Effect on the Treated (ATT).
 
 ```{r}
-out <- hbal(Treat = 'D', X = c('X1', 'X2'),  Y = 'Y', data=dat)
-summary(hbal::att(out))
+library(hbal)
+out <- hbal(Treat = "D", X = c("X1", "X2"),  Y = "Y", data=dat)
+summary(att(out))
 ```
 
 We can see that, by default, `hbal()` balances on an expanded covariate set that includes second- and third-order polynomials of the covariates. 
@@ -92,9 +99,14 @@ str(out)
 8. **penalty**: This is the regularization parameter $\alpha$ in  Xu \& Yang (2021).
 9. **call**: A string of the function call.
 
+For example, in the above example, you can access **hbal** weights for the control units using `out$weights`
+```{r}
+head(out$weights)
+length(out$weights)
+```
 
 ***
-## 2. Visualizing Results
+## Visualizing Results
 
 **hbal** has a build-in `plot()` method that allows us to visualize covariate balance before and after balancing.
 
@@ -102,7 +114,7 @@ str(out)
 plot(out)
 ```
 
-We can see that the linear terms (mean) of the covariates are exactly balanced between the treatment and the control groups. We can check the penalties applied to different groups of covariates. In this case, the higher-order terms also have relatively low penalties, and imbalance among higher-order terms is significantly reduced. 
+From the above plots, we can see that the linear terms (mean) of the covariates are exactly balanced between the treatment and the control groups. We can check the penalties applied to different groups of covariates. In this case, the higher-order terms also have relatively low penalties, and imbalance among higher-order terms is significantly reduced. 
 
 ```{r}
 out$penalty
@@ -114,10 +126,55 @@ We can also plot the weight distribution for the control units by specifying `ty
 plot(out, type='weight')
 ```
 
-***
-## 3. Expirical Example
+## Lalonde data 
 
-To illustrate how **hbal** works in empirical settings, we use a dataset from @black2016courting, in which the authors study the effect of promotion prospect to the Supreme Court on the behavior of circuit court judges. Here we focus on whether circuit court judges who are on the shortlist to fill Supreme Court vacancies ("contenders") ruled in line with the president as the outcome of interest. We load the dataset `contenderJudges`, which is shipped with **hbal**:
+**hbal** is an extension of **ebal**. By setting `expand.degree=0` and `cv=FALSE`, which tells `hbal()` to not expand the covariate space and not use cross validation to search for regularization hyperparameters, `hbal()` is equivalent to entropy balancing introduced by @hainmueller2012entropy. 
+
+We can demonstrate this equivalence by showing the hbal weights are exactly the same to the ebal weights from the **ebal** package in this case. Here we use a dataset that contains the subset of the @lalonde1986evaluating dataset from @dehejia1999causal and the Panel Study of Income Dynamics (PSID-1), which is also shipped with **hbal**.
+```{r, cache = TRUE, fig.height = 4.5, fig.width = 4.5, fig.align = "left"}
+head(lalonde)
+xvars=c("age","black","educ","hisp","married","re74","re75","nodegr","u74","u75")
+
+# ebal
+library(ebal)
+ebal.out <- ebalance(Treat = lalonde$nsw, X = lalonde[,xvars], print.level=-1)
+
+# hbal w/ level terms only
+hbal.out <- hbal(Treat = 'nsw', X = xvars,  Y = 're78', data=lalonde, 
+                          expand.degree = 0, cv = FALSE) 
+
+# save weights from ebal and hbal
+W <- data.frame(x = hbal.out$weights*sum(D), 
+                y = ebal.out$w) # store weights as x-y coordinates
+
+# plot weights
+ggplot(aes(x = x, y = y), data = W) + geom_point() + theme_bw() + 
+  labs(x="hbal weights", 
+       y="ebal weights", 
+       title="hbal weights vs hbal weights")
+```
+
+```{r}
+summary(att(hbal.out))
+```
+
+Adding higher-order terms makes the treatment effect estimate closer to the experimental benchmark (~$1800).
+```{r}
+hbal.full.out <- hbal(Treat = 'nsw', X = xvars, Y = 're78', data=lalonde, 
+               expand.degree=2,exclude=list(c("educ", "nodegr")))
+summary(att(hbal.full.out))
+```
+
+```{r, fig.height = 9, fig.width = 9.5, fig.align = "left"}
+plot(hbal.full.out)
+hbal.full.out$penalty
+```
+We see that the third-order terms are being more heavily penalized by the two-way interactions. 
+
+
+## Black and Owens (2016)
+
+The second example comes from @black2016courting, in which the authors study the effect of promotion prospect to the Supreme Court on the behavior of circuit court judges. Here we focus on whether circuit court judges who are on the shortlist to fill Supreme Court vacancies ("contenders") ruled in line with the president as the outcome of interest. We load the dataset `contenderJudges`, which is shipped with **hbal**:
 ```{r}
 data(hbal)
 str(contenderJudges)
@@ -127,11 +184,11 @@ First, we take a look at the data structure. The outcome variable is `presIdeoVo
 
 We can estimate the effect of Supreme Court vacancy on judges' rulings while controlling for functions of the covariates (to the third order) by:
 
-```{r}
+```{r, cache = TRUE}
 out <- hbal(Treat = 'treatFinal0', 
             X = c('judgeJCS','presDist','panelDistJCS','circmed','sctmed','coarevtc','casepub'),
             Y = 'presIdeoVote', data=contenderJudges)
-summary(hbal::att(out, clusters=contenderJudges$judge))$coefficients['Treat',]
+summary(att(out, clusters=contenderJudges$judge))$coefficients['Treat',]
 ```
 
 We see that contender judges are more likely to rule in line with the ideology of the sitting president during a Supreme Court vacancy.
@@ -142,10 +199,9 @@ We can further check covariate balance before and after balancing by checking th
 plot(out)
 ```
 
-***
-## 4. More Options
+## More Options
 
-### 4.1 User-supplied Penalties
+### User-supplied Penalties
 If we have prior knowledge about certain covariates and would like control the penalties on those, we can pass a named vector of penalties to the `alpha` argument. In the simulated dataset above, if we believe **X1.X1.X2** is an important variable that should be exactly balanced, we can explicitly do so by setting it penalty to zero:
 
 ```{r, fig.height = 5.5, fig.width = 8, fig.align = "left"}
@@ -157,45 +213,35 @@ plot(out)
 
 Here we can see that the penalty for **X1.X1.X2** is zero and it is exactly balanced between the treatment and control groups.
 
-***
-
-### 4.2 Excluding Covariates
+### Excluding Covariates
 
 By default, `hbal()` uses the R built-in `qr()` to check the rank of the (expanded) covariate matrix and remove columns that are not pivots when the matrix is rank-deficient. However, if a priori we know some combinations of the covariates are nonsensical, we can exclude them explicitly by using the `exclude` argument. For example, we can exclude any interaction that involves **X1** and **X2**:
 
-```{r}
+```{r, cache = TRUE}
 out <- hbal(Treat = 'D', X = c('X1', 'X2'),  Y = 'Y', data=dat, 
             exclude=list(c("X1", "X2")))
 summary(att(out)) # X1.X2 and X1.X1.X2 removed from balancing scheme
 ```
 
-***
-
-### 4.3 Setting Series Expansion
+### Setting Series Expansion
 
 `hbal()` uses the R built-in function `poly()` to include higher-order polynomials of the supplied covariates in the balancing scheme. This is controlled by the `expand.degree` argument. By default, it is set to `expand.degree = 3`, which expands the covariates to include polynomials up to the 3rd degree.
 
 We can ask `hbal()` to balance on less flexible functions of the covariates by decreasing the value of `expand.degree`, e.g. by setting `expand.degree = 2`. This may be useful when balancing on third order terms is infeasible.
 
-***
-
-### 4.4 Custom K-fold cross-validation
+### Custom K-fold cross-validation
 
 By default, `hbal()` uses 4-fold cross-validation. We can change to K-fold cross-validation for any arbitrary K by setting `folds = K`.
 
 We can also disable cross-validation by setting `cv = FALSE`. No regularization will be applied in this case and `hbal` is essentially equivalent to `ebalance` from the **ebal** package.
 
-***
-
-### 4.5 User-supplied base weights
+### User-supplied base weights
 
 By default, `hbal()` tries to keep the solution weights for the control units as close as possible (in an entropy sense) to a set of uniform base weights to retain information. In cases where the target distribution of the weights for the control units is not uniform weights, we can incorporate this information by supplying a vector of target weights to `base.weight`. 
 
 For example, if we want to set the target weight distribution such that the first 100 control units have weights of $\frac{1}{2}$ while the rest of the control units have weights of 1, we can do:
 
-***
-
-### 4.6 Other functionalities
+### Other functionalities
 
 1. `ds`: The double selection method by @belloni2014inference. This screens the expanded covariates and only keeps those that are are predictive for the treatment assignment or the outcome. This further reduces the dimensionality of the problem. Default is set to `FALSE`.
 
@@ -204,34 +250,6 @@ For example, if we want to set the target weight distribution such that the firs
 3. `shuffle.treat`: Whether treated units should be partitioned in cross-validation. Default is set to `FALSE`. If set to `TRUE`, the covariate means of the treated units will vary from fold to fold. It may be advisable to set this argument to `FALSE` if there is only a small number of treated units or if there are many outliers in the treatment group.
 
 4. `max.iterations`: Maximum number of iterations that will be run in finding the solution weights. Default is set to 200.
-
-## 5. Relation to **ebal**
-
-By setting `expand.degree=0` and `cv=FALSE`, which tells `hbal()` to not expand the covariate space and not use cross validation to search for regularization hyperparameters, `hbal()` is equivalent to entropy balancing introduced by @hainmueller2012entropy. We can demonstrate this equivalence by showing the hbal weights are exactly the same to the ebal weights from the **ebal** package in this case. Here we use a dataset that contains the subset of the @lalonde1986evaluating dataset from @dehejia1999causal and the Panel Study of Income Dynamics (PSID-1), which is also shipped with **hbal**.
-
-```{r, fig.height = 4.5, fig.width = 4.5, fig.align = "left"}
-library(ebal)
-str(lalonde)
-xvars=c("age","black","educ","hisp","married","re74","re75","nodegr","u74","u75")
-
-ebal_mean_balance <- ebalance(Treat = lalonde$nsw, X = lalonde[,xvars], print.level=-1)
-hbal_mean_balance <- hbal(Treat = 'nsw', X = xvars,  Y = 're78', data=lalonde, 
-                          expand.degree = 0, cv = FALSE) # mean balancing only
-W <- data.frame(x = hbal_mean_balance$weights*sum(D), 
-                y = ebal_mean_balance$w) # store weights as x-y coordinates
-ggplot(aes(x = x, y = y), data = W) + geom_point() + theme_bw() + 
-  labs(x="hbal weights", 
-       y="ebal weights", 
-       title="correlation between ebal and hbal weights")
-```
-
-Uncomment the ebal code will result in error: `Error in solve.default(hessian, gradient): system is computationally singular`
-```{r}
-X <- covarExpand(as.matrix(lalonde[,xvars]), exp.degree=2, treatment = lalonde$nsw)$mat #serial expansion to degree=2
-# ebal_higher <- ebalance(Treat = lalonde$nsw, X = a$mat, print.level=-1) # will result in error
-hbal_higher <- hbal(Treat = 'nsw', X = xvars, Y = 're78', data=lalonde, 
-               expand.degree=2,exclude=list(c("educ", "nodegr")))
-```
 
 ***
 # Reference

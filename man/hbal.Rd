@@ -11,13 +11,13 @@ hbal(Treat, X, Y, data, base.weight = NULL, coefs = NULL ,
  grouping = NULL, shuffle.treat=TRUE, exclude=NULL, seed=NULL)
 }
 \arguments{
+\item{data}{a dataframe that contains the treatment, outcome, and covariates.}
+
 \item{Treat}{a character string of the treatment variable.}
 
 \item{X}{a character vector of covariate names to balance on.}
 
 \item{Y}{a character string of the outcome variable.}
-
-\item{data}{a dataframe that contains the treatment, outcome, and covariates.}
 
 \item{base.weight}{target weight distribution for the control units.}
 
