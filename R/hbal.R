@@ -5,13 +5,14 @@
 #' treatment group. \code{hbal} automatically expands the covariate space to include
 #' higher order terms and uses cross-validation to select variable penalties for the 
 #' balancing conditions.
-#' @usage hbal(Treatment, X, Y, base.weight = NULL, coefs = NULL ,
+#' @usage hbal(Treat, X, Y, data, base.weight = NULL, coefs = NULL ,
 #'  max.iterations = 200, cv = TRUE, folds = 4, expand.degree = 3,
 #'  ds = FALSE, alpha = NULL, constraint.tolerance = 1e-3, print.level = -1, 
 #'  grouping = NULL, shuffle.treat=TRUE, exclude=NULL, seed=NULL)
-#' @param Treatment            a numeric, binary vector of treatment status. 1 should denote treatment observations and 0 should denote control observations.
-#' @param X                    matrix of covariates. When expand = \code{TRUE}, X is serially expanded to include higher-order terms of X.
-#' @param Y                    numeric vecor of outcome variable. Used only by subsequent estimation. See \code{att}.
+#' @param Treat            	   a character string of the treatment variable.
+#' @param X                    a character vector of covariate names to balance on.
+#' @param Y                    a character string of the outcome variable.
+#' @param data                 a dataframe that contains the treatment, outcome, and covariates.   
 #' @param base.weight          target weight distribution for the control units.
 #' @param coefs                initial coefficients for the reweighting algorithm (lambdas).
 #' @param max.iterations       maximum number of iterations. Default is 200.
@@ -19,7 +20,7 @@
 #' @param folds                number of folds for cross validation. Only used when cv is \code{TRUE}.
 #' @param expand.degree        degree of series expansion. 0 means no expansion. Default is 3.
 #' @param ds                   whether to perform double selection prior to balancing. Default is \code{FALSE}.
-#' @param alpha                vector of ridge penalties used in grid search during cross-validation. Only used when cv is \code{TRUE}.
+#' @param alpha                named vector of ridge penalties.
 #' @param constraint.tolerance tolerance level for overall imbalance. Default is 1e-3.
 #' @param print.level          details of printed output.
 #' @param grouping             different groupings of the covariates. Must be specified if expand is \code{FALSE}.
@@ -44,20 +45,21 @@
 #' @references Xu, Y., & Yang, E. (2021). Hierarchically Regularized Entropy Balancing.
 #' @examples
 #' # Example 1
-#' set.seed(92092)
+#' set.seed(1984)
 #' N <- 500
 #' X1 <- rnorm(N)
 #' X2 <- rbinom(N,size=1,prob=.5)
 #' X <- cbind(X1, X2)
 #' treat <- rbinom(N, 1, prob=0.5) # Treatment indicator
-#' y <- X[,1] + X[,2] + rnorm(N) # Outcome
-#' out <- hbal(Treatment = treat, Y = y, X = X)
+#' y <- 0.5 * treat + X[,1] + X[,2] + rnorm(N) # Outcome
+#' dat <- data.frame(treat=treat, X, Y=y)
+#' out <- hbal(Treat = 'treat', X = c('X1', 'X2'), Y = 'Y', data=dat)
 #' summary(hbal::att(out))
 #' 
 #' # Example 2
 #' ## Simulation from Kang and Shafer (2007).
 #' library(MASS)
-#' set.seed(92092)
+#' set.seed(1984)
 #' n <- 500
 #' X <- mvrnorm(n, mu = rep(0, 4), Sigma = diag(4))
 #' prop <- 1 / (1 + exp(X[,1] - 0.5 * X[,2] + 0.25*X[,3] + 0.1 * X[,4]))
@@ -68,14 +70,16 @@
 #' # Observed covariates
 #' X.mis <- cbind(exp(X[,1]/2), X[,2]*(1+exp(X[,1]))^(-1)+10, 
 #'     (X[,1]*X[,3]/25+.6)^3, (X[,2]+X[,4]+20)^2)
-#' out <- hbal(Treatment = treat, Y = y, X = X.mis)
+#' dat <- data.frame(treat=treat, X.mis, Y=y)
+#' out <- hbal(Treat = 'treat', X = c('X1', 'X2', 'X3', 'X4'), Y='Y', data=dat)
 #' summary(att(out))
 #' @export
 
 hbal <- function(
-	Treatment,
+	Treat,
 	X,
 	Y,
+	data,
 	base.weight=NULL,
 	coefs=NULL ,
 	max.iterations=200,
@@ -115,10 +119,16 @@ hbal <- function(
 	mcall <- match.call()
 	if(!is.null(seed)) set.seed(seed)
 
-	X  <- as.matrix(X)
+	var.names <- colnames(data)
+	if(!all(c(Treat, X, Y) %in% var.names)) stop("Some variable(s) specified are not in the data")
+
+	X  <- as.matrix(data[,X])
 	if (is.null(colnames(X))) colnames(X) <- paste0("X", 1:ncol(X))
 	if (sum(is.na(X))!=0) stop("data contain missing values")
-	if (!is.numeric(Treatment)) stop("Treatment indicator needs to be numeric")
+
+	Treatment <- unlist(data[,Treat])
+	if (!is.numeric(Treatment)) stop("Treatment variable needs to be numeric")
+	if (var(Treatment)==0) stop("Treatment variable only contains treated/control units")
 	ntreated  <- sum(Treatment==1)
 	ncontrols <- sum(Treatment==0)  
 	
@@ -151,6 +161,13 @@ hbal <- function(
 	tr.total <- c(1, colMeans(X[Treatment==1,,drop=FALSE]))
 	grouping[1] <- grouping[1] + 1 # need one more for normalizing constraint
 
+	if (!is.null(alpha)){
+		penalty.names <- names(alpha)
+		penalty.val <- unname(alpha)
+		penalty.pos <- match(penalty.names, colnames(X))+1
+	}else{
+		penalty.names <- penalty.val <- penalty.pos <- NULL
+	}
 	# Checks
 	if (sum(grouping) != ncol(co.x)) stop("Sum of grouping must be equal to ncol(X)")
 	if (sum(Treatment != 1 & Treatment != 0) > 0) stop("Treatment indicator ('Treatment') must be a logical variable, TRUE (1) or FALSE (0)")
@@ -165,7 +182,6 @@ hbal <- function(
 	if (qr(co.x)$rank != ncol(co.x)) stop("collinearity in covariate matrix for controls (remove collinear covariates)")
 	if (is.null(coefs)) coefs = c(log(tr.total[1]/sum(base.weight)),rep(0,(ncol(co.x)-1)))
 	if (length(coefs) != ncol(co.x)) stop("coefs needs to have same length as number of covariates plus one")
-	if (is.null(alpha) & cv==TRUE) alpha <- c(0,exp(seq(log(0.01), log(1000), length.out = 24))) # 25 alpha values distributed exponentially (0, 100) for grid search, this controls the degree of regularization for each group
 	if (is.null(alpha) & cv==FALSE) alpha <- rep(0,length(coefs))
 	if (is.logical(cv)==FALSE) stop("cv needs to be of type logical")
 	if (cv==TRUE && length(grouping)==1){
@@ -177,6 +193,7 @@ hbal <- function(
 	  cat("\n")
 	  cat("Control to Treatment ratio = ", ncontrols/ntreated, "\n")
 	}
+
 
 	# Main
 	if (cv==FALSE){
@@ -208,6 +225,8 @@ hbal <- function(
 			    'ftol_abs'=1e-5,
 			    'xtol_abs'=1e-3,
                             'print_level'=print.level),
+                penalty.pos=penalty.pos,
+                penalty.val=penalty.val,
                 grouping=grouping,
                 folds=folds,
                 treatment = X[Treatment==1,],
@@ -222,12 +241,17 @@ hbal <- function(
                 full.c=full.c,
                 shuffle.treat=shuffle.treat)
 
+		penalty <- rep(c(0, min.c$solution), times=grouping)
+		if (!is.null(penalty.pos)){
+			penalty[penalty.pos] <- penalty.val
+		}
+
 		z <- hb(
 			tr_total=as.matrix(tr.total),
 			co_x=co.x,
 			coefs=as.matrix(coefs),
 			base_weight=as.matrix(base.weight),
-			alpha=rep(c(0, min.c$solution), times=grouping), 
+			alpha=penalty, 
 			max_iterations=max.iterations,
 			constraint_tolerance=constraint.tolerance,
 			print_level=print.level
@@ -257,16 +281,17 @@ hbal <- function(
 				weights=weights, 
 				coefs=cc, 
 				Treatment=Treatment, 
-				Y=Y, 
+				Y=unlist(data[,Y]), 
 				mat=out.mat, 
 				group.assignment=group.assignment,
-				penalty=NULL,
+				penalty=alpha,
 				call=mcall)
 
 	if (cv==TRUE){
 		groups <- c("linear terms", "two-way interactions", "square terms", "three-way interactions", "linear-squre interactions", "cubic terms")
-		out[["penalty"]] <- c(0, min.c$solution)
+		out[["penalty"]] <- penalty[cumsum(out$group.assignment)+1]
 		names(out[["penalty"]]) <- groups[1:length(out[["penalty"]])]
+		out[["penalty"]][penalty.names] <- penalty.val
 	}
 
 	class(out) <- "hbal"

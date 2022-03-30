@@ -2,6 +2,8 @@
 #' @aliases CrossValidate
 #' @description Internal function called by \code{hbal} to select ridge penalties through cross-validation.
 #' @param alpha                   alpha. Controls degree of regularization.
+#' @param penalty.pos             positions of user-supplied penalties.
+#' @param penalty.val             values of user-supplied penalties.
 #' @param grouping                different groupings of the covariates.
 #' @param folds                   number of folds to perform cross validation. 
 #' @param treatment               covariate matrix for treatment group.
@@ -22,6 +24,8 @@
 
 crossValidate <- function(
 	alpha=NULL,
+	penalty.pos=NULL,
+	penalty.val=NULL,
 	grouping=NULL,
 	folds=NULL,
 	treatment = NULL,
@@ -46,6 +50,10 @@ crossValidate <- function(
 	# loop over each alpha value
 
 	penalty <- rep(c(0, alpha), times=grouping)
+	if (!is.null(penalty.pos)){
+		penalty[penalty.pos] <- penalty.val
+	}
+
 	sub.coef <- coefs
 	Coefs <- coefs
 

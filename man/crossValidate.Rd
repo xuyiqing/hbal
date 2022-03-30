@@ -7,6 +7,8 @@
 \usage{
 crossValidate(
   alpha = NULL,
+  penalty.pos = NULL,
+  penalty.val = NULL,
   grouping = NULL,
   folds = NULL,
   treatment = NULL,
@@ -24,6 +26,10 @@ crossValidate(
 }
 \arguments{
 \item{alpha}{alpha. Controls degree of regularization.}
+
+\item{penalty.pos}{positions of user-supplied penalties.}
+
+\item{penalty.val}{values of user-supplied penalties.}
 
 \item{grouping}{different groupings of the covariates.}
 

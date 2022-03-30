@@ -25,13 +25,16 @@ This is a wrapper for \code{lm_robust} and \code{lm_lin} from the \link{estimatr
 }
 \examples{
 #EXAMPLE 1
-#Given W, Y, X, calculate the ATT through hbal
-set.seed(92092)
-W <- sample(0:1, 1000, replace=TRUE)
-X <- data.frame(X1=rnorm(1000), X2=rnorm(1000))
-Y <- rnorm(1000)
-out <- hbal(Treatment = W, Y = Y, X = X)
-lin <- att(out, method="lin")
+set.seed(1984)
+N <- 500
+X1 <- rnorm(N)
+X2 <- rbinom(N,size=1,prob=.5)
+X <- cbind(X1, X2)
+treat <- rbinom(N, 1, prob=0.5) # Treatment indicator
+y <- 0.5 * treat + X[,1] + X[,2] + rnorm(N) # Outcome
+dat <- data.frame(treat=treat, X, Y=y)
+out <- hbal(Treat = 'treat', X = c('X1', 'X2'), Y = 'Y', data=dat)
+sout <- summary(att(out))
 }
 \author{
 Yiqing Xu, Eddie Yang

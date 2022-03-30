@@ -5,17 +5,19 @@
 \alias{hbal}
 \title{Hierarchically Regularized Entropy Balancing}
 \usage{
-hbal(Treatment, X, Y, base.weight = NULL, coefs = NULL ,
+hbal(Treat, X, Y, data, base.weight = NULL, coefs = NULL ,
  max.iterations = 200, cv = TRUE, folds = 4, expand.degree = 3,
  ds = FALSE, alpha = NULL, constraint.tolerance = 1e-3, print.level = -1, 
  grouping = NULL, shuffle.treat=TRUE, exclude=NULL, seed=NULL)
 }
 \arguments{
-\item{Treatment}{a numeric, binary vector of treatment status. 1 should denote treatment observations and 0 should denote control observations.}
+\item{Treat}{a character string of the treatment variable.}
 
-\item{X}{matrix of covariates. When expand = \code{TRUE}, X is serially expanded to include higher-order terms of X.}
+\item{X}{a character vector of covariate names to balance on.}
 
-\item{Y}{numeric vecor of outcome variable. Used only by subsequent estimation. See \code{att}.}
+\item{Y}{a character string of the outcome variable.}
+
+\item{data}{a dataframe that contains the treatment, outcome, and covariates.}
 
 \item{base.weight}{target weight distribution for the control units.}
 
@@ -31,7 +33,7 @@ hbal(Treatment, X, Y, base.weight = NULL, coefs = NULL ,
 
 \item{ds}{whether to perform double selection prior to balancing. Default is \code{FALSE}.}
 
-\item{alpha}{vector of ridge penalties used in grid search during cross-validation. Only used when cv is \code{TRUE}.}
+\item{alpha}{named vector of ridge penalties.}
 
 \item{constraint.tolerance}{tolerance level for overall imbalance. Default is 1e-3.}
 
@@ -70,20 +72,21 @@ variables and use cross-validation to select penalities for different groupings 
 }
 \examples{
 # Example 1
-set.seed(92092)
+set.seed(1984)
 N <- 500
 X1 <- rnorm(N)
 X2 <- rbinom(N,size=1,prob=.5)
 X <- cbind(X1, X2)
 treat <- rbinom(N, 1, prob=0.5) # Treatment indicator
-y <- X[,1] + X[,2] + rnorm(N) # Outcome
-out <- hbal(Treatment = treat, Y = y, X = X)
+y <- 0.5 * treat + X[,1] + X[,2] + rnorm(N) # Outcome
+dat <- data.frame(treat=treat, X, Y=y)
+out <- hbal(Treat = 'treat', X = c('X1', 'X2'), Y = 'Y', data=dat)
 summary(hbal::att(out))
 
 # Example 2
 ## Simulation from Kang and Shafer (2007).
 library(MASS)
-set.seed(92092)
+set.seed(1984)
 n <- 500
 X <- mvrnorm(n, mu = rep(0, 4), Sigma = diag(4))
 prop <- 1 / (1 + exp(X[,1] - 0.5 * X[,2] + 0.25*X[,3] + 0.1 * X[,4]))
@@ -94,7 +97,8 @@ y <- 210 + 27.4*X[,1] + 13.7*X[,2] + 13.7*X[,3] + 13.7*X[,4] + rnorm(n)
 # Observed covariates
 X.mis <- cbind(exp(X[,1]/2), X[,2]*(1+exp(X[,1]))^(-1)+10, 
     (X[,1]*X[,3]/25+.6)^3, (X[,2]+X[,4]+20)^2)
-out <- hbal(Treatment = treat, Y = y, X = X.mis)
+dat <- data.frame(treat=treat, X.mis, Y=y)
+out <- hbal(Treat = 'treat', X = c('X1', 'X2', 'X3', 'X4'), Y='Y', data=dat)
 summary(att(out))
 }
 \references{

@@ -17,7 +17,6 @@ Suggests:
     knitr,
     rmarkdown,
     broom,
-    dotwhisker,
     ebal
 LinkingTo: Rcpp, RcppEigen
 Encoding: UTF-8
