@@ -86,9 +86,12 @@ out <- hbal(Treat = 'D', X = c('X1', 'X2'),  Y = 'Y', data=dat)
 att(out, se_type = "stata")
 ```
 
-We can see that, by default, `hbal()` balances on an expanded covariate set that includes second- and third-order polynomials of the covariates. 
+We can see that, by default, `hbal()` balances on an expanded covariate set that includes second- and third-order polynomials of the covariates. Note that `att()` uses linear regression with robust standard errors (`lm_robust()` from the **estimatr** package) to calculate the ATT. Additional arguments accepted by `lm_robust()`, such as `se_type` and `clusters`, can be passed to `att()`. 
 
-`att()` uses linear regression with robust standard errors (`lm_robust()` from the **estimatr** package) to calculate the ATT. Additional arguments accepted by `lm_robust()`, such as `se_type` and `clusters`, can be passed to `att()`. 
+If users do not want to include an outcome model to obtain the ATT (hence, doubly robust), you can use a weighted difference-in-means estimators by setting `dr = FALSE`:
+```{r}
+att(out, dr = FALSE)
+```
 
 
 
@@ -249,7 +252,7 @@ plot(out)
 
 By default, `hbal()` uses the R built-in `qr()` to check the rank of the (expanded) covariate matrix and remove columns that are not pivots when the matrix is rank-deficient. However, if a priori we know some combinations of the covariates are nonsensical, we can exclude them explicitly by using the `exclude` argument. For example, we can exclude any interaction that involves **X1** and **X2**:
 
-```{r}
+```{r, cache = TRUE}
 out <- hbal(Treat = 'D', X = c('X1', 'X2'),  Y = 'Y', data=dat, 
             exclude=list(c("X1", "X2")))
 summary(att(out)) # X1.X2 and X1.X1.X2 removed from balancing scheme
