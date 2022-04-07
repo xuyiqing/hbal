@@ -7,3 +7,6 @@
 ^docs$
 ^vignettes$
 ^pkgdown$
+^.travis.yml
+^README.md
+^NEWS.md
