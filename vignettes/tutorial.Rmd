@@ -46,10 +46,11 @@ This page demonstrates the usage of the **hbal** package, which implements hiera
 
 And two S3 methods:
 
-* `plot(<hbal>)`, which visualizes covariate balance before and after balancing or the distribution of balancing weights.
+* `plot()`, which visualizes covariate balance before and after balancing or the distribution of balancing weights.
 
-* `summary(<hbal>)`, which summarizes the balancing results and reports ATT estimates. 
+* `summary()`, which summarizes the balancing results and reports ATT estimates. 
 
+R code used in this tutorial can be downloaded from [here](https://yiqingxu.org/packages/hbal/hbal_examples.R).
 
 ***
 
