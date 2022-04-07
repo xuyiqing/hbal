@@ -22,12 +22,6 @@ knitr::opts_chunk$set(
 
 **R** package for implementing hierarchically regularized entropy balancing. It is suitable for estimating average treatment effect on the treated with binary treatments under strict ignorability. **hbal** is an extension of entropy balancing: it expands the feature space by including higher-order terms (such as squared and cubic terms and interactions) of covariates and then achieves approximate balance on the expanded features using ridge penalties with a hierarchical structure.
 
-**Authors:** [Yiqing Xu](http://yiqingxu.org/) (Stanford); [Eddie Yang](https://www.eddieyang.net/) (UCSD)
-
-**Date:** March 27, 2022
-
-**Repo:** [GitHub](https://github.com/xuyiqing/hbal)  
-
 **Examples:** R code used in the [tutorial](https://yiqingxu.org/packages/hbal/articles/tutorial.html) can be downloaded from [here](hbal_examples.R).
 
 **Reference:** Eddie Yang & Yiqing Xu (2021). [Hierarchically Regularized Entropy Balancing](https://papers.ssrn.com/abstract=3807620). *Political Analysis*, forthcoming.

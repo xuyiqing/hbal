@@ -2,10 +2,8 @@ home:
   title: hbal--hierarchically regularized entropy balancing
   description: implementing hierarchically regularized entropy balancing
   links:
-  - text: Yiqing's homepage
-    href: https://yiqingxu.org/
-  - text: Eddie's homepage
-    href: https://eddieyang.net/
+  - text: Github repo
+    href: https://github.com/xuyiqing/hbal
   - text: Research paper
     href: https://papers.ssrn.com/abstract=3555463
 
@@ -47,7 +45,7 @@ reference:
 
 authors:
   Eddie Yang:
-    href: eddieyang.net
+    href: "https://eddieyang.net/"
   Yiqing Xu:
     href: "https://yiqingxu.org/"
 

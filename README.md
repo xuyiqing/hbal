@@ -19,13 +19,6 @@ including higher-order terms (such as squared and cubic terms and
 interactions) of covariates and then achieves approximate balance on the
 expanded features using ridge penalties with a hierarchical structure.
 
-**Authors:** [Yiqing Xu](http://yiqingxu.org/) (Stanford); [Eddie
-Yang](https://www.eddieyang.net/) (UCSD)
-
-**Date:** March 27, 2022
-
-**Repo:** [GitHub](https://github.com/xuyiqing/hbal)
-
 **Examples:** R code used in the
 [tutorial](https://yiqingxu.org/packages/hbal/articles/tutorial.html)
 can be downloaded from [here](hbal_examples.R).
