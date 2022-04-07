@@ -11,5 +11,5 @@
   ver <- packageDescription(pkg, lib.loc = mylib)$Version
   #author <- packageDescription(pkg, lib.loc = mylib)$Author
   packageStartupMessage(pkg, ": ", title, "\nVersion: ", ver, "\nReference: ", 
-  	"Xu, Y., & Yang, E. (2021). Hierarchically Regularized Entropy Balancing.", "\n")
+    "Xu, Y., & Yang, E. (2021). Hierarchically Regularized Entropy Balancing. Political Analysis, Forthcoming.", "\n")
 }

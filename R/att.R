@@ -2,9 +2,10 @@
 #' @aliases att
 #' @description \code{att} estimates the average treatment effect on the treated (ATT) from an 
 #' hbal object returned by \code{hbal}. 
-#' @usage att(hbalobject, method="lm_robust", ...)
+#' @usage att(hbalobject, method="lm_robust", dr=TRUE, ...)
 #' @param hbalobject  an object of class \code{hbal} as returned by \code{hbal}.
 #' @param method      estimation method for the ATT. Default is the Lin (2016) estimator. 
+#' @param dr      	  doubly robust, whether an outcome model is included in estimating the ATT.
 #' @param ...         arguments passed to lm_lin or lm_robust
 #' @details This is a wrapper for \code{lm_robust} and \code{lm_lin} from the \link{estimatr} package. 
 #' @return A matrix of estimates with their robust standard errors
@@ -28,24 +29,39 @@
 att <- function(
 	hbalobject,
 	method="lm_robust",
+	dr=TRUE,
 	...
 	){
 	if(class(hbalobject)!= "hbal" ){
      stop("hbalobject must be an hbal object from a call to hbal()")
     }
+    elpss <- list(...)
+    
     w <- rep(NA, length(hbalobject$Treatment)) # get rid of "no visible binding for global variable" in check, see https://www.r-bloggers.com/2019/08/no-visible-binding-for-global-variable/
 	w[hbalobject$Treatment==1] <- 1
 	w[hbalobject$Treatment==0] <- hbalobject$weights/sum(hbalobject$weights)*sum(hbalobject$Treatment==1)
 	dat <- data.frame(hbalobject$mat, w=w, Y=hbalobject$Y, Treat=hbalobject$Treatment)
 	if (method=="lin"){
-		assignment <- as.formula(Y~Treat)
 		covariates <- as.formula(paste0("~ ", paste0(colnames(hbalobject$mat), collapse=" + ")))
-		out <- lm_lin(formula=assignment, covariates=covariates, weights=w, se_type="stata", data=dat, ...)
+		if (is.null(elpss[['se_type']])){
+			out <- lm_lin(formula=as.formula(Y~Treat), covariates=covariates, weights=w, data=dat, se_type='stata', ...)
+		}else{
+			out <- lm_lin(formula=as.formula(Y~Treat), covariates=covariates, weights=w, data=dat, ...)
+		}
 	}
 
 	if (method=="lm_robust"){
-		ff <- as.formula(paste0("Y~Treat+", paste0(colnames(hbalobject$mat), collapse=" + ")))
-		out <- lm_robust(ff, weights=w, se_type="stata", data=dat, ...)
+		if(dr){
+			ff <- as.formula(paste0("Y~Treat+", paste0(colnames(hbalobject$mat), collapse=" + ")))
+		}else{
+			ff <- as.formula("Y~Treat")
+		}
+
+		if (is.null(elpss[['se_type']])){
+			out <- lm_robust(ff, data=dat, weights=w, se_type='stata', ...)
+		}else{
+			out <- lm_robust(ff, data=dat, weights=w, ...)
+		}
 	}
 	return(out)
 }

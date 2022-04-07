@@ -22,9 +22,6 @@ A data frame with 2675 rows and 13 columns.
   \item{nodegr}{indicator for no high school degree}
 }
 }
-\usage{
-data(lalonde)
-}
 \description{
 Data on the treated units is from Dehejia and Wahba (1999), containing 185 individuals; data on the control units is from Panel Study
 of Income Dynamics (PSID-1), containing 2,490 individuals.

@@ -1,0 +1,24 @@
+#' Data from Black \& Owens (2016) and Hazlett (2020)
+#' @description
+#' The contenderJudges dataset is from Black \& Owens (2016): Courting the president: how circuit court judges alter their behavior for promotion to the Supreme Court
+#' This dataset includes 10,171 period-judge observations for a total of 68 judges.
+#' The treatment variable of interest is \code{treatFinal0}, which indicates whether there was a vacancy in the Supreme Court
+#' The outcome of interest is ideological alignment of judges' votes with the sitting President (\code{presIdeoVote}).
+#' The remaining variables are characteristics of the judges and courts, to be used as controls.
+#' 
+#' The LaLonde dataset has treated units from Dehejia and Wahba (1999), containing 185 individuals; data on the control units is from Panel Study
+#' of Income Dynamics (PSID-1), containing 2,490 individuals.
+#'
+#' @name hbal-data
+#' @docType data
+#' 
+#' @usage data(hbal)
+#' 
+#' @source 
+#' \itemize{
+#'   \item Black, R. C., & Owens, R. J. (2016). Courting the president: how circuit court judges alter their behavior for promotion to the Supreme Court. American Journal of Political Science, 60(1), 30-43.
+#'   \item Dehejia, R. H., & Wahba, S. (1999). Causal effects in nonexperimental studies: Reevaluating the evaluation of training programs. Journal of the American statistical Association, 94(448), 1053-1062.
+#'   \item Hazlett, C. (2020). KERNEL BALANCING. Statistica Sinica, 30(3), 1155-1189.
+#' }
+#' @keywords datasets
+NULL

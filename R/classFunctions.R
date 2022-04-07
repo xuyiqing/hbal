@@ -19,8 +19,8 @@ plot.hbal <- function(x,
 	...){
 	if (type == 'weight'){
 		cat('sum(weights) normalized to the number of control units: ', length(x$weights), '\n')
-		dat <- data.frame(weights = x$weights * length(x$weights))
-		ggplot(data=dat, aes(x=weights, y=..scaled..)) + geom_density() + theme_bw() + labs(y='density')
+		dat <- data.frame(x = x$weights * length(x$weights))
+		ggplot(data=dat, aes_string(x="x", y="..scaled..")) + geom_density() + theme_bw() + labs(y='Density', x='Weights')
 	}else{
 		plots <- list()
 		out.sub <- list()
@@ -77,40 +77,19 @@ plot.hbal <- function(x,
 #' @export
 #' @method summary hbal
 summary.hbal <- function(object, ...){
-	if (!is.null(object$call)) cat("\nCall:", deparse(object$call), sep = "\n")
-	groups <- c("linear", "two-way interact", "square", "three-way interact", "linear-squre interact", "cubic")
-	groups <- groups[1:length(object$group.assignment)]
-	if(length(which(object$group.assignment==0))!=0){
-		groups <- groups[-which(object$group.assignment==0)]
-		object$group.assignment <- object$group.assignment[-which(object$group.assignment==0)]
-	}
-
-	att <- summary(hbal::att(object))
-	cat("\nAverage Treatment Effect on the Treated:\n")
-	print(round(att$coefficients["Treat",], 3))
+	out <- list()
+	if (!is.null(object$call)) out[['call']] <- object$call
 	
-	cat("\nCovariates included in adjustment:\n")
-	start <- 1
-	for (i in 1:length(groups)){
-		end <- start+object$group.assignment[i]-1
-		msg <- paste0(colnames(object$mat)[start:end], collapse=", ")
-		cat(groups[i], ":\n", msg, "\n\n")
-		start <- end+1
-	}	
-	balance.out <- list()
+	est <- summary(hbal::att(object, ...))
+	
+	out[['ATT Estimate']] <- est$coefficients["Treat",]
+
+	out[['penalty']] <- object$penalty
+	
 	row.names <- colnames(object$mat)
 	balance.tab <- matrix(NA, length(row.names), 3)
 	rownames(balance.tab) <- row.names
 
-	if(!is.null(object$penalty)){
-		cat("penalty for each group of covariates selected:\n")
-		penalty <- matrix(NA, 1, length(groups))
-		colnames(penalty) <- groups
-		rownames(penalty) <- "penalty value"
-		penalty[1,] <- object$penalty
-		print(round(penalty, 2))
-	}
-	cat("\nSummary of Balance for Matched Data:\n")
 	T <- object$Treatment # treatment
 	treat <- object$mat[T==1,] # treated
 	control <- object$mat[T==0,] * c(object$weights) * sum(T==0) # control
@@ -119,14 +98,10 @@ summary.hbal <- function(object, ...){
 	denom <- apply(rbind(treat, control), 2, sd)
 	std.diff.after <- (apply(treat, 2, mean) - apply(control, 2, mean))/denom
 	balance.tab[,3] <- std.diff.after
-	colnames(balance.tab) <- c("Means, Treated", "Means, Control", "Std. Mean Diff.")
+	colnames(balance.tab) <- c("Mean (Treated)", "Mean (Control)", "Std. Mean Diff.")
 	balance.tab <- round(balance.tab, 2)
-	start <- 1
-	for (i in 1:length(object$group.assignment)){
-		end <- start+object$group.assignment[i]-1
-		balance.out[[groups[i]]] <- balance.tab[start:end,]
-		start <- end+1
-	}
-	balance.out
+	
+	out[['balance']] <- balance.tab
 
+	return(out)
 }

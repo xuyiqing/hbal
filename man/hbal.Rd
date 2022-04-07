@@ -5,10 +5,12 @@
 \alias{hbal}
 \title{Hierarchically Regularized Entropy Balancing}
 \usage{
-hbal(Treat, X, Y, data, base.weight = NULL, coefs = NULL ,
- max.iterations = 200, cv = TRUE, folds = 4, expand.degree = 3,
- ds = FALSE, alpha = NULL, constraint.tolerance = 1e-3, print.level = -1, 
- grouping = NULL, shuffle.treat=TRUE, exclude=NULL, seed=NULL)
+hbal(data, Treat, X, Y, base.weight = NULL, coefs = NULL ,
+     max.iterations = 200, cv = TRUE, folds = 4, 
+     expand.degree = 3, ds = FALSE, alpha = NULL, 
+     group.alpha=NULL, constraint.tolerance = 1e-3, 
+     print.level = -1, grouping = NULL, 
+     shuffle.treat=TRUE, exclude=NULL, seed=NULL)
 }
 \arguments{
 \item{data}{a dataframe that contains the treatment, outcome, and covariates.}
@@ -34,6 +36,8 @@ hbal(Treat, X, Y, data, base.weight = NULL, coefs = NULL ,
 \item{ds}{whether to perform double selection prior to balancing. Default is \code{FALSE}.}
 
 \item{alpha}{named vector of ridge penalties.}
+
+\item{group.alpha}{binary indicator of whether each covariate group should be penalized.}
 
 \item{constraint.tolerance}{tolerance level for overall imbalance. Default is 1e-3.}
 

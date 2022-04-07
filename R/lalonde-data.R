@@ -6,8 +6,6 @@
 #' @name lalonde
 #' @docType data
 #' 
-#' @usage data(lalonde)
-#' 
 #' @format A data frame with 2675 rows and 13 columns.
 #' \describe{
 #'   \item{nsw}{treatment indicator of whether an individual participated in the National Supported Work (NSW) program}

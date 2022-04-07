@@ -4,12 +4,14 @@
 \alias{att}
 \title{Estimating the ATT from an hbal object}
 \usage{
-att(hbalobject, method="lm_robust", ...)
+att(hbalobject, method="lm_robust", dr=TRUE, ...)
 }
 \arguments{
 \item{hbalobject}{an object of class \code{hbal} as returned by \code{hbal}.}
 
 \item{method}{estimation method for the ATT. Default is the Lin (2016) estimator.}
+
+\item{dr}{doubly robust, whether an outcome model is included in estimating the ATT.}
 
 \item{...}{arguments passed to lm_lin or lm_robust}
 }

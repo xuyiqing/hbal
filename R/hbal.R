@@ -5,10 +5,12 @@
 #' treatment group. \code{hbal} automatically expands the covariate space to include
 #' higher order terms and uses cross-validation to select variable penalties for the 
 #' balancing conditions.
-#' @usage hbal(Treat, X, Y, data, base.weight = NULL, coefs = NULL ,
-#'  max.iterations = 200, cv = TRUE, folds = 4, expand.degree = 3,
-#'  ds = FALSE, alpha = NULL, constraint.tolerance = 1e-3, print.level = -1, 
-#'  grouping = NULL, shuffle.treat=TRUE, exclude=NULL, seed=NULL)
+#' @usage hbal(data, Treat, X, Y, base.weight = NULL, coefs = NULL ,
+#'      max.iterations = 200, cv = TRUE, folds = 4, 
+#'      expand.degree = 3, ds = FALSE, alpha = NULL, 
+#'      group.alpha=NULL, constraint.tolerance = 1e-3, 
+#'      print.level = -1, grouping = NULL, 
+#'      shuffle.treat=TRUE, exclude=NULL, seed=NULL)
 #' @param data                 a dataframe that contains the treatment, outcome, and covariates.   
 #' @param Treat            	   a character string of the treatment variable.
 #' @param X                    a character vector of covariate names to balance on.
@@ -21,6 +23,7 @@
 #' @param expand.degree        degree of series expansion. 0 means no expansion. Default is 3.
 #' @param ds                   whether to perform double selection prior to balancing. Default is \code{FALSE}.
 #' @param alpha                named vector of ridge penalties.
+#' @param group.alpha          binary indicator of whether each covariate group should be penalized.
 #' @param constraint.tolerance tolerance level for overall imbalance. Default is 1e-3.
 #' @param print.level          details of printed output.
 #' @param grouping             different groupings of the covariates. Must be specified if expand is \code{FALSE}.
@@ -88,6 +91,7 @@ hbal <- function(
 	expand.degree=3,
 	ds=FALSE,
 	alpha=NULL,
+	group.alpha=NULL,
 	constraint.tolerance=1e-3,
 	print.level=-1,
 	grouping=NULL,
@@ -161,6 +165,9 @@ hbal <- function(
 	tr.total <- c(1, colMeans(X[Treatment==1,,drop=FALSE]))
 	grouping[1] <- grouping[1] + 1 # need one more for normalizing constraint
 
+	if(!is.null(group.alpha)){
+		group.alpha <- group.alpha[-1]
+	}
 	if (!is.null(alpha)){
 		penalty.names <- names(alpha)
 		penalty.val <- unname(alpha)
@@ -227,6 +234,7 @@ hbal <- function(
                             'print_level'=print.level),
                 penalty.pos=penalty.pos,
                 penalty.val=penalty.val,
+                group.alpha=group.alpha,
                 grouping=grouping,
                 folds=folds,
                 treatment = X[Treatment==1,],
@@ -241,6 +249,9 @@ hbal <- function(
                 full.c=full.c,
                 shuffle.treat=shuffle.treat)
 
+		if(!is.null(group.alpha)){
+			min.c$solution[which(group.alpha==0)] <- 0
+		}
 		penalty <- rep(c(0, min.c$solution), times=grouping)
 		if (!is.null(penalty.pos)){
 			penalty[penalty.pos] <- penalty.val

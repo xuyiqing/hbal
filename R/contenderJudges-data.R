@@ -8,8 +8,6 @@
 #' @name contenderJudges
 #' @docType data
 #' 
-#' @usage data(contenderJudges)
-#' 
 #' @format A data frame with 10171 rows and 10 columns.
 #' \describe{
 #'   \item{presIdeoVote}{ideological alignment of judges' votes with the sitting President (outcome)}

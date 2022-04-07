@@ -19,9 +19,6 @@ A data frame with 10171 rows and 10 columns.
   \item{judge}{name of the judge}
 }
 }
-\usage{
-data(contenderJudges)
-}
 \description{
 Data on the contender judges from Black \& Owens (2016): Courting the president: how circuit court judges alter their behavior for promotion to the Supreme Court
 This dataset includes 10,171 period-judge observations for a total of 68 judges.
