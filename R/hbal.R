@@ -153,10 +153,19 @@ hbal <- function(
 	full.c <- full[Treatment==0,]
 
 	if (ds){
-		selected <- doubleSelection(X=X, W=Treatment, Y=Y, grouping=grouping)
+		if (expand.degree > 1) {X.ds <- scale(expand$mat)} else {X.ds <- as.matrix(data[,X])}
+		selected <- doubleSelection(X=X.ds, W=Treatment, Y=unlist(data[,Y]), grouping=grouping)
 		X <- scale(selected$resX)
 		grouping <- selected$penalty.list
 	}
+
+	if (length(grouping)==1){
+		cv <- FALSE
+		if (print.level>0){
+			cat("length(grouping)==1, setting cv=FALSE")
+		}
+	}
+
 	full.c <- cbind(rep(1,ncontrols), full.c)
 
 	if(is.null(grouping) & cv==FALSE) grouping <- ncol(X)
