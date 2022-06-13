@@ -27,8 +27,8 @@ doubleSelection <- function(
 	cv.out <- cv.glmnet(X, Y, alpha=1)
 	y.coef <- coef(cv.out)
 	y.coef <- y.coef@i 
-	all.coef <- sort(union(t.coef, y.coef))[-1]
-	all.coef <- sort(union(1:grouping[1], all.coef))
+	all.coef <- sort(union(t.coef, y.coef))[-1] #no intercept
+#	all.coef <- sort(union(1:grouping[1], all.coef)) #keep all level terms
 
 	X <- X[,all.coef]
 
