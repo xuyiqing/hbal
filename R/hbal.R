@@ -126,7 +126,8 @@ hbal <- function(
 	var.names <- colnames(data)
 	if(!all(c(Treat, X, Y) %in% var.names)) stop("Some variable(s) specified are not in the data")
 
-	X  <- as.matrix(data[,X])
+	X  <- raw <- as.matrix(data[,X])
+
 	if (is.null(colnames(X))) colnames(X) <- paste0("X", 1:ncol(X))
 	if (sum(is.na(X))!=0) stop("data contain missing values")
 
@@ -136,6 +137,7 @@ hbal <- function(
 	ntreated  <- sum(Treatment==1)
 	ncontrols <- sum(Treatment==0)  
 	
+	if(is.null(grouping)) grouping <- ncol(X)
 	if (expand.degree%%1L!=0 | expand.degree<0) stop("expand.degree needs to be a non-negative integer")
 	if (expand.degree > 1) {# series expansion of the covariates
 		expand <- covarExpand(X, exp.degree=expand.degree, treatment=Treatment, exclude=exclude)
@@ -153,12 +155,12 @@ hbal <- function(
 	full.c <- full[Treatment==0,]
 
 	if (ds){
-		if (expand.degree > 1) {X.ds <- scale(expand$mat)} else {X.ds <- as.matrix(data[,X])}
+		if (expand.degree > 1) {X.ds <- expand$mat} else {X.ds <- raw}
 		selected <- doubleSelection(X=X.ds, W=Treatment, Y=unlist(data[,Y]), grouping=grouping)
 		X <- scale(selected$resX)
 		grouping <- selected$penalty.list
 	}
-
+	
 	if (length(grouping)==1){
 		cv <- FALSE
 		if (print.level>0){
@@ -168,7 +170,6 @@ hbal <- function(
 
 	full.c <- cbind(rep(1,ncontrols), full.c)
 
-	if(is.null(grouping) & cv==FALSE) grouping <- ncol(X)
 	co.x <- X[Treatment==0,] # control group
 	co.x <- cbind(rep(1,ncontrols),co.x)
 	tr.total <- c(1, colMeans(X[Treatment==1,,drop=FALSE]))
@@ -282,8 +283,8 @@ hbal <- function(
 	weights<-z$Weights_ebal
 	cc <- z$coefs
 
-	if (expand.degree>1 & ds){
-		out.mat <- expand$mat[,selected$covar.keep]
+	if (ds){
+		out.mat <- selected$resX
 	}
 	if (expand.degree>1 & !ds){
 		out.mat <- expand$mat
@@ -291,12 +292,10 @@ hbal <- function(
 	if (expand.degree<1 & !ds){
 		out.mat <- X
 	}
-	if (ds){
-		group.assignment <- selected$select.group
-	}else{
-		grouping[1] <- grouping[1]-1
-		group.assignment <- grouping
-	}
+
+	grouping[1] <- grouping[1]-1
+	group.assignment <- grouping
+
 	out <- list(converged=z$converged,
 				weights=weights, 
 				coefs=cc, 
