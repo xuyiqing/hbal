@@ -32,8 +32,8 @@ att <- function(
 	dr=TRUE,
 	...
 	){
-	if(class(hbalobject)!= "hbal" ){
-     stop("hbalobject must be an hbal object from a call to hbal()")
+	if(!inherits(hbalobject, "hbal")){
+		stop("hbalobject must be an hbal object from a call to hbal()")
     }
     elpss <- list(...)
     

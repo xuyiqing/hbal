@@ -91,7 +91,7 @@ crossValidate <- function(
 				), 
 			silent=TRUE
 			)
-		if (class(out)!="try-error"){
+		if (!inherits(out, "try-error")){
 			coe <- out$coefs
 			weights <- c(exp(test.control%*%coe))
 			weights <- weights * base.weight[co.test.k]
