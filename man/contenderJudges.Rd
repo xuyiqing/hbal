@@ -3,7 +3,7 @@
 \docType{data}
 \name{contenderJudges}
 \alias{contenderJudges}
-\title{Data from Black \& Owens (2016)}
+\title{Data from Black and Owens (2016)}
 \format{
 A data frame with 10171 rows and 10 columns.
 \describe{
@@ -20,7 +20,7 @@ A data frame with 10171 rows and 10 columns.
 }
 }
 \description{
-Data on the contender judges from Black \& Owens (2016): Courting the president: how circuit court judges alter their behavior for promotion to the Supreme Court
+Data on the contender judges from Black and Owens (2016): Courting the president: how circuit court judges alter their behavior for promotion to the Supreme Court
 This dataset includes 10,171 period-judge observations for a total of 68 judges.
 The treatment variable of interest is \code{treatFinal0}, which indicates whether there was a vacancy in the Supreme Court
 The outcome of interest is ideological alignment of judges' votes with the sitting President (\code{presIdeoVote}).
@@ -28,7 +28,7 @@ The remaining variables are characteristics of the judges and courts, to be used
 }
 \references{
 \itemize{
-  \item Black, R. C., & Owens, R. J. (2016). Courting the president: how circuit court judges alter their behavior for promotion to the Supreme Court. American Journal of Political Science, 60(1), 30-43.
+  \item Black, R. C., and Owens, R. J. (2016). Courting the president: how circuit court judges alter their behavior for promotion to the Supreme Court. American Journal of Political Science, 60(1), 30-43.
 }
 }
 \keyword{datasets}
