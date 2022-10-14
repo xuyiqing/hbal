@@ -106,7 +106,7 @@ out <- hbal(Treat = 'treat', X = c('X1', 'X2', 'X3', 'X4'), Y='Y', data=dat)
 summary(att(out))
 }
 \references{
-Xu, Y., & Yang, E. (2021). Hierarchically Regularized Entropy Balancing.
+Xu, Y., & Yang, E. (2022). Hierarchically Regularized Entropy Balancing. Political Analysis, 1-8. doi:10.1017/pan.2022.12
 }
 \author{
 Yiqing Xu, Eddie Yang

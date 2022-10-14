@@ -12,7 +12,7 @@
 #'      print.level = -1, grouping = NULL, 
 #'      shuffle.treat=TRUE, exclude=NULL, seed=NULL)
 #' @param data                 a dataframe that contains the treatment, outcome, and covariates.   
-#' @param Treat            	   a character string of the treatment variable.
+#' @param Treat                a character string of the treatment variable.
 #' @param X                    a character vector of covariate names to balance on.
 #' @param Y                    a character string of the outcome variable.
 #' @param base.weight          target weight distribution for the control units.
@@ -45,7 +45,7 @@
 #' @importFrom stats var
 #' @importFrom nloptr nloptr
 #' @useDynLib hbal, .registration = TRUE
-#' @references Xu, Y., & Yang, E. (2021). Hierarchically Regularized Entropy Balancing.
+#' @references Xu, Y., & Yang, E. (2022). Hierarchically Regularized Entropy Balancing. Political Analysis, 1-8. doi:10.1017/pan.2022.12
 #' @examples
 #' # Example 1
 #' set.seed(1984)
@@ -206,9 +206,8 @@ hbal <- function(
 		warning("length(grouping)==1, reverting to cv = FALSE. \nEither double selection selected 0 higher order term or the supplied grouping has length 1")
 	}
 	if (print.level >= 1){
-	  cat("Data Setup\nCovariate Adjustment:", colnames(X), "\n" )
-	  cat("\n")
-	  cat("Control to Treatment ratio = ", ncontrols/ntreated, "\n")
+		cat("Data Setup\nCovariate Adjustment:", colnames(X), "\n\n" )
+		cat("Control to Treatment ratio = ", ncontrols/ntreated, "\n")
 	}
 
 

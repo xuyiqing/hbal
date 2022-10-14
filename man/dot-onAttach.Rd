@@ -15,5 +15,5 @@
 Function to load package description.
 }
 \references{
-Xu, Y., & Yang, E. (2021). Hierarchically Regularized Entropy Balancing.
+Xu, Y., & Yang, E. (2022). Hierarchically Regularized Entropy Balancing. Political Analysis, 1-8. doi:10.1017/pan.2022.12
 }

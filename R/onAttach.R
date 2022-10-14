@@ -3,13 +3,13 @@
 #' @param lib   libname
 #' @param pkg   package name
 #' @importFrom utils packageDescription
-#' @references Xu, Y., & Yang, E. (2021). Hierarchically Regularized Entropy Balancing.
+#' @references Xu, Y., & Yang, E. (2022). Hierarchically Regularized Entropy Balancing. Political Analysis, 1-8. doi:10.1017/pan.2022.12
 
 .onAttach <- function(lib, pkg) {
-  mylib <- dirname(system.file(package = pkg))
-  title <- packageDescription(pkg, lib.loc = mylib)$Title
-  ver <- packageDescription(pkg, lib.loc = mylib)$Version
-  #author <- packageDescription(pkg, lib.loc = mylib)$Author
-  packageStartupMessage(pkg, ": ", title, "\nVersion: ", ver, "\nReference: ", 
-    "Xu, Y., & Yang, E. (2021). Hierarchically Regularized Entropy Balancing. Political Analysis, Forthcoming.", "\n")
+    mylib <- dirname(system.file(package = pkg))
+    title <- packageDescription(pkg, lib.loc = mylib)$Title
+    ver <- packageDescription(pkg, lib.loc = mylib)$Version
+    #author <- packageDescription(pkg, lib.loc = mylib)$Author
+    packageStartupMessage(pkg, ": ", title, "\nVersion: ", ver, "\nReference: ", 
+        "Xu, Y., & Yang, E. (2022). Hierarchically Regularized Entropy Balancing. Political Analysis, 1-8. doi:10.1017/pan.2022.12", "\n")
 }
