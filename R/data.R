@@ -16,8 +16,8 @@
 #' 
 #' @source 
 #' \itemize{
-#'   \item Black, R. C., & Owens, R. J. (2016). Courting the president: how circuit court judges alter their behavior for promotion to the Supreme Court. American Journal of Political Science, 60(1), 30-43.
-#'   \item Dehejia, R. H., & Wahba, S. (1999). Causal effects in nonexperimental studies: Reevaluating the evaluation of training programs. Journal of the American statistical Association, 94(448), 1053-1062.
+#'   \item Black, R. C., \& Owens, R. J. (2016). Courting the president: how circuit court judges alter their behavior for promotion to the Supreme Court. American Journal of Political Science, 60(1), 30-43.
+#'   \item Dehejia, R. H., \& Wahba, S. (1999). Causal effects in nonexperimental studies: Reevaluating the evaluation of training programs. Journal of the American statistical Association, 94(448), 1053-1062.
 #'   \item Hazlett, C. (2020). KERNEL BALANCING. Statistica Sinica, 30(3), 1155-1189.
 #' }
 #' @keywords datasets

@@ -24,7 +24,7 @@
 #' }
 #' @references 
 #' \itemize{
-#'   \item Dehejia, R. H., & Wahba, S. (1999). Causal effects in nonexperimental studies: Reevaluating the evaluation of training programs. Journal of the American statistical Association, 94(448), 1053-1062.
+#'   \item Dehejia, R. H., \& Wahba, S. (1999). Causal effects in nonexperimental studies: Reevaluating the evaluation of training programs. Journal of the American statistical Association, 94(448), 1053-1062.
 #'   \item Hazlett, C. (2020). KERNEL BALANCING. Statistica Sinica, 30(3), 1155-1189.
 #' }
 #' @keywords datasets
