@@ -2,13 +2,13 @@ Package: hbal
 Type: Package
 Title: Hierarchically Regularized Entropy Balancing
 Version: 1.2.3
-Date: 2022-04-07
+Date: 2022-10-14
 Authors@R: c(
   person("Yiqing", "Xu", , "yiqingxu@stanford.edu", c("aut")),
   person("Eddie", "Yang", , "z5yang@ucsd.edu", c("aut", "cre"))
   )
 Maintainer: Eddie Yang <z5yang@ucsd.edu>
-Description: Implements hierarchically regularized entropy balancing (hbal) proposed by Xu and Yang (2022). The method adjusts the covariate distributions of the control group to match those of the treatment group. hbal automatically expands the covariate space to include higher order terms and uses cross-validation to select variable penalties for the balancing conditions.
+Description: Implements hierarchically regularized entropy balancing (hbal) proposed by Xu and Yang (2022) <doi:10.1017/pan.2022.12>. The method adjusts the covariate distributions of the control group to match those of the treatment group. hbal automatically expands the covariate space to include higher order terms and uses cross-validation to select variable penalties for the balancing conditions.
 URL: https://yiqingxu.org/packages/hbal/
 License: MIT + file LICENSE
 Depends: R (>= 3.6.0)
