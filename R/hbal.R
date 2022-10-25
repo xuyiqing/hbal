@@ -126,9 +126,17 @@ hbal <- function(
 	var.names <- colnames(data)
 	if(!all(c(Treat, X, Y) %in% var.names)) stop("Some variable(s) specified are not in the data")
 
-	num_col <- colSums(sapply(data[,X], is.finite))==nrow(data)
-	if (sum(num_col)!=length(num_col)) warning(paste0('Variables: ', X[!num_col], ' are dropped because they are not numeric/finite'))
-	X <- X[num_col]
+#	num_col <- colSums(sapply(data[,X], is.finite))==nrow(data)
+#	if (sum(num_col)!=length(num_col)) warning(paste0('Variables: ', X[!num_col], ' are dropped because they are not numeric/finite'))
+#	X <- X[num_col]
+
+	num_cols <- !sapply(data, class) == 'character' # need all numeric columns
+	if (sum(num_cols)!=length(num_cols)) stop('Some columns in the data are character columns. Consider converting them to numeric')
+
+	num_rows <- rowSums(sapply(data[,X], is.finite))==length(X) # keep only numeric rows
+	if (sum(num_rows)!=length(num_rows)) warning("Some rows are dropped because they contain missing/NA/infinite values")
+	data <- data[num_rows,]
+	if (!is.null(base.weight)) base.weight <- base.weight[num_rows]
 
 	X  <- raw <- as.matrix(data[,X])
 
