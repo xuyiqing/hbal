@@ -126,7 +126,7 @@ hbal <- function(
 	var.names <- colnames(data)
 	if(!all(c(Treat, X, Y) %in% var.names)) stop("Some variable(s) specified are not in the data")
 
-	num_col <- colSums(sapply(data[,X], is.finite))==nrow(dat)
+	num_col <- colSums(sapply(data[,X], is.finite))==nrow(data)
 	if (sum(num_col)!=length(num_col)) warning(paste0('Variables: ', X[!num_col], ' are dropped because they are not numeric/finite'))
 	X <- X[num_col]
 
