@@ -133,11 +133,14 @@ hbal <- function(
 	num_cols <- !sapply(data[, c(Treat, X, Y)], class) == 'character' # need all numeric columns
 	if (sum(num_cols)!=length(num_cols)) stop('Some columns in the data are character columns. Consider converting them to numeric')
 
-	num_rows <- rowSums(sapply(data[,X], is.finite))==length(X) # keep only numeric rows
-	if (sum(num_rows)!=length(num_rows)) warning("Some rows are dropped because they contain missing/NA/infinite values")
-	data <- data[num_rows,]
-	if (!is.null(base.weight)) base.weight <- base.weight[num_rows]
-
+	# listwise deletion
+	num_rows <- complete.cases(data[, c(Treat, X, Y)])
+	if (length(num_rows) < nrows(data)) {
+		warning("Some rows are dropped because they contain missing/NA/infinite values")
+		data <- data[num_rows,]
+		if (!is.null(base.weight)) {base.weight <- base.weight[num_rows]}
+	}		
+	
 	X  <- raw <- as.matrix(data[,X])
 
 	if (is.null(colnames(X))) colnames(X) <- paste0("X", 1:ncol(X))
