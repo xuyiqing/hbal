@@ -135,7 +135,7 @@ hbal <- function(
 
 	# listwise deletion
 	num_rows <- complete.cases(data[, c(Treat, X, Y)])
-	if (length(num_rows) < nrows(data)) {
+	if (length(num_rows) < nrow(data)) {
 		warning("Some rows are dropped because they contain missing/NA/infinite values")
 		data <- data[num_rows,]
 		if (!is.null(base.weight)) {base.weight <- base.weight[num_rows]}
