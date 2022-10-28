@@ -130,7 +130,7 @@ hbal <- function(
 #	if (sum(num_col)!=length(num_col)) warning(paste0('Variables: ', X[!num_col], ' are dropped because they are not numeric/finite'))
 #	X <- X[num_col]
 
-	num_cols <- !sapply(data, class) == 'character' # need all numeric columns
+	num_cols <- !sapply(data[, c(Treat, X, Y)], class) == 'character' # need all numeric columns
 	if (sum(num_cols)!=length(num_cols)) stop('Some columns in the data are character columns. Consider converting them to numeric')
 
 	num_rows <- rowSums(sapply(data[,X], is.finite))==length(X) # keep only numeric rows
