@@ -126,25 +126,53 @@ hbal <- function(
 	var.names <- colnames(data)
 	if(!all(c(Treat, X, Y) %in% var.names)) stop("Some variable(s) specified are not in the data")
 
-#	num_col <- colSums(sapply(data[,X], is.finite))==nrow(data)
-#	if (sum(num_col)!=length(num_col)) warning(paste0('Variables: ', X[!num_col], ' are dropped because they are not numeric/finite'))
-#	X <- X[num_col]
-
 	num_cols <- !sapply(data[, c(Treat, X, Y)], class) == 'character' # need all numeric columns
 	if (sum(num_cols)!=length(num_cols)) stop('Some columns in the data are character columns. Consider converting them to numeric')
 
 	# listwise deletion
 	num_rows <- complete.cases(data[, c(Treat, X, Y)])
-	if (length(num_rows) < nrow(data)) {
-		warning("Some rows are dropped because they contain missing/NA/infinite values")
+	if (sum(num_rows) < nrow(data)) {
+		cat("Some rows are dropped because they contain missing/NA/infinite values\n")
 		data <- data[num_rows,]
 		if (!is.null(base.weight)) {base.weight <- base.weight[num_rows]}
-	}		
-	
+	}
+
+	# check variation
+	if (sd(data[,Treat]) == 0) {stop("No variation in the treatment variable.")}
+	X.novar <- X[which(apply(data[,X], 2, sd) == 0)]# controls of no variations
+	if (length(X.novar) > 0) {
+		cat(paste("The following variable(s) have no variations and are automatically dropped:", paste0(X.novar, collapse = ", "),"\n"))
+		X <- setdiff(X, X.novar)
+	}
+
+	# check collinearity
+	if (qr(data[,X])$rank != ncol(data[,X])) {
+		cat("Collinearity in covariate matrix for controls; ")
+		X.good <- X[1]
+		for (i in 2:length(X)) {
+			X.test <- c(X.good, X[i])
+			if (qr(data[,X.test])$rank == length(X.test)) {
+				X.good <- c(X.good, X[i])
+			}
+		}
+		X.bad <- setdiff(X, X.good)
+		cat("the following variable(s) are removed:",paste(X.bad, collapse = ", "),"\n")
+		X <- X.good
+	}
+
+	X.names <- X
 	X  <- raw <- as.matrix(data[,X])
 
-	if (is.null(colnames(X))) colnames(X) <- paste0("X", 1:ncol(X))
-	if (sum(is.na(X))!=0) stop("data contain missing values")
+
+	if (is.null(colnames(X))) {
+		colnames(X) <- paste0("X", 1:ncol(X))
+	}
+	# check missing again
+	if (sum(is.na(X))!=0) {
+		stop("Data contain missing values")
+	}	
+
+
 
 	Treatment <- unlist(data[,Treat])
 	if (!is.numeric(Treatment)) stop("Treatment variable needs to be numeric")
@@ -153,9 +181,11 @@ hbal <- function(
 	ncontrols <- sum(Treatment==0)  
 	
 	if(is.null(grouping)) grouping <- ncol(X)
-	if(length(expand.degree)!=1) stop("expand.degree needs to be of length 1")
-	if (!expand.degree %in% c(1, 2, 3)) stop("expand.degree needs to be one of c(1, 2, 3)")
-	if (expand.degree > 1) {# series expansion of the covariates
+	if(length(expand.degree)!=1) stop("\"expand.degree\" needs to be of length 1")
+	if (!expand.degree %in% c(1, 2, 3)) stop("\"expand.degree\" needs to be one of c(1, 2, 3)")
+
+	# series expansion of the covariates	
+	if (expand.degree > 1) {
 		expand <- covarExpand(X, exp.degree=expand.degree, treatment=Treatment, exclude=exclude)
 		grouping <- expand$grouping
 		if (0 %in% grouping){
@@ -166,11 +196,30 @@ hbal <- function(
 		X <- scale(X)
 	}
 
+	# check collinearity again
+	if (qr(X)$rank != ncol(X)) {
+		X.good <- 1
+		for (i in 2:ncol(X)) {
+			X.test <- c(X.good, i)
+			if (qr(X[,X.test])$rank == length(X.test)) {
+				X.good <- c(X.good, i)
+			}
+		}
+		if (expand.degree == 1) {
+			X.bad <- setdiff(1:ncol(X), X.good)
+			cat("After scaling, the following variable(s) are removed due to collinearity:",paste(X.names[X.bad], collapse = ", "))
+		}
+		X <- X[,X.good,drop = FALSE]
+		if (expand.degree == 1) {
+			grouping <- ncol(X)
+		}	
+	}
+
 	full <- X # need to keep a copy of the standardized X for cross-validation. Normalization so that means and variances of covariates on the same scale 
 	full.t <- full[Treatment==1,]
 	full.c <- full[Treatment==0,]
 
-	if (ds){
+	if (ds == TRUE){
 		if (expand.degree > 1) {X.ds <- expand$mat} else {X.ds <- raw}
 		selected <- doubleSelection(X=X.ds, W=Treatment, Y=unlist(data[,Y]), grouping=grouping)
 		X <- scale(selected$resX)
@@ -180,7 +229,7 @@ hbal <- function(
 	if (length(grouping)==1){
 		cv <- FALSE
 		if (print.level>0){
-			cat("length(grouping)==1, setting cv=FALSE")
+			cat("length(grouping) = 1, setting cv=FALSE")
 		}
 	}
 
