@@ -83,6 +83,8 @@ hbal <- function(
 	Treat,
 	X,
 	Y,
+	X.keep = NULL, # always keep despite double selection
+	X.levelonly = NULL, # do not participate in serial expansion
 	base.weight=NULL,
 	coefs=NULL ,
 	max.iterations=200,
@@ -121,52 +123,68 @@ hbal <- function(
 
 	# set up elements
 	mcall <- match.call()
-	if(!is.null(seed)) set.seed(seed)
+	if(!is.null(seed)) {set.seed(seed)}
 
+	# combine X, X.keep, X.levelonly
+	X.all <- unique(c(X, X.keep, X.levelonly))
+	X.expand <- setdiff(X.all, X.levelonly)
+	if (length(X.expand) == 0 & expand.degree > 1) {cat("No variable to expand\n")}
+
+	# check if variables are in the dataset
 	var.names <- colnames(data)
-	if(!all(c(Treat, X, Y) %in% var.names)) stop("Some variable(s) specified are not in the data")
+	if(!all(c(Treat, X.all, Y) %in% var.names)) stop("Some variable(s) specified are not in the data")
 
-	num_cols <- !sapply(data[, c(Treat, X, Y)], class) == 'character' # need all numeric columns
-	if (sum(num_cols)!=length(num_cols)) stop('Some columns in the data are character columns. Consider converting them to numeric')
+	valid_cols <- !sapply(data[, c(Treat, X.all, Y)], class) == 'character' # need all numeric columns
+	if (sum(valid_cols)!=length(valid_cols)) stop('Some columns in the data are character columns. Consider converting them to numeric')
 
 	# listwise deletion
-	num_rows <- complete.cases(data[, c(Treat, X, Y)])
-	if (sum(num_rows) < nrow(data)) {
+	valid_rows <- complete.cases(data[, c(Treat, X.all, Y)])
+	if (sum(valid_rows) < nrow(data)) {
 		cat("Some rows are dropped because they contain missing/NA/infinite values\n")
-		data <- data[num_rows,]
-		if (!is.null(base.weight)) {base.weight <- base.weight[num_rows]}
+		data <- data[valid_rows,]
+		if (!is.null(base.weight)) {base.weight <- base.weight[valid_rows]}
 	}
 
 	# check variation
 	if (sd(data[,Treat]) == 0) {stop("No variation in the treatment variable.")}
-	X.novar <- X[which(apply(data[,X], 2, sd) == 0)]# controls of no variations
+	X.novar <- X.all[which(apply(data[,X.all], 2, sd) == 0)]# controls of no variations
 	if (length(X.novar) > 0) {
 		cat(paste("The following variable(s) have no variations and are automatically dropped:", paste0(X.novar, collapse = ", "),"\n"))
-		X <- setdiff(X, X.novar)
+		X.all <- setdiff(X.all, X.novar)
 	}
+
+	# scaling
+	data[,X.all] <- scale(data[, X.all])
 
 	# check collinearity
-	if (qr(data[,X])$rank != ncol(data[,X])) {
+	if (qr(data[,X.all])$rank != ncol(data[,X.all])) {
 		cat("Collinearity in covariate matrix for controls; ")
-		X.good <- X[1]
-		for (i in 2:length(X)) {
-			X.test <- c(X.good, X[i])
+		X.good <- X.all[1]
+		for (i in 2:length(X.all)) {
+			X.test <- c(X.good, X.all[i])
 			if (qr(data[,X.test])$rank == length(X.test)) {
-				X.good <- c(X.good, X[i])
+				X.good <- c(X.good, X.all[i])
 			}
 		}
-		X.bad <- setdiff(X, X.good)
+		X.bad <- setdiff(X.all, X.good)
 		cat("the following variable(s) are removed:",paste(X.bad, collapse = ", "),"\n")
-		X <- X.good
+		X.all <- X.good
+		X.keep <- setdiff(X.keep, X.bad)		
+		X.levelonly <- setdiff(X.levelonly, X.bad)		
 	}
 
-	X.names <- X
-	X  <- raw <- as.matrix(data[,X])
-
-
+	# define matrix X
+	X.names <- X.all
+	X  <- raw <- as.matrix(data[, X.all, drop = FALSE])
 	if (is.null(colnames(X))) {
 		colnames(X) <- paste0("X", 1:ncol(X))
 	}
+	# get column numbers
+	X.levelonly.num <- which(X.all %in% X.levelonly)
+	X.expand.num <- which(X.all %in% X.expand)
+	X.keep.num <- which(X.all %in% X.keep)
+
+	
 	# check missing again
 	if (sum(is.na(X))!=0) {
 		stop("Data contain missing values")
@@ -184,46 +202,62 @@ hbal <- function(
 	if(length(expand.degree)!=1) stop("\"expand.degree\" needs to be of length 1")
 	if (!expand.degree %in% c(1, 2, 3)) stop("\"expand.degree\" needs to be one of c(1, 2, 3)")
 
-	# series expansion of the covariates	
+	# series expansion of the covariates
 	if (expand.degree > 1) {
-		expand <- covarExpand(X, exp.degree=expand.degree, treatment=Treatment, exclude=exclude)
+		expand <- covarExpand(X[, X.expand.num], exp.degree=expand.degree, treatment=Treatment, exclude=exclude)
+		X.tmp <- expand$mat
 		grouping <- expand$grouping
 		if (0 %in% grouping){
-    		grouping <- grouping[-which(grouping==0)]
+			grouping <- grouping[-which(grouping==0)]
 		}
-		X <- scale(expand$mat)
-	} else{
-		X <- scale(X)
-	}
+		## add level-only covariates
+		if (length(X.levelonly.num)>0) { 
+			X <- cbind(X[, X.levelonly.num], X.tmp)
+			grouping[1] <- grouping[1] + length(X.levelonly.num)
+		} else {
+			X <- X.tmp
+		}
+		X <- scale(X)		
 
-	# check collinearity again
-	if (qr(X)$rank != ncol(X)) {
-		X.good <- 1
-		for (i in 2:ncol(X)) {
-			X.test <- c(X.good, i)
-			if (qr(X[,X.test])$rank == length(X.test)) {
-				X.good <- c(X.good, i)
+		# check collinearity again after serial expansion
+		grouping.expand <- c()
+		for (i in 1:length(grouping)) {
+			grouping.expand <- c(grouping.expand, rep(i, grouping[i]))
+		}
+		if (qr(X)$rank != ncol(X)) {
+			X.good.num <- 1
+			for (i in 2:ncol(X)) {
+				X.test.num <- c(X.good.num, i)
+				if (qr(X[,X.test.num])$rank == length(X.test.num)) {
+					X.good.num <- c(X.good.num, i)
+				}
 			}
+			X.bad.num <- setdiff(1:ncol(X), X.good.num) # these are column numbers
+			cat("After serial expansion, the following variable(s) are removed due to collinearity:",paste(colnames(X)[X.bad.num], collapse = ", "))
+			X <- X[, X.good.num, drop = FALSE]
+			grouping.expand <- grouping.expand[-X.bad.num]
+			grouping <- as.numeric(table(grouping.expand))
+			# update X.keep.num
+			X.keep.intersect <- intersect(X.keep.num, X.good.num)
+			X.keep.num <- which(X.good.num %in% X.keep.intersect)
 		}
-		if (expand.degree == 1) {
-			X.bad <- setdiff(1:ncol(X), X.good)
-			cat("After scaling, the following variable(s) are removed due to collinearity:",paste(X.names[X.bad], collapse = ", "))
-		}
-		X <- X[,X.good,drop = FALSE]
-		if (expand.degree == 1) {
-			grouping <- ncol(X)
-		}	
-	}
+	} 
 
 	full <- X # need to keep a copy of the standardized X for cross-validation. Normalization so that means and variances of covariates on the same scale 
 	full.t <- full[Treatment==1,]
 	full.c <- full[Treatment==0,]
 
+	# double selection
 	if (ds == TRUE){
-		if (expand.degree > 1) {X.ds <- expand$mat} else {X.ds <- raw}
-		selected <- doubleSelection(X=X.ds, W=Treatment, Y=unlist(data[,Y]), grouping=grouping)
-		X <- scale(selected$resX)
-		grouping <- selected$penalty.list
+		selected <- doubleSelection(X=X, W=Treatment, Y=unlist(data[,Y]), grouping=grouping)
+		X.num <- X.select.num <- selected$covar.keep
+		grouping <- selected$penalty.list	
+		# add those must keep	
+		if (length(X.keep.num)>0) {
+			X.num <- union(X.keep.num, X.select.num)
+			grouping[1] <- grouping[1] + (length(X.num) - length(X.select.num))			
+		}
+		X <- X[, X.num] 		
 	}
 	
 	if (length(grouping)==1){
