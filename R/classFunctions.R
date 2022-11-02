@@ -25,28 +25,23 @@ plot.hbal <- function(x,
 		plots <- list()
 		out.sub <- list()
 		width <- list()
-		groups <- c("linear terms", "two-way interactions", "square terms", "three-way interactions", "linear-squre interactions", "cubic terms")
-		groups <- groups[1:length(x$group.assignment)]
-		if(length(which(x$group.assignment==0))!=0){
-			groups <- groups[-which(x$group.assignment==0)]
-			x$group.assignment <- x$group.assignment[-which(x$group.assignment==0)]
-		}
+		groups <- names(x$grouping)
 		var.names <- colnames(x$mat)
-		T <- x$Treatment # treatment
-		treat <- x$mat[T==1,] # treated
-		control <- x$mat[T==0,] * c(x$weights) * sum(T==0) # control
+		Treatment <- x$Treatment # treatment
+		treat <- x$mat[Treatment==1,] # treated
+		control <- x$mat[Treatment==0,] * c(x$weights) * sum(Treatment==0) # control
 		denom <- apply(rbind(treat, control), 2, sd)
 		std.diff.after <- (apply(treat, 2, mean) - apply(control, 2, mean))/denom
-		denom <- apply(rbind(treat, x$mat[T==0,]), 2, sd)
-		std.diff.before <- (apply(treat, 2, mean) - apply(x$mat[T==0,], 2, mean))/denom
+		denom <- apply(rbind(treat, x$mat[Treatment==0,]), 2, sd)
+		std.diff.before <- (apply(treat, 2, mean) - apply(x$mat[Treatment==0,], 2, mean))/denom
 		out <- data.frame(val=c(std.diff.before, std.diff.after),
 						  y=rep(var.names, 2),
 						  group=factor(rep(c("before adjustment", "after adjustment"), each=length(std.diff.before))),
-						  covar.group=rep(rep(groups, x$group.assignment),2))
+						  covar.group=rep(rep(groups, x$grouping),2))
 		start <- 1
 		max_length <- max(str_length(var.names))
 		for (i in 1:length(groups)){
-			end <- start+x$group.assignment[i]-1
+			end <- start+x$grouping[i]-1
 			out.sub[[i]] <- rbind(out[start:end,], out[(start+length(std.diff.before)):(end+length(std.diff.before)),])
 			l <- max(abs(out.sub[[i]]$val), 0.15)
 			plots[[i]] <- ggplot(aes_string(x="val", y="y"), data=out.sub[[i]]) + geom_point(size=3, shape = 21, colour = "black", aes_string(fill="group")) + 
@@ -82,17 +77,19 @@ summary.hbal <- function(object, ...){
 	
 	est <- summary(hbal::att(object, ...))
 	
-	out[['ATT Estimate']] <- est$coefficients["Treat",]
+	out[['att']] <- est$coefficients["Treat",]
 
-	out[['penalty']] <- object$penalty
+	out[['group.penalty']] <- object$group.penalty
+
+	out[['term.penalty']] <- object$term.penalty
 	
 	row.names <- colnames(object$mat)
 	balance.tab <- matrix(NA, length(row.names), 3)
 	rownames(balance.tab) <- row.names
 
-	T <- object$Treatment # treatment
-	treat <- object$mat[T==1,] # treated
-	control <- object$mat[T==0,] * c(object$weights) * sum(T==0) # control
+	Treatment <- object$Treatment # treatment
+	treat <- object$mat[Treatment==1,] # treated
+	control <- object$mat[Treatment==0,] * c(object$weights) * sum(Treatment==0) # control
 	balance.tab[,1] <- apply(treat, 2, mean)
 	balance.tab[,2] <- apply(control, 2, mean)
 	denom <- apply(rbind(treat, control), 2, sd)

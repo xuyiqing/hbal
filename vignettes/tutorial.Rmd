@@ -83,7 +83,7 @@ In the simplest use case, we can use the following two lines of code to:
 2. estimate the ATT.
 
 ```{r}
-out <- hbal(Treat = 'D', X = c('X1', 'X2'),  Y = 'Y', data=dat)
+out <- hbal(Treat = 'D', X = c('X1', 'X2'),  Y = 'Y', data=dat, expand.degree = 3)
 att(out, se_type = "stata")
 ```
 
@@ -141,7 +141,7 @@ plot(out)
 From the above plots, we can see that the linear terms (mean) of the covariates are exactly balanced between the treatment and the control groups. We can check the penalties applied to different groups of covariates. In this case, the higher-order terms have relatively high penalties except for two-way interactions, in accordance with the true data generating process. 
 
 ```{r}
-out$penalty
+out$group.penalty
 ```
 
 We can also plot the weight distribution for the control units by specifying `type = 'weight'` in `plot()`. We can see that the weights are quite concentrated around the unit weight.
@@ -166,7 +166,7 @@ ebal.out <- ebalance(Treat = lalonde$nsw, X = lalonde[,xvars], print.level=-1)
 
 # hbal w/ level terms only
 hbal.out <- hbal(Treat = 'nsw', X = xvars,  Y = 're78', data=lalonde, 
-                 expand.degree = 0, cv = FALSE) 
+                 expand.degree = 1, cv = FALSE) 
 
 # save weights from ebal and hbal
 W <- data.frame(x = hbal.out$weights*sum(D), 
@@ -184,16 +184,16 @@ summary(hbal.out)
 ```
 
 Adding higher-order terms makes the treatment effect estimate closer to the experimental benchmark (~$1800).
-```{r, cache = TRUE}
+```{r}
 hbal.full.out <- hbal(Treat = 'nsw', X = xvars, Y = 're78', data=lalonde, 
                       expand.degree = 2, exclude=list(c("educ", "nodegr")))
-summary(hbal.full.out)$'ATT Estimate'
+summary(hbal.full.out)$att
 ```
 Note that `exclude=list(c("educ", "nodegr"))` removes the nonsensical interaction between `educ` and `nodegr`.
 
 ```{r, fig.height = 9, fig.width = 9.5, fig.align = "left"}
 plot(hbal.full.out)
-hbal.full.out$penalty
+hbal.full.out$group.penalty
 ```
 We see that the squared terms are being more heavily penalized than two-way interactions. 
 
@@ -212,8 +212,9 @@ We can estimate the effect of Supreme Court vacancy on judges' rulings while con
 ```{r, cache = TRUE}
 out <- hbal(Treat = 'treatFinal0', 
             X = c('judgeJCS','presDist','panelDistJCS','circmed','sctmed','coarevtc','casepub'),
-            Y = 'presIdeoVote', data=contenderJudges)
-summary(out)$`ATT Estimate`
+            Y = 'presIdeoVote', data=contenderJudges,
+            expand.degree = 3)
+summary(out)$att
 ```
 
 We see that contender judges are more likely to rule in line with the ideology of the sitting president during a Supreme Court vacancy.
@@ -232,8 +233,8 @@ If we have prior knowledge about specific covariates and would like control the 
 
 ```{r, fig.height = 5.5, fig.width = 8, fig.align = "left"}
 out <- hbal(Treat = 'D', X = c('X1', 'X2'),  Y = 'Y', data=dat, 
-            alpha=c('X1.X1.X2'=0))
-out$penalty
+            expand.degree = 3, term.alpha=c('X1.X1.X2'=0))
+out$group.penalty
 plot(out)
 ```
 
@@ -243,8 +244,8 @@ In addition, we can also control whether each covariate group is penalized or no
 
 ```{r, fig.height = 5.5, fig.width = 8, fig.align = "left"}
 out <- hbal(Treat = 'D', X = c('X1', 'X2'),  Y = 'Y', data=dat, 
-            group.alpha=c(0, 0, 0, 0, 0))
-out$penalty
+            expand.degree = 3, group.alpha=c(0, 0, 0, 0, 0))
+out$group.penalty
 plot(out)
 ```
 
@@ -255,7 +256,7 @@ By default, `hbal()` uses the R built-in `qr()` to check the rank of the (expand
 
 ```{r, cache = TRUE}
 out <- hbal(Treat = 'D', X = c('X1', 'X2'),  Y = 'Y', data=dat, 
-            exclude=list(c("X1", "X2")))
+            expand.degree = 3, exclude=list(c("X1", "X2")))
 summary(att(out)) # X1.X2 and X1.X1.X2 removed from balancing scheme
 ```
 

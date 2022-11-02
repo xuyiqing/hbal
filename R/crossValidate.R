@@ -4,7 +4,7 @@
 #' @param alpha                   alpha. Controls degree of regularization.
 #' @param penalty.pos             positions of user-supplied penalties.
 #' @param penalty.val             values of user-supplied penalties.
-#' @param group.alpha             binary indicator of whether each covariate group should be penalized.
+#' @param group.exact             binary indicator of whether each covariate group should be penalized.
 #' @param grouping                different groupings of the covariates.
 #' @param folds                   number of folds to perform cross validation. 
 #' @param treatment               covariate matrix for treatment group.
@@ -27,7 +27,7 @@ crossValidate <- function(
 	alpha=NULL,
 	penalty.pos=NULL,
 	penalty.val=NULL,
-	group.alpha=NULL,
+	group.exact=NULL,
 	grouping=NULL,
 	folds=NULL,
 	treatment = NULL,
@@ -50,8 +50,8 @@ crossValidate <- function(
 	coe <- NULL
 
 	# loop over each alpha value
-	if (!is.null(group.alpha)){
-		alpha[which(group.alpha==0)] <- 0
+	if (!is.null(group.exact)){
+		alpha[which(group.exact==1)] <- 0
 	}
 	penalty <- rep(c(0, alpha), times=grouping)
 	if (!is.null(penalty.pos)){
