@@ -206,8 +206,9 @@ hbal <- function(
 		X.bad.pos <- setdiff(1:ncol(X), X.good.pos)
 		X.bad <- X.all[X.bad.pos]
 		cat("the following variable(s) are removed:",paste(X.bad, collapse = ", "),"\n")
-		# update saved X data (not scaled)
-		X.sav <- X.sav[, X.good.pos]
+		# update X & saved X data (not scaled)
+		X <- X[, X.good.pos, drop = FALSE]
+		X.sav <- X.sav[, X.good.pos, drop = FALSE]
 		# update variable names
 		X.all <- X.all[X.good.pos]
 		X.keep <- setdiff(X.keep, X.bad)		
@@ -239,7 +240,6 @@ hbal <- function(
 		group.labs <- c("linear", "two-way", "squared", 
 		"three-way", "linear*squared", "cubic") # six of them
 		names(grouping) <- group.labs[1:length(grouping)]
-
 		## add level-only covariates
 		if (length(X.levelonly.pos)>0) { 
 			X.sav <- cbind(X.sav[, X.levelonly.pos], X.tmp)
@@ -247,12 +247,10 @@ hbal <- function(
 		} else {
 			X.sav <- X.tmp
 		}
-
 		# remove empty
 		if (0 %in% grouping){
 			grouping <- grouping[-which(grouping==0)]
 		}
-
 
 		# X.sav is unscaled; X is scaled
 		X <- scale(X.sav)		
@@ -260,7 +258,7 @@ hbal <- function(
 		# check collinearity again after serial expansion
 		grouping.expand <- c()
 		for (i in 1:length(grouping)) {
-			grouping.expand <- c(grouping.expand, rep(i, grouping[i]))
+			grouping.expand <- c(grouping.expand, rep(names(grouping)[i], grouping[i]))
 		}
 		if (qr(X)$rank != ncol(X)) {
 			X.good.pos <- 1
@@ -274,7 +272,8 @@ hbal <- function(
 			cat("After serial expansion, the following variable(s) are removed due to collinearity:",paste(colnames(X)[X.bad.pos], collapse = ", "),"\n")
 			X <- X[, X.good.pos, drop = FALSE]
 			grouping.expand <- grouping.expand[-X.bad.pos]
-			grouping <- as.numeric(table(grouping.expand))
+			grouping <- as.numeric(table(grouping.expand)) # with grouping names
+			names(grouping) <- names(table(grouping.expand))
 			# update X.sav
 			X.sav <- X.sav[, X.good.pos, drop = FALSE]
 			# update X.keep.pos
@@ -301,6 +300,7 @@ hbal <- function(
 		X <- X[, X.pos]		
 		X.sav <- X.sav[, X.pos] 		
 	}
+
 	
 	if (length(grouping)==1){
 		cv <- FALSE
@@ -491,6 +491,7 @@ hbal <- function(
 	# Print out #Obs and groups & penalties
 	tr <- rev(table(Treatment))
 	names(tr) <- c("Treated", "Controls")
+	cat("\n")
 	print(tr)
 	cat("\n")
 
@@ -498,10 +499,9 @@ hbal <- function(
 	print(cbind.data.frame("#Terms" = grouping.out, "Penalty" = round(group.alpha.out,1)))
 	cat("\n")
 
-	if (print.level >= 1){
+	if (print.level >= 0){
 		cat(" Terms\n")
-		print(cbind.data.frame("Group" = rep(names(grouping), times = grouping), 
-			"Penalty" = round(alpha,1)))
+		print(cbind.data.frame("Term" = colnames(X.sav), "Group" = rep(names(grouping), times = grouping), "Penalty" = round(alpha,1)))
 		cat("\n")
 	}
 

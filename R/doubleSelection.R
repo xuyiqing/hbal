@@ -35,6 +35,7 @@ doubleSelection <- function(
 	for (i in 1:length(grouping)){
 		nn <- n + grouping[i]
 		penalty.list[i] <- sum(all.coef > n & all.coef <= nn)
+		names(penalty.list)[i] <- names(grouping)[i]
 		n <- nn
 	}
 
