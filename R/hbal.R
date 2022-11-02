@@ -92,7 +92,7 @@ hbal <- function(
 	base.weight=NULL,
 	coefs=NULL ,
 	max.iterations=200,
-	cv=TRUE,
+	cv=FALSE,
 	folds=4,
 	expand.degree=1,
 	ds=FALSE,
@@ -179,6 +179,10 @@ hbal <- function(
 	# 3. serial expansion on original data, then scale
 	# 4. check collinearity again, drop
 	# 5. double selection
+
+	# Data (Matrices): X, X.sav
+	# Variable names: X.all, X.keep, X.levelonly
+	# Variable positions: X.levelonly.pos, X.expand.pos, X.keep.pos
 
 	# check X variation
 	X.novar <- X.all[which(apply(data[,X.all], 2, sd) == 0)]# controls of no variations
