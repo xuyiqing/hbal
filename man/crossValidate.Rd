@@ -9,7 +9,7 @@ crossValidate(
   alpha = NULL,
   penalty.pos = NULL,
   penalty.val = NULL,
-  group.alpha = NULL,
+  group.exact = NULL,
   grouping = NULL,
   folds = NULL,
   treatment = NULL,
@@ -32,7 +32,7 @@ crossValidate(
 
 \item{penalty.val}{values of user-supplied penalties.}
 
-\item{group.alpha}{binary indicator of whether each covariate group should be penalized.}
+\item{group.exact}{binary indicator of whether each covariate group should be penalized.}
 
 \item{grouping}{different groupings of the covariates.}
 

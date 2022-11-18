@@ -15,14 +15,14 @@
 #' @param Treat                a character string of the treatment variable.
 #' @param X                    a character vector of covariate names to balance on.
 #' @param Y                    a character string of the outcome variable.
-#' @param X.expand             a character vector of covariate names to serially expanded.
-#' @param X.keep               a character vector of covariate names to kept regardless whether they are selected in double selection.
+#' @param X.expand             a character vector of covariate names for serial expansion.
+#' @param X.keep               a character vector of covariate names to keep regardless of whether they are selected in double selection.
 #' @param base.weight          target weight distribution for the control units.
 #' @param coefs                initial coefficients for the reweighting algorithm (lambdas).
 #' @param max.iterations       maximum number of iterations. Default is 200.
 #' @param cv                   whether to use cross validation. Default is \code{TRUE}.
 #' @param folds                number of folds for cross validation. Only used when cv is \code{TRUE}.
-#' @param expand.degree        degree of series expansion. 0 means no expansion. Default is 3.
+#' @param expand.degree        degree of series expansion. 1 means no expansion. Default is 1.
 #' @param ds                   whether to perform double selection prior to balancing. Default is \code{FALSE}.
 #' @param group.exact          binary indicator of whether each covariate group should be exact balanced.
 #' @param group.alpha          penalty for each covariate group 
@@ -100,7 +100,7 @@ hbal <- function(
 	group.alpha=NULL,
 	term.alpha=NULL,
 	constraint.tolerance=1e-3,
-	print.level=-1,
+	print.level=0,
 	grouping=NULL,
 	group.labs=NULL,
 	shuffle.treat=TRUE,
@@ -129,16 +129,18 @@ hbal <- function(
 
 	# set up elements
 	mcall <- match.call()
-	if(!is.null(seed)) {set.seed(seed)}
+	if(!is.null(seed)) set.seed(seed)
 
 	# covariates for expansion
-	if (expand.degree > 1 & is.null(X.expand)==TRUE) {
-		cat("All variables will serially expanded")
-		if (length(X) >= 30) {cat("; there may be too many of them")}
+	if (expand.degree > 1 & is.null(X.expand) == TRUE) {
+		if (print.level > 0) cat("All variables will be serially expanded")
+		if (length(X) >= 20 & print.level > 0) {
+			cat("Too many variables to expand. This can take up significant memory")}
 		X.expand <- X
 	}
-	if (expand.degree == 1 & is.null(X.expand)==FALSE) {
-		cat("\"X.expand\" is ignored because expand.degree = 1; no serial expansion will be performed")
+	if (expand.degree == 1 & is.null(X.expand) == FALSE) {
+		if (print.level > 0) {
+			cat("\"X.expand\" is ignored because expand.degree = 1; no serial expansion will be performed")}
 		X.expand <- NULL
 	}
 
@@ -151,20 +153,21 @@ hbal <- function(
 	if(!all(c(Treat, X.all, Y) %in% var.names)) stop("Some variable(s) specified are not in the data")
 
 	valid_cols <- !sapply(data[, c(Treat, X.all, Y)], class) == 'character' # need all numeric columns
-	if (sum(valid_cols)!=length(valid_cols)) stop('Some columns in the data are character columns. Consider converting them to numeric')
+	if (sum(valid_cols) != length(valid_cols)) {
+		stop('Some columns in the data are character columns. Consider converting them to numeric')}
 
 	# listwise deletion
 	valid_rows <- complete.cases(data[, c(Treat, X.all, Y)])
 	if (sum(valid_rows) < nrow(data)) {
-		cat("Some rows are dropped because they contain missing/NA/infinite values\n")
+		if (print.level > 0) cat("Some rows are dropped because they contain missing/NA/infinite values\n")
 		data <- data[valid_rows,]
-		if (!is.null(base.weight)) {base.weight <- base.weight[valid_rows]}
+		if (!is.null(base.weight)) base.weight <- base.weight[valid_rows]
 	}
 
 	# Treatment indicator
-	Treatment <- unlist(data[,Treat])
-	if (sd(Treatment) == 0) {stop("No variation in the treatment variable.")}
-	if (!is.numeric(Treatment)) {stop("Treatment variable needs to be numeric")}
+	Treatment <- unname(unlist(data[,Treat]))
+	if (sd(Treatment) == 0) stop("No variation in the treatment variable.")
+	if (!is.numeric(Treatment)) stop("Treatment variable needs to be numeric")
 	ntreated  <- sum(Treatment==1)
 	ncontrols <- sum(Treatment==0)  
 
@@ -185,8 +188,8 @@ hbal <- function(
 	# Variable positions: X.levelonly.pos, X.expand.pos, X.keep.pos
 
 	# check X variation
-	X.novar <- X.all[which(apply(data[,X.all], 2, sd) == 0)]# controls of no variations
-	if (length(X.novar) > 0) {
+	X.novar <- X.all[which(apply(data[,X.all], 2, sd) == 0)] # controls of no variations
+	if (length(X.novar) > 0 & print.level > 0) {
 		cat(paste("The following variable(s) have no variations and are automatically dropped:", paste0(X.novar, collapse = ", "),"\n"))
 		X.all <- setdiff(X.all, X.novar)
 	}
@@ -209,7 +212,7 @@ hbal <- function(
 		}
 		X.bad.pos <- setdiff(1:ncol(X), X.good.pos)
 		X.bad <- X.all[X.bad.pos]
-		cat("the following variable(s) are removed:",paste(X.bad, collapse = ", "),"\n")
+		if (print.level > 0) cat("the following variable(s) are removed:",paste(X.bad, collapse = ", "),"\n")
 		# update X & saved X data (not scaled)
 		X <- X[, X.good.pos, drop = FALSE]
 		X.sav <- X.sav[, X.good.pos, drop = FALSE]
@@ -238,7 +241,7 @@ hbal <- function(
 
 	# series expansion of the covariates
 	if (expand.degree > 1) {
-		expand <- covarExpand(X.sav[, X.expand.pos], exp.degree=expand.degree, treatment=Treatment, exclude=exclude)
+		expand <- covarExpand(X.sav[, X.expand.pos, drop = FALSE], exp.degree=expand.degree, treatment=Treatment, exclude=exclude)
 		X.tmp <- expand$mat
 		grouping <- expand$grouping
 		group.labs <- c("linear", "two-way", "squared", 
@@ -246,7 +249,7 @@ hbal <- function(
 		names(grouping) <- group.labs[1:length(grouping)]
 		## add level-only covariates
 		if (length(X.levelonly.pos)>0) { 
-			X.sav <- cbind(X.sav[, X.levelonly.pos], X.tmp)
+			X.sav <- cbind(X.sav, X.tmp[, -c(1:length(X.expand.pos))])
 			grouping[1] <- grouping[1] + length(X.levelonly.pos)
 		} else {
 			X.sav <- X.tmp
@@ -273,7 +276,9 @@ hbal <- function(
 				}
 			}
 			X.bad.pos <- setdiff(1:ncol(X), X.good.pos) # these are column numbers
-			cat("After serial expansion, the following variable(s) are removed due to collinearity:",paste(colnames(X)[X.bad.pos], collapse = ", "),"\n")
+			if (print.level > 0) {
+				cat("After serial expansion, the following variable(s) are removed due to collinearity:",
+					paste(colnames(X)[X.bad.pos], collapse = ", "),"\n")}
 			X <- X[, X.good.pos, drop = FALSE]
 			grouping.expand <- grouping.expand[-X.bad.pos]
 			grouping <- as.numeric(table(grouping.expand)) # with grouping names
@@ -308,9 +313,7 @@ hbal <- function(
 	
 	if (length(grouping)==1){
 		cv <- FALSE
-		if (print.level>0){
-			cat("length(grouping) = 1, setting cv=FALSE")
-		}
+		if (print.level>0) cat("length(grouping) = 1, setting cv=FALSE")
 	}
 
 	full.c <- cbind(rep(1,ncontrols), full.c)
@@ -328,7 +331,7 @@ hbal <- function(
 	if (!is.null(term.alpha)){
 		penalty.names <- names(term.alpha)
 		if (length(match(penalty.names, colnames(X)))==0) {
-			cat("Invalid variable name(s); \"term.alpha\" is ignored\n")
+			if (print.level > 0) cat("Invalid variable name(s); \"term.alpha\" is ignored\n")
 			penalty.names <- penalty.val <- penalty.pos <- NULL
 		} else {
 			penalty.val <- term.alpha
@@ -362,7 +365,9 @@ hbal <- function(
 	if (cv %in% c(TRUE, FALSE) == FALSE) {stop("cv needs to be of type logical")}
 	if (cv==TRUE && length(grouping)==1){
 		cv <- FALSE
-		cat("length(grouping)==1, no need to cross-validate tuning parameters. \nEither double selection selected 0 higher order term or the supplied grouping has length 1")
+		if (print.level > 0) {
+			cat("length(grouping)==1, no need to cross-validate tuning parameters. \n
+				Either double selection selected 0 higher order term or the supplied grouping has length 1")}
 	}
 	if (print.level >= 1){
 		cat("Data Setup\nCovariate Adjustment:", colnames(X), "\n\n" )
@@ -379,7 +384,7 @@ hbal <- function(
 			stop("Elements in \"group.alpha\" should be non-negative")
 		}
 		if (cv == TRUE) {
-			cat("Cross-validation is skipped when \"group.alpha\" is supplied\n")
+			if (print.level > 0) cat("Cross-validation is skipped when \"group.alpha\" is supplied\n")
 			cv <- FALSE
 		} 
 	} else {
@@ -393,7 +398,9 @@ hbal <- function(
 	if (is.null(group.exact)==FALSE) {
 		if (cv == FALSE) {
 			group.exact <- NULL
-			cat("\"group.exact\" is ignored when \"cv = FALSE\" because either all covariates will be exactly balanced on or \"group.alpha\" is supplied\n")
+			if (print.level > 0) {
+				cat("\"group.exact\" is ignored when \"cv = FALSE\" because either all covariates 
+					will be exactly balanced on or \"group.alpha\" is supplied\n")}
 		} else {
 			if (sum(group.exact %in% c(0,1))!= length(group.exact)) {
 				stop("Elements in \"group.exact\" should be TRUE or FALSE")
@@ -436,8 +443,8 @@ hbal <- function(
                 full.c=full.c,
                 shuffle.treat=shuffle.treat)
 
-		if(!is.null(group.alpha)){
-			min.c$solution[which(group.alpha==0)] <- 0
+		if(!is.null(group.exact)){
+			min.c$solution[which(group.exact[-1]==1)] <- 0
 		}
 		# save CV results: penalty (same length of covariates)
 		group.alpha <- c(0, min.c$solution)  # add 0 for the level term
@@ -446,7 +453,6 @@ hbal <- function(
 	# expand to penalty for individual terms
 	names(group.alpha) <- names(grouping)
 	alpha <- rep(group.alpha, times=grouping) 
-
 	# apply individual penalty values for specific terms
 	if (!is.null(penalty.pos)) { # fill in specific alpha for individual terms
 		alpha[penalty.pos] <- penalty.val
@@ -495,17 +501,23 @@ hbal <- function(
 	# Print out #Obs and groups & penalties
 	tr <- rev(table(Treatment))
 	names(tr) <- c("Treated", "Controls")
-	cat("\n")
-	print(tr)
-	cat("\n")
-
-	cat(" Groups\n")
-	print(cbind.data.frame("#Terms" = grouping.out, "Penalty" = round(group.alpha.out,1)))
-	cat("\n")
 
 	if (print.level >= 0){
+		cat("\n")
+		print(tr)
+		cat("\n")
+
+		cat(" Groups\n")
+		print(cbind.data.frame("#Terms" = grouping.out, "Penalty" = round(group.alpha.out,1)))
+		cat("\n")
+	}
+
+
+	if (print.level > 0){
 		cat(" Terms\n")
-		print(cbind.data.frame("Term" = colnames(X.sav), "Group" = rep(names(grouping), times = grouping), "Penalty" = round(alpha,1)))
+		terms.dat <- data.frame("Group" = rep(names(grouping), times = grouping), "Penalty" = round(alpha,1))
+		rownames(terms.dat) <- colnames(X.sav)
+		print(terms.dat)
 		cat("\n")
 	}
 

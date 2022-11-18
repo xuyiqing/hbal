@@ -21,6 +21,10 @@ hbal(data, Treat, X, Y, base.weight = NULL, coefs = NULL ,
 
 \item{Y}{a character string of the outcome variable.}
 
+\item{X.expand}{a character vector of covariate names for serial expansion.}
+
+\item{X.keep}{a character vector of covariate names to keep regardless of whether they are selected in double selection.}
+
 \item{base.weight}{target weight distribution for the control units.}
 
 \item{coefs}{initial coefficients for the reweighting algorithm (lambdas).}
@@ -31,19 +35,23 @@ hbal(data, Treat, X, Y, base.weight = NULL, coefs = NULL ,
 
 \item{folds}{number of folds for cross validation. Only used when cv is \code{TRUE}.}
 
-\item{expand.degree}{degree of series expansion. 0 means no expansion. Default is 3.}
+\item{expand.degree}{degree of series expansion. 1 means no expansion. Default is 1.}
 
 \item{ds}{whether to perform double selection prior to balancing. Default is \code{FALSE}.}
 
-\item{alpha}{named vector of ridge penalties.}
+\item{group.exact}{binary indicator of whether each covariate group should be exact balanced.}
 
-\item{group.alpha}{binary indicator of whether each covariate group should be penalized.}
+\item{group.alpha}{penalty for each covariate group}
+
+\item{term.alpha}{named vector of ridge penalties, only takes 0 or 1.}
 
 \item{constraint.tolerance}{tolerance level for overall imbalance. Default is 1e-3.}
 
 \item{print.level}{details of printed output.}
 
 \item{grouping}{different groupings of the covariates. Must be specified if expand is \code{FALSE}.}
+
+\item{group.labs}{labels for user-supplied groups}
 
 \item{shuffle.treat}{whether to use cross-validation on the treated units. Default is \code{TRUE}.}
 
