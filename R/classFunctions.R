@@ -116,7 +116,7 @@ summary.hbal <- function(object, print.level = 0, ...){
 		cat(" Terms\n")
 		terms.dat <- data.frame("Group" = rep(names(object$grouping), times = (object$grouping), 
 		"Penalty" = round(object$term.penalty,1)))
-		rownames(terms.dat) <- colnames(object$mat[,-c(1,2)])
+		rownames(terms.dat) <- colnames(object$mat)
 		print(terms.dat)
 		cat("\n")
 	}

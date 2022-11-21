@@ -37,6 +37,8 @@ summary(hbal.out)
 out <- hbal(Y = 'Y', Treat = 'D', X = c('X1', 'X2', 'X3'),  
             data = dat, expand.degree = 3)
 summary(out)
+summary(out, print.level = 1) # more info
+
 
 # Obtaining the ATT
 att(out, dr = FALSE)

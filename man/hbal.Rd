@@ -5,12 +5,12 @@
 \alias{hbal}
 \title{Hierarchically Regularized Entropy Balancing}
 \usage{
-hbal(data, Treat, X, Y, base.weight = NULL, coefs = NULL ,
+hbal(data, Treat, X, Y = NULL, w = NULL, coefs = NULL ,
      max.iterations = 200, cv = TRUE, folds = 4, 
      expand.degree = 3, ds = FALSE, alpha = NULL, 
      group.alpha=NULL, constraint.tolerance = 1e-3, 
      print.level = -1, grouping = NULL, 
-     shuffle.treat=TRUE, exclude=NULL, seed=NULL)
+     shuffle.treat=TRUE, exclude=NULL, force = FALSE, seed=NULL)
 }
 \arguments{
 \item{data}{a dataframe that contains the treatment, outcome, and covariates.}
@@ -21,11 +21,11 @@ hbal(data, Treat, X, Y, base.weight = NULL, coefs = NULL ,
 
 \item{Y}{a character string of the outcome variable.}
 
+\item{w}{ character string of the variable that stores base weights.}
+
 \item{X.expand}{a character vector of covariate names for serial expansion.}
 
 \item{X.keep}{a character vector of covariate names to keep regardless of whether they are selected in double selection.}
-
-\item{base.weight}{target weight distribution for the control units.}
 
 \item{coefs}{initial coefficients for the reweighting algorithm (lambdas).}
 
@@ -56,6 +56,8 @@ hbal(data, Treat, X, Y, base.weight = NULL, coefs = NULL ,
 \item{shuffle.treat}{whether to use cross-validation on the treated units. Default is \code{TRUE}.}
 
 \item{exclude}{list of covariate name pairs or triplets to be excluded.}
+
+\item{force}{a logical flag indicating whether to expand covariates when there are too many of them.}
 
 \item{seed}{random seed to be set. Set random seed when cv=\code{TRUE} for reproducibility.}
 }
