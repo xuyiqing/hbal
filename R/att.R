@@ -36,31 +36,41 @@ att <- function(
 		stop("hbalobject must be an hbal object from a call to hbal()")
     }
     elpss <- list(...)
-    
-    w <- rep(NA, length(hbalobject$Treatment)) # get rid of "no visible binding for global variable" in check, see https://www.r-bloggers.com/2019/08/no-visible-binding-for-global-variable/
-	w[hbalobject$Treatment==1] <- 1
-	w[hbalobject$Treatment==0] <- hbalobject$weights/sum(hbalobject$weights)*sum(hbalobject$Treatment==1)
-	dat <- data.frame(hbalobject$mat, w=w, Y=hbalobject$Y, Treat=hbalobject$Treatment)
-	if (method=="lin"){
-		covariates <- as.formula(paste0("~ ", paste0(colnames(hbalobject$mat), collapse=" + ")))
-		if (is.null(elpss[['se_type']])){
-			out <- lm_lin(formula=as.formula(Y~Treat), covariates=covariates, weights=w, data=dat, se_type='stata', ...)
-		}else{
-			out <- lm_lin(formula=as.formula(Y~Treat), covariates=covariates, weights=w, data=dat, ...)
-		}
+	if (dr == FALSE & method == "lin") {
+		method <- "lm_robust"
 	}
-
+	if (is.null(hbalobject$Y)==TRUE) {
+		stop("The outcome variable is missing in hbalobject; please add Y when calling hbal()")
+	}
+	# extract data 
+	dat <-   hbalobject$mat 
+    Y <- hbalobject$Y # name of the outcome variable
+	Tr <- hbalobject$Treat # name of the treatment variable
+	Covar <- colnames(dat)
+	dat <- cbind.data.frame(hbalobject$Outcome, hbalobject$Treatment, dat)
+	colnames(dat) <- c(Y, Tr, Covar)
+	dat$w <- hbalobject$weights
+	# linear regression
 	if (method=="lm_robust"){
 		if(dr){
-			ff <- as.formula(paste0("Y~Treat+", paste0(colnames(hbalobject$mat), collapse=" + ")))
+			ff <- as.formula(paste0(Y, ' ~ ', Tr, ' + ', paste0(Covar, collapse=" + ")))
 		}else{
-			ff <- as.formula("Y~Treat")
+			ff <- as.formula(paste0(Y, ' ~ ', Tr))
 		}
 
 		if (is.null(elpss[['se_type']])){
 			out <- lm_robust(ff, data=dat, weights=w, se_type='stata', ...)
 		}else{
 			out <- lm_robust(ff, data=dat, weights=w, ...)
+		}
+	}
+	# Lin (2013): regression with interactions
+	if (method=="lm_lin"){
+		covariates <- as.formula(paste0("~ ", paste0(Covar, collapse=" + ")))
+		if (is.null(elpss[['se_type']])){
+			out <- lm_lin(formula = as.formula(paste0(Y, ' ~ ', Tr)), covariates=covariates, weights=w, data=dat, se_type='stata', ...)
+		}else{
+			out <- lm_lin(formula = as.formula(paste0(Y, ' ~ ', Tr)), covariates=covariates, weights=w, data=dat, ...)
 		}
 	}
 	return(out)

@@ -21,35 +21,32 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
+  fig.width = 10,
+  fig.height = 7,
   comment = "#>"
 )
-options(width = 200)
 ``` 
 
 
 ```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
 library(ggplot2)
 library(estimatr)
 require(ebal)
 ```
 
-This page demonstrates the usage of the **hbal** package, which implements hierarchically regularized entropy balancing introduced by @XuYang2022.  **hbal** automatically expands the covariate space to include higher order terms and uses cross-validation to select variable penalties for the balancing conditions, and then seek approximate balance on the expanded covariate space. 
+This page demonstrates the usage of the **hbal** package, which implements hierarchically regularized entropy balancing introduced by @XuYang2022.  **hbal** automatically expands the covariate space to include higher order terms and uses cross-validation to select variable penalties for the balancing conditions, and then seeks approximate balance on the expanded covariate space. 
 
 **hbal** provides two main functions:
 
 * `hbal()`: performs hierarchically regularized entropy balancing.
 
-* `att()`: calculates the average treatment effect on the treated (ATT) from an `hbalobject` returned by `hbal()`. 
+* `att()`: calculates the average treatment effect on the treated (ATT) from an `hbal` object returned by `hbal()`. 
 
 And two S3 methods:
 
-* `plot()`: visualizes covariate balance before and after balancing or the distribution of balancing weights.
+* `summary()`: summarizes the balancing results. 
 
-* `summary()`: summarizes the balancing results and reports ATT estimates. 
+* `plot()`: visualizes covariate balance before and after weighting or the distribution of balancing weights.
 
 R code used in this tutorial can be downloaded from [here](https://yiqingxu.org/packages/hbal/hbal_examples.R).
 
@@ -57,161 +54,191 @@ R code used in this tutorial can be downloaded from [here](https://yiqingxu.org/
 
 ## Basic Usage
 
-We simulate a toy cross-sectional dataset with a binary treatment to illustrate the basic usage of **hbal**. Note that treatment assignment is dependent on the two covariates. 
+We simulate a toy cross-sectional dataset with a binary treatment to illustrate the basic usage of **hbal**. Note that treatment assignment depends on all three covariates. 
 ```{r, message=FALSE}
 library(hbal)
 set.seed(1984)
-N <- 1000
+N <- 1500
 X1 <- rnorm(N)
-X2 <- rbinom(N,size = 1, prob = .5)
-D_star <- 0.5 * X1 + 0.3 * X2 + 0.2 * X1 * X2
+X2 <- rnorm(N)
+X3 <- rbinom(N, size = 1, prob = .5)
+D_star <- 0.5 * X1 + 0.3 * X2 + 0.2 * X1 * X2 - 0.5 * X1 * X3 - 1
 D <- ifelse(D_star > rnorm(N), 1, 0) # Treatment indicator
-y <- 0.5 * D + X1 + X2 + rnorm(N) # Outcome
-dat <- data.frame(D = D, X1 = X1, X2 = X2, Y = y)
+y <- 0.5 * D + X1 + X2 + X2 * X3 + rnorm(N) # Outcome
+dat <- data.frame(D = D, X1 = X1, X2 = X2, X3 = X3, Y = y)
 head(dat)
 ```
 
-**hbal** is an extension of entropy balancing (**ebal**; @hainmueller2012entropy). By default, **hbal** replicates **ebal** by performing exact balancing on all covariates and no serial expansion. We can demonstrate this equivalence by showing the hbal weights are exactly the same to the ebal weights from the **ebal** package in this case. 
+**hbal** is an extension of entropy balancing, or **ebal** proposed by @hainmueller2012entropy. By default, **hbal** replicates **ebal** by performing exact balancing on all covariates and no serial expansion, i.e., `expand.degree = 1` (default). We can demonstrate this equivalence by showing the hbal weights are exactly the same to the ebal weights from the **ebal** package in this case. 
 
-```{r, cache = TRUE, fig.height = 4.5, fig.width = 4.5, fig.align = "left", dpi=100}
+```{r, fig.height = 6, fig.width = 6, fig.align = "left", dpi=100}
 library(ebal)
-ebal.out <- ebalance(Treat = dat$D, X = dat[,c('X1', 'X2')], print.level = -1) # ebal
-hbal.out <- hbal(Treat = 'D', X = c('X1', 'X2'),  Y = 'Y', data = dat, print.level = -1) # hbal
-
-W <- data.frame(x = hbal.out$weights, 
-                y = ebal.out$w/sum(ebal.out$w))
+ebal.out <- ebalance(Treat = dat$D, X = dat[,c('X1', 'X2', 'X3')]) # ebal
+hbal.out <- hbal(Treat = 'D', X = c('X1', 'X2', 'X3'),  Y = 'Y',  data = dat) # hbal
 
 # plot weights
+W <- data.frame(x = ebal.out$w, y = hbal.out$weights.co)
 ggplot(aes(x = x, y = y), data = W) + geom_point() + theme_bw() + 
-  labs(x = "hbal weights", y="ebal weights", 
-       title = "hbal weights vs. ebal weights")
+  labs(x = "ebal weights", y="hbal weights", title = "ebal weights vs. hbal weights")
 ```
 
-`hbal()` returns a list of 10 objects:
+`hbal()` returns a list of 15 objects:
 
 ```{r}
-str(hbal.out)
+names(hbal.out)
 ```
 1. **converged**: Binary indicator of whether the algorithm has converged.
-2. **weights**: Solution weights. Can be plugged into any downstream estimator.
-3. **coefs**: Values of Lagrangian multipliers. They are used to calculate the solution `weights`.
-4. **Treatment**: Treatment indicator. Reproduced here to be used by `att()`.
-5. **Y**: Outcome variable. Reproduced here to be used by `att()`.
-6. **mat**: Expanded covariates matrix.
-7. **grouping**: A vector of the number of variabels in each covariate group.
+2. **weights**: Resulting weights, including the base weights for the treated and solution weights for the controls (see below).
+3. **weights.co**: Solution weights for the controls. Can be plugged into any downstream estimator.
+4. **coefs**: Values of Lagrangian multipliers. They are used to calculate the solution `weights`.
+5. **Treatment**: The treatment status vector.
+6. **mat**: Data matrix, including the outcome variable (the first column), the treatment variable (the second column), and expanded covariates (the remaining columns).
+7. **grouping**: A vector of the number of variables in each covariate group. The length of the vector equals the number of groups.
 8. **group.penalty**: Penalties for different groups of covariates. This is the regularization parameter $\alpha$ in @XuYang2022.
-9. **term.penalty**: Penalties for individual covariates.
-9. **call**: A string of the function call.
+9. **term.penalty**: Penalties for individual covariates. The length of the vector equals the number of balancing terms, including expanded ones.
+10. **bal.tal**: A balance table.
+11. **base.weights**: A vector of base weights, originally from variable `w` supplied by users. The length of the vector equals the number of rows entering the balancing scheme.
+12. **Treat**: A character string that stores the treatment variable name. 
+13. **Outcome**: The outcome vector, if `Y` is supplied.
+14. **Y**: A character string that stores the outcome variable name, if `Y` is supplied.. 
+15. **call**: A string of the function call.
 
-We can use `att()` on a `hbaobject` to directly get the weighted ATT estimate.  Note that `att()` uses linear regression with robust standard errors (`lm_robust()` from the **estimatr** package) to calculate the ATT. Additional arguments accepted by `lm_robust()`, such as `se_type` and `clusters`, can be passed to `att()`. 
-
+The `summary()` function provides additional information on the balancing scheme, including the numbers of treated and control units, groups and corresponding penalties, and a balance table, in which `Std.Diff.(O)` and `Std.Diff.(W)` represent standardized difference before and after balancing, respectively. For example, in this case, only the linear terms are being balanced on. 
 ```{r}
-att(hbal.out)
+summary(hbal.out)
 ```
 
-Beyond balancing on just the linear terms of the covariates, `hbal()` allows balancing on a serial expansion of the covariates. This is achieved by setting the `expand.degree` argument. Currently, `hbal()` supports both second order serial expansion (two-way interactions and square terms; `expand.degree = 2`) and third order serial expansion (two-way interactions, square terms, linear*square interactions, and cubic terms; `expand.degree = 3`). For example, we can do exact balancing on third order serial expansion of the covariates:
+In addition to balancing on just the linear/level terms of the covariates, `hbal()` allows balancing on a serial expansion of the covariates. This is achieved by setting the `expand.degree` argument. Currently, `hbal()` supports both second order serial expansion (two-way interactions and square terms; `expand.degree = 2`) and third order serial expansion (two-way interactions, square terms, linear*square interactions, and cubic terms; `expand.degree = 3`). For example, we can do exact balancing on third order serial expansion of the covariates:
+```{r}
+out <- hbal(Y = 'Y', Treat = 'D', X = c('X1', 'X2', 'X3'),  
+            data = dat, expand.degree = 3)
+summary(out)
+```
+
+### Obtaining the ATT
+
+We can use `att()` on a `hbal` object to directly get an ATT estimate.  Note that `att()` uses linear regression with robust standard errors (`lm_robust()` from the **estimatr** package) to calculate the ATT. `att()` allows users to use one of the following three methods to estimate the ATT:
+
+* difference in weighted means by setting `dr = FASLE`, in which `dr` represents *doubly robust*; as a result, `method` is ignored;
+
+* weighted linear regression by setting `method = ""lm_robust"` (default);
+
+* weighted linear regression with a full set of interactions between the treatment indicator and demeaned covariates, or Lin's method, by setting `method = ""lm_lin"`.  
+
+Additional arguments accepted by `lm_robust()` or `lm_lin()`, such as `se_type` and `clusters`, can be passed to `att()`, for example: 
+```{r}
+att(out, dr = FALSE)
+att(out)
+att(out, method = "lm_lin", se_type = "stata")
+```
+
+
+Furthermore, `hbal()` allows variable penalties on the balancing conditions for different groups of covariates. Penalties are automatically determined using cross-validation. This minimizes the variance of the weights, increases the feasibility of the balancing problem, and is the approach advocated in @XuYang2022. We can do so by setting `cv = TRUE`. Note that, by default, `hbal()` only penalizes higher-order terms and seeks to achieve exact balance on linear terms.
 
 ```{r}
-out <- hbal(Treat = 'D', X = c('X1', 'X2'),  Y = 'Y', data = dat, expand.degree = 3)
+out <- hbal(Treat = 'D', X = c('X1', 'X2', 'X3'),  Y = 'Y', 
+            data = dat, expand.degree = 3, cv = TRUE)
+summary(out)
 att(out)
 ```
 
-Furthermore, `hbal()` allows variable penalties on the balancing conditions for different groups of covariates. Penalties are automatically determined using cross-validation. This minimizes the variance of the weights, increases the feasibility of the balancing problem, and is the approach advocated in @XuYang2022. We can do so by setting `cv = TRUE`. Note that, by default, `hbal()` only penalizes higher-order terms and tries to achieve exact balance for linear terms.
 
-```{r}
-out <- hbal(Treat = 'D', X = c('X1', 'X2'),  Y = 'Y', data = dat, expand.degree = 3, cv = TRUE)
-```
-
-
-## Visualizing Results
+### Visualizing Results
 
 **hbal** has a build-in `plot()` method that allows us to visualize covariate balance before and after balancing.
 
-```{r, fig.height = 4, fig.width = 6, fig.align = "left"}
+```{r, fig.align = "left"}
 plot(out)
 ```
 
-From the above plots, we can see that the linear terms of the covariates are exactly balanced between the treatment and the control groups. We can check the penalties applied to different groups of covariates. In this case, the higher-order terms all have relatively high penalties except for two-way interactions, in accordance with the true data generating process. 
+From the above plots, we can see that the linear terms of the covariates are exactly balanced between the treatment and the control groups. We can check the group penalties or penalties applied to each covariate. In this case, the higher-order terms all have relatively high penalties except for two-way interactions, in accordance with the true data generating process. 
 
 ```{r}
-out$group.penalty
+round(out$group.penalty, 2)
+round(out$term.penalty, 2)
 ```
 
 We can also plot the weight distribution for the control units by specifying `type = 'weight'` in `plot()`. We can see that the weights are quite concentrated around the unit weight.
 
-```{r, fig.height = 4, fig.width = 5.5, fig.align = "left"}
+```{r, fig.width = 6, fig.height = 6, fig.align = "left"}
 plot(out, type='weight')
 ```
 
 
-## More Controls
+## Additional Options
 ### Controlling Exact/Approximate Balancing
 
-Users can manually control which group of covariates to be exactly balanced and which group to be approximately balanced (via regularization) by using the `group.exact` argument. It takes in a binary vector with length equal to the number of covariate groups, with 1 indicating exact balance on that group and 0 indicating approximate balance. Appropriate penalties are then searched through cross-validation.
+Users can manually control which group of covariates to be exactly balanced and which group to be approximately balanced (via regularization) by using the `group.exact` argument. It takes in a binary vector with length equal to the number of covariate groups, with 1 indicating exact balance on that group and 0 indicating approximate balance. Appropriate penalties are then searched through cross-validation. When using this option, please make that the length of vector supplied equals the number of groups. 
 
 For example, we can ask `hbal()` to achieve exact balance on the linear terms and two-way interactions and approximate balance for the rest:
-
 ```{r}
 out <- hbal(Treat = 'D', X = c('X1', 'X2'),  Y = 'Y', data = dat, 
             expand.degree = 3, cv = TRUE, group.exact = c(1, 1, 0, 0, 0))
+summary(out)
 ```
 
-### User-supplied Penalties
+### User-Supplied Penalties
 If researchers have prior knowledge about covariates and would like to supply specific penalties for each group of covariates, we can do so by passing a vector of penalties to the `group.alpha` argument. For example, we can manually set penalties to be 0 for the the linear terms and two-way interactions and 100 for other groups:
-
 ```{r}
-out <- hbal(Treat = 'D', X = c('X1', 'X2'),  Y = 'Y', data = dat, 
-            expand.degree = 3, group.alpha = c(0, 0, 100, 100, 100))
+out <- hbal(Treat = 'D', X = c('X1', 'X2', 'X3'),  Y = 'Y', data = dat, 
+            expand.degree = 3, group.alpha = c(0, 0, 100, 100, 100, 100))
+summary(out)
 ```
 
 ### Controling Serial Expansion
 
 Sometimes we may not want to perform serial expansion on all covariates but instead expand on a select set of covariates, we can do so by using the `X.expand` argument to specify the covariates we want to expand on. For example, we can expand only on **X1**:
 ```{r}
-out <- hbal(Treat = 'D', X = c('X1', 'X2'),  Y = 'Y', data = dat, 
-            expand.degree = 3, X.expand = c('X1'), print.level = 1)
+out <- hbal(Treat = 'D', X = c('X1', 'X2', 'X3'),  Y = 'Y', data = dat, 
+            expand.degree = 3, X.expand = c('X1', 'X2'))
+summary(out)
 ```
 
 ### Selecting Covariates
-Performing serial expansion on many covariates can result in a prohibitive number of covariates that need to be balanced on. In such cases, users many want to reduce the number of covariate by using the double selection method by @belloni2014inference. This screens the expanded covariates and only keeps those that are are predictive for the treatment assignment or the outcome. Users can enable double selection by setting `ds = TRUE`.
-
+Performing serial expansion on many covariates can result in a prohibitive number of covariates that need to be balanced on. In such cases, users many want to reduce the number of covariate by using the double selection method by @belloni2014inference. This screens the expanded covariates and only keeps those that are are predictive for the treatment assignment or the outcome. Users can enable double selection by setting `ds = TRUE`. In the following case, almost all the higher-order terms except `X1*X2` and `X2*X3` are screened out by the double selection procedure.
 ```{r}
-out <- hbal(Treat = 'D', X = c('X1', 'X2'),  Y = 'Y', data = dat, 
-            expand.degree = 3, ds = TRUE) # all higher order terms are screened out by ds
+out <- hbal(Treat = 'D', X = c('X1', 'X2', 'X3'),  Y = 'Y', data = dat, 
+            expand.degree = 3, ds = TRUE) 
+summary(out)
 att(out)
 ```
 
 ### Keeping/Excluding Covariates
 If there are covariates that users would like to keep in the balancing conditions regardless of whether they are selected in double selection, we can use the `X.keep` argument to specify the covariates to keep. On the other hand, if a priori we know some combinations of the covariates are nonsensical, we can exclude them explicitly by using the `exclude` argument. For example, we can exclude any interaction that involves **X1** and **X2**:
-
 ```{r}
-out <- hbal(Treat = 'D', X = c('X1', 'X2'),  Y = 'Y', data = dat, 
-            expand.degree = 3, exclude = list(c("X1", "X2")))
-att(out) # X1.X2 and X1.X1.X2 removed from balancing scheme
+out <- hbal(Treat = 'D', X = c('X1', 'X2', 'X3'),  Y = 'Y', data = dat, 
+            expand.degree = 3, exclude = list(c('X1', 'X2')))
+summary(out) # X1.X2 and X1.X1.X2 removed from balancing scheme
+att(out) 
 ```
 
-## Example 1: Lalonde data 
+## Example 1: Lalonde Data 
 
-To show the use of **habl** in practice, here we use **habl** on a dataset that contains the subset of the @lalonde1986evaluating dataset from @dehejia1999causal and the Panel Study of Income Dynamics (PSID-1), which is also shipped with **hbal**.
-
+To show the use of **habl** in practice, here we use **habl** on a dataset that contains the subset of the @lalonde1986evaluating dataset from @dehejia1999causal and the Panel Study of Income Dynamics (PSID-1), which is also shipped with **hbal**. 
 ```{r}
 data(hbal)
 head(lalonde)
+```
+
+First, we adjust for the linear terms only:
+```{r}
 xvars <- c("age","black","educ","hisp","married","re74","re75","nodegr","u74","u75") # covariates
 # hbal w/ level terms only
 hbal.out <- hbal(Treat = 'nsw', X = xvars,  Y = 're78', data = lalonde) 
-summary(hbal.out)$att
+summary(hbal.out)
+att(hbal.out)
 ```
 
-Adding higher-order terms makes the treatment effect estimate closer to the experimental benchmark (~$1800). Note that `exclude=list(c("educ", "nodegr"))` removes the nonsensical interaction between `educ` and `nodegr`.
+Adding higher-order terms makes the treatment effect estimate closer to the experimental benchmark (~$1800). As a result of cross-validation, no penalty is imposed on the linear and squared terms.  Note that `exclude=list(c("educ", "nodegr"))` removes the nonsensical interaction between `educ` and `nodegr`.
 ```{r}
 hbal.full.out <- hbal(Treat = 'nsw', X = xvars, Y = 're78', data = lalonde, 
                       expand.degree = 2, cv = TRUE, exclude=list(c("educ", "nodegr")))
-summary(hbal.full.out)$att
+summary(hbal.full.out)
+att(hbal.full.out)
 ```
 
 We can check the penalties applied to each group and the cavariate balance before and after balancing.
-```{r, fig.height = 7.5, fig.width = 7, fig.align = "left"}
+```{r, fig.height = 8, fig.align = "left"}
 hbal.full.out$group.penalty
 plot(hbal.full.out)
 ```
@@ -230,16 +257,17 @@ str(contenderJudges)
 
 We can estimate the effect of Supreme Court vacancy on judges' rulings while controlling for functions of the covariates (to the second order). We see that contender judges are more likely to rule in line with the ideology of the sitting president during a Supreme Court vacancy.
 
-```{r, cache = TRUE}
+```{r}
 xvars <- c("judgeJCS", "presDist", "panelDistJCS", "circmed", "sctmed", "coarevtc", "casepub")
 out <- hbal(Treat = 'treatFinal0', X = xvars, Y = 'presIdeoVote', data = contenderJudges,
             expand.degree = 2, cv = TRUE)
-summary(out)$att
+summary(out)
+att(out)
 ```
 
 We can further check covariate balance before and after balancing by checking the balance plots. Here we see that the linear terms are exactly balanced between the treatment and the control groups. Imbalance among higher-order terms and interactions are also significantly reduced.
 
-```{r, fig.height = 7.5, fig.width = 7, fig.align = "left"}
+```{r, fig.height = 8, fig.align = "left"}
 plot(out)
 ```
 

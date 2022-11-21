@@ -10,6 +10,7 @@ usethis::use_pkgdown()
 usethis::use_news_md() # update logs
 
 # remember to knitr README.Rmd
+devtools::install_github("r-lib/pkgdown")
 pkgdown::build_site(install = FALSE)
 
 # or alternatively

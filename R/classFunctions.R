@@ -4,6 +4,7 @@
 #' @usage \method{plot}{hbal}(x, type = 'balance', ...)
 #' @param x       an object of class \code{hbalobject} as returned by \code{hbal}.
 #' @param type    type of graph to plot.
+#' @param log     log scale for the weight plot
 #' @param ...     Further arguments to be passed to \code{plot.hbal()}.
 #' @return A matrix of ggplots of covariate balance by group
 #' @import ggplot2
@@ -14,29 +15,32 @@
 #' @author Yiqing Xu, Eddie Yang
 #' @export
 #' @method plot hbal
-plot.hbal <- function(x, 
+plot.hbal <- function(x,
+	base_size = 10,
 	type = 'balance',
+	log = TRUE,
 	...){
 	if (type == 'weight'){
-		cat('sum(weights) normalized to the number of control units: ', length(x$weights), '\n')
-		dat <- data.frame(x = x$weights * length(x$weights))
-		ggplot(data=dat, aes_string(x="x", y="..scaled..")) + geom_density() + theme_bw() + labs(y='Density', x='Weights')
+		cat('sum(weights) normalized to the number of treated units\n')
+		w <- x$weights.co
+		if (log  == TRUE) {
+			dat <- data.frame(x = log(w)); xlab <- 'Weights (log10)'					
+		} else {
+			dat <- data.frame(x = w); xlab <- 'Weights'			
+		}
+		ggplot(data=dat, aes_string(x="x")) + geom_histogram(aes(y=..density..), color="black", fill="white", bins = 50) + 
+			labs(y='Density', x=xlab) + geom_density(alpha=.2, fill="#FF6666") + theme_classic() 			
 	}else{
 		plots <- list()
 		out.sub <- list()
 		width <- list()
 		groups <- names(x$grouping)
-		var.names <- colnames(x$mat)
-		Treatment <- x$Treatment # treatment
-		treat <- x$mat[Treatment==1,] # treated
-		control <- x$mat[Treatment==0,] * c(x$weights) * sum(Treatment==0) # control
-		denom <- apply(rbind(treat, control), 2, sd)
-		std.diff.after <- (apply(treat, 2, mean) - apply(control, 2, mean))/denom
-		denom <- apply(rbind(treat, x$mat[Treatment==0,]), 2, sd)
-		std.diff.before <- (apply(treat, 2, mean) - apply(x$mat[Treatment==0,], 2, mean))/denom
+		var.names <- colnames(x$mat) # remove outcome & treat
+		std.diff.before <- x$bal.tab[,4]
+		std.diff.after <- x$bal.tab[,5]
 		out <- data.frame(val=c(std.diff.before, std.diff.after),
 						  y=rep(var.names, 2),
-						  group=factor(rep(c("before adjustment", "after adjustment"), each=length(std.diff.before))),
+						  group=factor(rep(c("before adjustment", "after adjustment"), each=length(std.diff.before)), levels = c("before adjustment", "after adjustment")),
 						  covar.group=rep(rep(groups, x$grouping),2))
 		start <- 1
 		max_length <- max(str_length(var.names))
@@ -44,11 +48,11 @@ plot.hbal <- function(x,
 			end <- start+x$grouping[i]-1
 			out.sub[[i]] <- rbind(out[start:end,], out[(start+length(std.diff.before)):(end+length(std.diff.before)),])
 			l <- max(abs(out.sub[[i]]$val), 0.15)
-			plots[[i]] <- ggplot(aes_string(x="val", y="y"), data=out.sub[[i]]) + geom_point(size=3, shape = 21, colour = "black", aes_string(fill="group")) + 
-							scale_y_discrete(limits=rev(var.names[start:end]), labels=str_pad(rev(var.names[start:end]),max_length, side = "left")) + xlim(-l, l) + scale_fill_manual(values=c("black", "white")) +
-							geom_vline(xintercept = -0.1, lty=2) + geom_vline(xintercept = 0.1, lty=2) + theme_bw() + labs(x="Standardized Difference", y="") + 
-							theme(legend.title = element_blank()) + ggtitle(groups[i]) + theme(axis.text.y = element_text(family = "mono")) +theme(legend.position="bottom")
-			
+			plots[[i]] <- ggplot(aes_string(x="val", y="y"), data=out.sub[[i]]) + geom_point(size=3, shape = 21, colour = "black", aes_string(fill="group")) +
+							scale_fill_manual(values = c("white","black")) + 
+							scale_y_discrete(limits=rev(var.names[start:end]), labels=str_pad(rev(var.names[start:end]),max_length, side = "left")) + xlim(-l, l) + 
+							geom_vline(xintercept = -0.1, lty=2) + geom_vline(xintercept = 0.1, lty=2) + theme_bw(base_size = base_size) + labs(x="Std. Diff.", y="") + 
+							theme(legend.title = element_blank(), legend.position="bottom") + ggtitle(groups[i]) + theme(axis.text.y = element_text(family = "mono")) 			
 			start <- end+1
 		}
 		legend <- gtable_filter(ggplot_gtable(ggplot_build(plots[[1]])), "guide-box")
@@ -59,46 +63,67 @@ plot.hbal <- function(x,
 	}
 }
 
+########################################################
+########################################################
+########################################################
+########################################################
 
 #' @title Summarizing from an \code{hbal} Object
 #' @aliases summary
 #' @description This function prints a summary from an \code{hbal} Object.
 #' @usage \method{summary}{hbal}(object, ...)
 #' @param object  an object of class \code{hbalobject} as returned by \code{hbal}.
+#' @param print.level  level of detials to be printed
 #' @param ...     Further arguments to be passed to \code{summary.hbal()}.
 #' @return a summary table
 #' @importFrom stats sd
 #' @author Yiqing Xu, Eddie Yang
 #' @export
 #' @method summary hbal
-summary.hbal <- function(object, ...){
-	out <- list()
-	if (!is.null(object$call)) out[['call']] <- object$call
+summary.hbal <- function(object, print.level = 0, ...){
 	
-	est <- summary(hbal::att(object, ...))
-	
-	out[['att']] <- est$coefficients["Treat",]
+	# out <- list()
+	# if (!is.null(object$call)) out[['call']] <- object$call
 
-	out[['group.penalty']] <- object$group.penalty
+	# print(object$call)
+	# cat("\n")
 
-	out[['term.penalty']] <- object$term.penalty
-	
-	row.names <- colnames(object$mat)
-	balance.tab <- matrix(NA, length(row.names), 3)
-	rownames(balance.tab) <- row.names
+	# #est <- summary(hbal::att(object, ...))
+	#out[['att']] <- est$coefficients["Treat",]
+	cat("Call:\n ")
+	print(object$call)
+	cat("\n")
 
+	# out[['group.penalty']] <- object$group.penalty
+	# out[['term.penalty']] <- object$term.penalty
 	Treatment <- object$Treatment # treatment
-	treat <- object$mat[Treatment==1,] # treated
-	control <- object$mat[Treatment==0,] * c(object$weights) * sum(Treatment==0) # control
-	balance.tab[,1] <- apply(treat, 2, mean)
-	balance.tab[,2] <- apply(control, 2, mean)
-	denom <- apply(rbind(treat, control), 2, sd)
-	std.diff.after <- (apply(treat, 2, mean) - apply(control, 2, mean))/denom
-	balance.tab[,3] <- std.diff.after
-	colnames(balance.tab) <- c("Mean (Treated)", "Mean (Control)", "Std. Mean Diff.")
-	balance.tab <- round(balance.tab, 2)
-	
-	out[['balance']] <- balance.tab
+	nTr <- sum(Treatment == 1)
+	nCo <- sum(Treatment == 0)
 
-	return(out)
+	# no. of treated and controls
+	tr <- rev(table(Treatment))
+	names(tr) <- c("Treated", "Controls")
+	print(tr)
+	cat(" Co/Tr Ratio =", round(nCo/nTr, 2), "\n\n")
+	
+	## groups and penalties
+	cat(" Groups\n")
+	print(cbind.data.frame("#Terms" = object$grouping, "Penalty" = round(object$group.penalty,1)))
+	cat("\n")
+	## terms and penalties
+	if (print.level > 0){
+		# terms 
+		cat(" Terms\n")
+		terms.dat <- data.frame("Group" = rep(names(object$grouping), times = (object$grouping), 
+		"Penalty" = round(object$term.penalty,1)))
+		rownames(terms.dat) <- colnames(object$mat[,-c(1,2)])
+		print(terms.dat)
+		cat("\n")
+	}
+
+	# balance talbe
+	cat(" Balance Table\n")
+	print(object$bal.tab)	
+
+	# return(out)
 }
