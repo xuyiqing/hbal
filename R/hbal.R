@@ -91,11 +91,11 @@ hbal <- function(
 	w=NULL,
 	X.expand = NULL, # variables to be expanded
 	X.keep = NULL, # always keep despite double selection
+	expand.degree=1,
 	coefs=NULL ,
 	max.iterations=200,
 	cv=FALSE,
 	folds=4,
-	expand.degree=1,
 	ds=FALSE,
 	group.exact=NULL,
 	group.alpha=NULL,

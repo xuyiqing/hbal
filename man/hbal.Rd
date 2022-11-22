@@ -5,12 +5,16 @@
 \alias{hbal}
 \title{Hierarchically Regularized Entropy Balancing}
 \usage{
-hbal(data, Treat, X, Y = NULL, w = NULL, coefs = NULL ,
-     max.iterations = 200, cv = TRUE, folds = 4, 
-     expand.degree = 3, ds = FALSE, alpha = NULL, 
-     group.alpha=NULL, constraint.tolerance = 1e-3, 
-     print.level = -1, grouping = NULL, 
-     shuffle.treat=TRUE, exclude=NULL, force = FALSE, seed=NULL)
+hbal(data, Treat, X, Y = NULL, w = NULL, 
+     X.expand = NULL, X.keep = NULL, 
+     expand.degree = 1, coefs = NULL ,
+     max.iterations = 200, cv = FALSE, folds = 4, 
+     ds = FALSE, group.exact = NULL, 
+     group.alpha = NULL, term.alpha = NULL,
+     constraint.tolerance = 1e-3, print.level = 0, 
+     grouping = NULL, group.labs = NULL,
+     shuffle.treat = TRUE, exclude = NULL, 
+     force = FALSE, seed=NULL)
 }
 \arguments{
 \item{data}{a dataframe that contains the treatment, outcome, and covariates.}
@@ -27,6 +31,8 @@ hbal(data, Treat, X, Y = NULL, w = NULL, coefs = NULL ,
 
 \item{X.keep}{a character vector of covariate names to keep regardless of whether they are selected in double selection.}
 
+\item{expand.degree}{degree of series expansion. 1 means no expansion. Default is 1.}
+
 \item{coefs}{initial coefficients for the reweighting algorithm (lambdas).}
 
 \item{max.iterations}{maximum number of iterations. Default is 200.}
@@ -34,8 +40,6 @@ hbal(data, Treat, X, Y = NULL, w = NULL, coefs = NULL ,
 \item{cv}{whether to use cross validation. Default is \code{TRUE}.}
 
 \item{folds}{number of folds for cross validation. Only used when cv is \code{TRUE}.}
-
-\item{expand.degree}{degree of series expansion. 1 means no expansion. Default is 1.}
 
 \item{ds}{whether to perform double selection prior to balancing. Default is \code{FALSE}.}
 
@@ -47,9 +51,9 @@ hbal(data, Treat, X, Y = NULL, w = NULL, coefs = NULL ,
 
 \item{constraint.tolerance}{tolerance level for overall imbalance. Default is 1e-3.}
 
-\item{print.level}{details of printed output.}
+\item{print.level}{details of printed output: -1 for none, 0 for minimum, 1 for detailed.}
 
-\item{grouping}{different groupings of the covariates. Must be specified if expand is \code{FALSE}.}
+\item{grouping}{different groupings of the covariates. }
 
 \item{group.labs}{labels for user-supplied groups}
 

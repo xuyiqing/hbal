@@ -43,14 +43,15 @@ att <- function(
 		stop("The outcome variable is missing in hbalobject; please add Y when calling hbal()")
 	}
 	# extract data 
-	dat <-   hbalobject$mat 
+	mat <-   hbalobject$mat 
     Y <- hbalobject$Y # name of the outcome variable
 	Tr <- hbalobject$Treat # name of the treatment variable
-	Covar <- colnames(dat)
-	dat <- cbind.data.frame(hbalobject$Outcome, hbalobject$Treatment, dat)
+	Covar <- colnames(mat)
+	dat <- cbind.data.frame(hbalobject$Outcome, hbalobject$Treatment, mat)
 	colnames(dat) <- c(Y, Tr, Covar)
+	w <- "w" # this line is useless; just to get around CRAN checker
 	dat$w <- hbalobject$weights
-	# linear regression
+		# linear regression
 	if (method=="lm_robust"){
 		if(dr){
 			ff <- as.formula(paste0(Y, ' ~ ', Tr, ' + ', paste0(Covar, collapse=" + ")))

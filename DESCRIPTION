@@ -4,10 +4,10 @@ Title: Hierarchically Regularized Entropy Balancing
 Version: 1.2.6
 Date: 2022-11-20
 Authors@R: c(
-  person("Yiqing", "Xu", , "yiqingxu@stanford.edu", c("aut")),
-  person("Eddie", "Yang", , "z5yang@ucsd.edu", c("aut", "cre"))
+  person("Yiqing", "Xu", , "yiqingxu@stanford.edu", c("aut", "cre")),
+  person("Eddie", "Yang", , "z5yang@ucsd.edu", c("aut"))
   )
-Maintainer: Eddie Yang <z5yang@ucsd.edu>
+Maintainer: Yiqing Xu <yiqingxu@stanford.edu>
 Description: Implements hierarchically regularized entropy balancing (hbal) proposed by Xu and Yang (2022) <doi:10.1017/pan.2022.12>. The method adjusts the covariate distributions of the control group to match those of the treatment group. hbal automatically expands the covariate space to include higher order terms and uses cross-validation to select variable penalties for the balancing conditions.
 URL: https://yiqingxu.org/packages/hbal/
 License: MIT + file LICENSE
