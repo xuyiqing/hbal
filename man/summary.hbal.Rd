@@ -9,9 +9,7 @@
 }
 \arguments{
 \item{object}{an object of class \code{hbalobject} as returned by \code{hbal}.}
-
 \item{print.level}{details of printed output: 0 for minimum, 1 for detailed.}
-
 \item{...}{Further arguments to be passed to \code{summary.hbal()}.}
 }
 \value{

@@ -25,25 +25,25 @@ hbal(data, Treat, X, Y = NULL, w = NULL,
 
 \item{Y}{a character string of the outcome variable.}
 
-\item{w}{ character string of the variable that stores base weights.}
+\item{w}{a character string indicating the variable that stores base weights.}
 
 \item{X.expand}{a character vector of covariate names for serial expansion.}
 
 \item{X.keep}{a character vector of covariate names to keep regardless of whether they are selected in double selection.}
 
-\item{expand.degree}{degree of series expansion. 1 means no expansion. Default is 1.}
+\item{expand.degree}{degree of series expansion. The default is 1, which means no expansion.}
 
 \item{coefs}{initial coefficients for the reweighting algorithm (lambdas).}
 
-\item{max.iterations}{maximum number of iterations. Default is 200.}
+\item{max.iterations}{maximum number of iterations. The default is 200.}
 
-\item{cv}{whether to use cross validation. Default is \code{TRUE}.}
+\item{cv}{whether to use cross-validation. The default is \code{TRUE}.}
 
-\item{folds}{number of folds for cross validation. Only used when cv is \code{TRUE}.}
+\item{folds}{number of folds for cross-validation. Only used when cv is \code{TRUE}.}
 
 \item{ds}{whether to perform double selection prior to balancing. Default is \code{FALSE}.}
 
-\item{group.exact}{binary indicator of whether each covariate group should be exact balanced.}
+\item{group.exact}{binary indicator of whether each covariate group should be exactly balanced.}
 
 \item{group.alpha}{penalty for each covariate group}
 
@@ -51,13 +51,13 @@ hbal(data, Treat, X, Y = NULL, w = NULL,
 
 \item{constraint.tolerance}{tolerance level for overall imbalance. Default is 1e-3.}
 
-\item{print.level}{details of printed output: -1 for none, 0 for minimum, 1 for detailed.}
+\item{print.level}{details of printed output: -1 for none, 0 for minimum (default), 1 for detailed.}
 
-\item{grouping}{different groupings of the covariates. }
+\item{grouping}{a vector indicating different groupings of the covariates.}
 
 \item{group.labs}{labels for user-supplied groups}
 
-\item{shuffle.treat}{whether to use cross-validation on the treated units. Default is \code{TRUE}.}
+\item{shuffle.treat}{whether to use cross-validation on the treated units. The default is \code{TRUE}.}
 
 \item{exclude}{list of covariate name pairs or triplets to be excluded.}
 
@@ -66,27 +66,26 @@ hbal(data, Treat, X, Y = NULL, w = NULL,
 \item{seed}{random seed to be set. Set random seed when cv=\code{TRUE} for reproducibility.}
 }
 \value{
-An list object of class \code{hbal} with the following elements:
-\item{coefs}{vector that contains coefficients from the reweighting algorithm.}
-\item{mat}{matrix of serially expanded covariates if expand=\code{TRUE}. Otherwise, the original covariate matrix is returned.}
-\item{penalty}{vector of ridge penalties used for each covariate} 
-\item{weights}{vector that contains the control group weights assigned by hbal.}
-\item{W}{vector of treatment status}
-\item{Y}{vector of outcome}
+A list object of class \code{hbal} with the following elements: 
+\item{converged}{a logical flag indicating whether the algorithm has converged.}
+\item{weights}{a vector that contains the treatment and control group weights assigned by hbal. The treatment group weights are from the base weithgs}
+\item{weights.co}{a vector that contains the control group weights only assigned by hbal.}
+\item{coefs}{a vector that contains coefficients from the reweighting algorithm.}
+\item{mat}{a matrix of serially expanded covariates if expand=\code{TRUE}. Otherwise, the original covariate matrix is returned.}
+\item{grouping}{a vector indicating different groupings of the covariates.}
+\item{group.penalty}{a vector that stores ridge penalty for each group.}
+\item{term.penalty}{a vector that stores ridge penalty for each covariate.} 
+\item{bal.tab}{a balance table.}
+\item{Treat}{a vector of treatment status.}
+\item{base.weights}{a vector that saves the base weights.}
 }
 \description{
-\code{hbal} performs hierarchically regularized entropy balancing 
-such that the covariate distributions of the control group match those of the 
-treatment group. \code{hbal} automatically expands the covariate space to include
-higher order terms and uses cross-validation to select variable penalties for the 
-balancing conditions.
+\code{hbal} performs hierarchically regularized entropy balancing such that the covariate distributions of the control group match those of the treatment group. \code{hbal} automatically expands the covariate space to include higher-order terms and uses cross-validation to select variable penalties for the balancing conditions.
 
-hbal performs hierarchically regularized entropy balancing such that the covariate distributions of the control group match those of the treatment group. hbal automatically expands the covariate space to include higher order terms and uses cross-validation to select variable penalties for the balancing conditions.
+\code{hbal} performs hierarchically regularized entropy balancing such that the covariate distributions of the control group match those of the treatment group. \code{hbal} automatically expands the covariate space to include higher-order terms and uses cross-validation to select variable penalties for the balancing conditions.
 }
 \details{
-In the simplest set-up, user can just pass in \{Treatment, X, Y\}. The default settings will serially expand
-X to include higher order terms, hierarchically residualize these terms, perform double selection to only keep the relevant
-variables and use cross-validation to select penalities for different groupings of the covariates.
+In the simplest set-up, users can just pass in \{Treatment, X, Y\}. The default settings will serially expand X to include higher-order terms, hierarchically residualize these terms, and use cross-validation to select penalties for different groups of the covariates.
 }
 \examples{
 # Example 1
@@ -98,8 +97,8 @@ X <- cbind(X1, X2)
 treat <- rbinom(N, 1, prob=0.5) # Treatment indicator
 y <- 0.5 * treat + X[,1] + X[,2] + rnorm(N) # Outcome
 dat <- data.frame(treat=treat, X, Y=y)
-out <- hbal(Treat = 'treat', X = c('X1', 'X2'), Y = 'Y', data=dat)
-summary(hbal::att(out))
+out <- hbal(data=dat, Treat = 'treat', X = c('X1', 'X2'), Y = 'Y')
+att(out)
 
 # Example 2
 ## Simulation from Kang and Shafer (2007).
@@ -116,8 +115,8 @@ y <- 210 + 27.4*X[,1] + 13.7*X[,2] + 13.7*X[,3] + 13.7*X[,4] + rnorm(n)
 X.mis <- cbind(exp(X[,1]/2), X[,2]*(1+exp(X[,1]))^(-1)+10, 
     (X[,1]*X[,3]/25+.6)^3, (X[,2]+X[,4]+20)^2)
 dat <- data.frame(treat=treat, X.mis, Y=y)
-out <- hbal(Treat = 'treat', X = c('X1', 'X2', 'X3', 'X4'), Y='Y', data=dat)
-summary(att(out))
+out <- hbal(data=dat, Treat = 'treat', X = c('X1', 'X2', 'X3', 'X4'), Y='Y')
+att(out)
 }
 \references{
 Xu, Y., & Yang, E. (2022). Hierarchically Regularized Entropy Balancing. Political Analysis, 1-8. doi:10.1017/pan.2022.12

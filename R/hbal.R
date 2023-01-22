@@ -15,14 +15,14 @@
 #' @param Treat                a character string of the treatment variable.
 #' @param X                    a character vector of covariate names to balance on.
 #' @param Y                    a character string of the outcome variable.
+#' @param w          		   a character string of the weighting variable for base weights
 #' @param X.expand             a character vector of covariate names for serial expansion.
 #' @param X.keep               a character vector of covariate names to keep regardless of whether they are selected in double selection.
-#' @param w          		   a character string of the weighting variable for base weights
+#' @param expand.degree        degree of series expansion. 1 means no expansion. Default is 1.
 #' @param coefs                initial coefficients for the reweighting algorithm (lambdas).
 #' @param max.iterations       maximum number of iterations. Default is 200.
 #' @param cv                   whether to use cross validation. Default is \code{TRUE}.
 #' @param folds                number of folds for cross validation. Only used when cv is \code{TRUE}.
-#' @param expand.degree        degree of series expansion. 1 means no expansion. Default is 1.
 #' @param ds                   whether to perform double selection prior to balancing. Default is \code{FALSE}.
 #' @param group.exact          binary indicator of whether each covariate group should be exact balanced.
 #' @param group.alpha          penalty for each covariate group 
@@ -87,31 +87,31 @@ hbal <- function(
 	data,
 	Treat,
 	X,
-	Y=NULL,
-	w=NULL,
+	Y = NULL,
+	w = NULL,
 	X.expand = NULL, # variables to be expanded
 	X.keep = NULL, # always keep despite double selection
-	expand.degree=1,
-	coefs=NULL ,
-	max.iterations=200,
-	cv=FALSE,
-	folds=4,
-	ds=FALSE,
-	group.exact=NULL,
-	group.alpha=NULL,
-	term.alpha=NULL,
-	constraint.tolerance=1e-3,
-	print.level=0,
-	grouping=NULL,
-	group.labs=NULL,
-	shuffle.treat=TRUE,
-	exclude=NULL,
-	force=FALSE,
-	seed=NULL
+	expand.degree = 1,
+	coefs = NULL,
+	max.iterations = 200,
+	cv = FALSE,
+	folds = 4,
+	ds = FALSE,
+	group.exact = NULL,
+	group.alpha = NULL,
+	term.alpha = NULL,
+	constraint.tolerance = 1e-3,
+	print.level = 0,
+	grouping = NULL,
+	group.labs = NULL,
+	shuffle.treat = TRUE,
+	exclude = NULL,
+	force = FALSE,
+	seed = NULL
 	){
 
 	# ntreated: number of treated units
-	# ncontrols: number of control units
+	# ncontrols: number of control units # nolint # nolint
 	# full: standardized design matrix (X) to be used for cross validation
 	# full.t: standardized covariates for the treated units
 	# full.c: standardized covariates for the control units, also has a column of 1s for normalizing constraint
@@ -134,7 +134,7 @@ hbal <- function(
 	if(!is.null(seed)) set.seed(seed)
 
 	# covariates for expansion
-	if (expand.degree >= 0 & is.null(X.expand) == TRUE) {
+	if (expand.degree >= 0 && is.null(X.expand) == TRUE) {
 		if (print.level > 0) cat("All variables will be serially expanded")
 		if ((expand.degree == 2 & length(X)>30) | (expand.degree == 3 & length(X)>10)) {
 			if (force == TRUE) {
@@ -145,7 +145,7 @@ hbal <- function(
 		}
 		X.expand <- X
 	}
-	if (expand.degree == 1 & is.null(X.expand) == FALSE) {
+	if (expand.degree == 1 && is.null(X.expand) == FALSE) {
 		if (print.level >= 0) {
 			cat("\"X.expand\" is ignored because expand.degree = 1; no serial expansion will be performed")}
 		X.expand <- NULL
@@ -205,7 +205,7 @@ hbal <- function(
 
 	# check X variation
 	X.novar <- X.all[which(apply(data[,X.all], 2, sd) == 0)] # controls of no variations
-	if (length(X.novar) > 0 & print.level >= 0) {
+	if (length(X.novar) > 0 && print.level >= 0) {
 		cat(paste("The following variable(s) have no variations and are automatically dropped:", paste0(X.novar, collapse = ", "),"\n"))
 		X.all <- setdiff(X.all, X.novar)
 	}
@@ -257,7 +257,8 @@ hbal <- function(
 
 	# series expansion of the covariates
 	if (expand.degree > 1) {
-		expand <- covarExpand(X.sav[, X.expand.pos, drop = FALSE], exp.degree=expand.degree, treatment=Treatment, exclude=exclude)
+		expand <- covarExpand(X.sav[, X.expand.pos, drop = FALSE], 
+			exp.degree = expand.degree, treatment = Treatment, exclude = exclude)
 		X.tmp <- expand$mat
 		grouping <- expand$grouping
 		if (expand.degree == 2) {group.labs <- c("linear", "squared", "two-way")} # three of them
@@ -276,7 +277,7 @@ hbal <- function(
 		}
 
 		# X.sav is unscaled; X is scaled
-		X <- scale(X.sav)		
+		X <- scale(X.sav)
 
 		# check collinearity again after serial expansion
 		grouping.expand <- c()
@@ -312,8 +313,9 @@ hbal <- function(
 	full.c <- full[Treatment==0,]
 
 	# double selection
-	if (ds == TRUE){
-		selected <- doubleSelection(X=X, W=Treatment, Y=unlist(data[,Y]), grouping=grouping)
+    if (ds == TRUE){
+		selected <- doubleSelection(X=X, W=Treatment, Y=unlist(data[,Y]), 
+			grouping=grouping)
 		X.pos <- X.select.pos <- selected$covar.keep
 		grouping <- selected$penalty.list	
 		# add those must keep	

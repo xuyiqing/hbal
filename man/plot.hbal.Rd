@@ -9,13 +9,9 @@
 }
 \arguments{
 \item{x}{an object of class \code{hbalobject} as returned by \code{hbal}.}
-
 \item{type}{type of graph to plot, either 'balance' or 'weight'.}
-
 \item{log}{binary indicator for logrithmic scale when \code{type = 'weight'}.}
-
 \item{base_size}{base font size for lables when \code{type = 'balance'}.}
-
 \item{...}{Further arguments to be passed to \code{plot.hbal()}.}
 }
 \value{
