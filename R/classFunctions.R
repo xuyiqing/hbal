@@ -28,7 +28,7 @@ plot.hbal <- function(x,
 		} else {
 			dat <- data.frame(x = w); xlab <- 'Weights'			
 		}
-		ggplot(data=dat, aes_string(x="x")) + geom_histogram(aes_string(y="..density.."), color="black", fill="white", bins = 50) + 
+		ggplot(data=dat, aes_string(x="x")) + geom_histogram(aes(y=after_stat(density)), color="black", fill="white", bins = 50) + 
 			labs(y='Density', x=xlab) + geom_density(alpha=.2, fill="#FF6666") + theme_classic() 			
 	}else{
 		plots <- list()

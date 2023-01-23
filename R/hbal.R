@@ -135,10 +135,10 @@ hbal <- function(
 
 	# covariates for expansion
 	if (expand.degree >= 0 && is.null(X.expand) == TRUE) {
-		if (print.level > 0) cat("All variables will be serially expanded")
+		if (print.level > 0) message("All variables will be serially expanded")
 		if ((expand.degree == 2 & length(X)>30) | (expand.degree == 3 & length(X)>10)) {
 			if (force == TRUE) {
-				cat("Too many variables to expand. This can take up significant memory.\nPlease consider including fewer covariates or using the \`X.expand\` option\n")
+				message("Too many variables to expand. This can take up significant memory.\nPlease consider including fewer covariates or using the \`X.expand\` option\n")
 			} else {
 				stop("Too many variables to expand. This can take up significant memory.\nPlease consider including fewer covariates or using the \`X.expand\` option.\nAdd \'force = TRUE\' if you want to keep going")
 			}
@@ -147,7 +147,7 @@ hbal <- function(
 	}
 	if (expand.degree == 1 && is.null(X.expand) == FALSE) {
 		if (print.level >= 0) {
-			cat("\"X.expand\" is ignored because expand.degree = 1; no serial expansion will be performed")}
+			message("\"X.expand\" is ignored because expand.degree = 1; no serial expansion will be performed")}
 		X.expand <- NULL
 	}
 
@@ -167,7 +167,7 @@ hbal <- function(
 	# listwise deletion
 	valid_rows <- complete.cases(data[, c(Treat, X.all, Y, w)])
 	if (sum(valid_rows) < nrow(data)) {
-		if (print.level >= 0) {cat("Some rows are dropped because they contain missing/NA/infinite values\n")}
+		if (print.level >= 0) {message("Some rows are dropped because they contain missing/NA/infinite values\n")}
 		data <- data[valid_rows,]		
 	}
 
@@ -206,7 +206,7 @@ hbal <- function(
 	# check X variation
 	X.novar <- X.all[which(apply(data[,X.all], 2, sd) == 0)] # controls of no variations
 	if (length(X.novar) > 0 && print.level >= 0) {
-		cat(paste("The following variable(s) have no variations and are automatically dropped:", paste0(X.novar, collapse = ", "),"\n"))
+		message(paste("The following variable(s) have no variations and are automatically dropped:", paste0(X.novar, collapse = ", "),"\n"))
 		X.all <- setdiff(X.all, X.novar)
 	}
 
@@ -218,7 +218,7 @@ hbal <- function(
 
 	# check collinearity
 	if (qr(X)$rank != ncol(X)) {
-		cat("Collinearity in covariate matrix for controls; ")
+		message("Collinearity in covariate matrix for controls; ")
 		X.good.pos <- 1
 		for (i in 2:ncol(X)) {
 			X.test.pos <- c(X.good.pos, i)
@@ -228,7 +228,7 @@ hbal <- function(
 		}
 		X.bad.pos <- setdiff(1:ncol(X), X.good.pos)
 		X.bad <- X.all[X.bad.pos]
-		if (print.level >= 0) cat("the following variable(s) are removed:",paste(X.bad, collapse = ", "),"\n")
+		if (print.level >= 0) message("the following variable(s) are removed:",paste(X.bad, collapse = ", "),"\n")
 		# update X & saved X data (not scaled)
 		X <- X[, X.good.pos, drop = FALSE]
 		X.sav <- X.sav[, X.good.pos, drop = FALSE]
@@ -294,7 +294,7 @@ hbal <- function(
 			}
 			X.bad.pos <- setdiff(1:ncol(X), X.good.pos) # these are column numbers
 			if (print.level >= 0) {
-				cat("After serial expansion, the following variable(s) are removed due to collinearity:",
+				message("After serial expansion, the following variable(s) are removed due to collinearity:",
 					paste(colnames(X)[X.bad.pos], collapse = ", "),"\n")}
 			X <- X[, X.good.pos, drop = FALSE]
 			grouping.expand <- grouping.expand[-X.bad.pos]
@@ -331,7 +331,7 @@ hbal <- function(
 	
 	if (length(grouping)==1){
 		cv <- FALSE
-		if (print.level >= 0) cat("length(grouping) = 1, setting \'cv = FALSE\'")
+		if (print.level >= 0) message("length(grouping) = 1, setting \'cv = FALSE\'")
 	}
 
 	full.c <- cbind(rep(1,ncontrols), full.c)
@@ -351,7 +351,7 @@ hbal <- function(
 	if (!is.null(term.alpha)){
 		penalty.names <- names(term.alpha)
 		if (length(match(penalty.names, colnames(X)))==0) {
-			if (print.level >= 0) cat("Invalid variable name(s); \"term.alpha\" is ignored\n")
+			if (print.level >= 0) message("Invalid variable name(s); \"term.alpha\" is ignored\n")
 			penalty.names <- penalty.val <- penalty.pos <- NULL
 		} else {
 			penalty.val <- term.alpha
@@ -384,7 +384,7 @@ hbal <- function(
 	if (cv==TRUE && length(grouping)==1){
 		cv <- FALSE
 		if (print.level > 0) {
-			cat("length(grouping)==1, no need to cross-validate tuning parameters. \n
+			message("length(grouping)==1, no need to cross-validate tuning parameters. \n
 				Either double selection selected 0 higher order term or the supplied grouping has length 1")}
 	}
 	
@@ -397,7 +397,7 @@ hbal <- function(
 			stop("Elements in \"group.alpha\" should be non-negative")
 		}
 		if (cv == TRUE) {
-			if (print.level >= 0) cat("Cross-validation is skipped when \"group.alpha\" is supplied\n")
+			if (print.level >= 0) message("Cross-validation is skipped when \"group.alpha\" is supplied\n")
 			cv <- FALSE
 		} 
 	} else {
@@ -412,7 +412,7 @@ hbal <- function(
 		if (cv == FALSE) {
 			group.exact <- NULL
 			if (print.level >= 0) {
-				cat("\"group.exact\" is ignored when \"cv = FALSE\" because either all covariates 
+				message("\"group.exact\" is ignored when \"cv = FALSE\" because either all covariates 
 					will be exactly balanced on or \"group.alpha\" is supplied\n")}
 		} else {
 			if (sum(group.exact %in% c(0,1))!= length(group.exact)) {
