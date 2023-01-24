@@ -5,9 +5,9 @@ home:
   - text: Github repo
     href: https://github.com/xuyiqing/hbal
   - text: Research paper
-    href: https://papers.ssrn.com/abstract=3555463
+    href: https://www.cambridge.org/core/journals/political-analysis/article/hierarchically-regularized-entropy-balancing/7DF29028EABE0B2465D1E1FF35F13DDB
 
-url: https://yiqingxu.org/packages/fect/
+url: https://yiqingxu.org/packages/hbal/
 template:
   bootstrap: 5
 
@@ -20,7 +20,7 @@ navbar:
     - text: "Changelog"
       href: news/index.html
     - text: "Paper"
-      href: https://papers.ssrn.com/abstract=3807620
+      href: https://www.cambridge.org/core/journals/political-analysis/article/hierarchically-regularized-entropy-balancing/7DF29028EABE0B2465D1E1FF35F13DDB
   right:
    - icon: fa-github
      href: https://github.com/xuyiqing/hbal
@@ -41,6 +41,7 @@ reference:
     - summary.hbal
   - title: Dataset
   - contents:
+    - lalonde
     - contenderJudges
 
 authors:

@@ -4,6 +4,7 @@
 \name{hbal-data}
 \alias{hbal-data}
 \title{Data from Black and Owens (2016) and Hazlett (2020)}
+\keyword{internal}
 \source{
 \itemize{
   \item Black, R. C., and Owens, R. J. (2016). Courting the president: how circuit court judges alter their behavior for promotion to the Supreme Court. American Journal of Political Science, 60(1), 30-43.
@@ -24,4 +25,3 @@ The remaining variables are characteristics of the judges and courts, to be used
 The LaLonde dataset has treated units from Dehejia and Wahba (1999), containing 185 individuals; data on the control units is from Panel Study
 of Income Dynamics (PSID-1), containing 2,490 individuals.
 }
-\keyword{datasets}

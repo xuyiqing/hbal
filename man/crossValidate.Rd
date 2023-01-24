@@ -4,6 +4,7 @@
 \alias{crossValidate}
 \alias{CrossValidate}
 \title{Ridge Penalty Selection through Cross Validation}
+\keyword{internal}
 \usage{
 crossValidate(
   alpha = NULL,

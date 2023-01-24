@@ -6,6 +6,7 @@
 \usage{
 covarExclude(colname, exclude)
 }
+\keyword{internal}
 \arguments{
 \item{colname}{column name.}
 

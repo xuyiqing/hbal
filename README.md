@@ -4,29 +4,35 @@
 # hbal
 
 <!-- badges: start -->
-
+<!--
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
+-->
+
+[![Lifecycle:
+stable](https://img.shields.io/badge/lifecycle-stable-green.svg)](https://www.tidyverse.org/lifecycle/#stablel)
 [![License:
 MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 <!-- badges: end -->
 
 **R** package for implementing hierarchically regularized entropy
-balancing. It is suitable for estimating average treatment effect on the
-treated with binary treatments under strict ignorability. **hbal** is an
-extension of entropy balancing: it expands the feature space by
-including higher-order terms (such as squared and cubic terms and
-interactions) of covariates and then achieves approximate balance on the
-expanded features using ridge penalties with a hierarchical structure.
+balancing proposed by Xu and Yang (2022). It is suitable for estimating
+average treatment effect on the treated with binary treatments under
+strong ignorability. **hbal** is an extension of entropy balancing: it
+automatically expands the feature space by including higher-order terms
+(such as squared and cubic terms and interactions) of covariates and
+then achieves approximate balance on the expanded features using ridge
+penalties with a hierarchical structure.
 
 **Examples:** R code used in the
 [tutorial](https://yiqingxu.org/packages/hbal/articles/tutorial.html)
-can be downloaded from [here](hbal_examples.R).
+can be downloaded from
+[here](https://raw.githubusercontent.com/xuyiqing/hbal/main/pkgdown/hbal_examples.R).
 
 **Reference:** Eddie Yang & Yiqing Xu (2021). [Hierarchically
 Regularized Entropy
-Balancing](https://papers.ssrn.com/abstract=3807620). *Political
-Analysis*, forthcoming.
+Balancing](https://www.cambridge.org/core/journals/political-analysis/article/hierarchically-regularized-entropy-balancing/7DF29028EABE0B2465D1E1FF35F13DDB).
+*Political Analysis*, published online.
 
 ------------------------------------------------------------------------
 
@@ -35,14 +41,14 @@ Analysis*, forthcoming.
 You can install the **hbal** package from CRAN:
 
 ``` r
-install.packages('hbal') # Not on CRAN yet.
+install.packages('hbal') 
 ```
 
 You can also install the up-to-date development version from Github:
 
 ``` r
-install.packages('devtools', repos = 'http://cran.us.r-project.org') # if not already installed
-devtools::install_github('xuyiqing/hbal', ref="main")
+install.packages('devtools') # if not already installed
+devtools::install_github('xuyiqing/hbal')
 ```
 
 **hbal** depends on the following packages, which will be installed
@@ -65,7 +71,7 @@ require(stringr)
 
 ### Notes on installation failures
 
-1.  Mac users who have updated to MacOS BigSur or Monterey will likely
+1.  Mac users who have updated to MacOS BigSur or higher will likely
     encounter compilation problems. See
     [here](http://yiqingxu.org/public/BigSurError.pdf) for a potential
     solution.
@@ -85,5 +91,5 @@ require(stringr)
 
 ## Report bugs
 
-Please report bugs to **z5yang \[at\] ucsd.edu** with your sample code
-and data file. Much appreciated!
+Please report bugs to **yiqingxu \[at\] stanford.edu** with your sample
+code and data file. Much appreciated!

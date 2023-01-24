@@ -6,6 +6,7 @@
 \usage{
 covarExpand(X, exp.degree = 3, treatment = NULL, exclude = NULL)
 }
+\keyword{internal}
 \arguments{
 \item{X}{a matrix of covariates.}
 \item{exp.degree}{the degree of the polynomial.}
