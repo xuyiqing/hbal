@@ -48,7 +48,7 @@ And two S3 methods:
 
 * `plot()`: visualizes covariate balance before and after weighting or the distribution of balancing weights.
 
-R code used in this tutorial can be downloaded from [here](https://yiqingxu.org/packages/hbal/hbal_examples.R).
+R code used in this tutorial can be downloaded from [here](https://raw.githubusercontent.com/xuyiqing/hbal/main/pkgdown/hbal_examples.R).
 
 ***
 

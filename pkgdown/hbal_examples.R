@@ -1,5 +1,5 @@
 ### R Code for hbal Tutorial
-# v.1.2.6
+# v.1.2.8
 
 library(ggplot2)
 library(estimatr)
@@ -21,14 +21,15 @@ dat <- data.frame(D = D, X1 = X1, X2 = X2, X3 = X3, Y = y)
 head(dat)
 
 # ebal vs hbal
+# install.packages("ebal")
 library(ebal)
 ebal.out <- ebalance(Treat = dat$D, X = dat[,c('X1', 'X2', 'X3')]) # ebal
 hbal.out <- hbal(Treat = 'D', X = c('X1', 'X2', 'X3'),  Y = 'Y',  data = dat) # hbal
+
 # plot weights
 W <- data.frame(x = ebal.out$w, y = hbal.out$weights.co)
 ggplot(aes(x = x, y = y), data = W) + geom_point() + theme_bw() + 
   labs(x = "ebal weights", y="hbal weights", title = "ebal weights vs. hbal weights")
-
 
 names(hbal.out)
 summary(hbal.out)
@@ -57,8 +58,6 @@ plot(out, type='weight')
 round(out$group.penalty, 2)
 round(out$term.penalty, 2)
 
-
-
 #########################################
 ## Additional Options
 #########################################
@@ -67,6 +66,7 @@ round(out$term.penalty, 2)
 out <- hbal(Treat = 'D', X = c('X1', 'X2'),  Y = 'Y', data = dat, 
             expand.degree = 3, cv = TRUE, group.exact = c(1, 1, 0, 0, 0))
 summary(out)
+att(out)
 
 
 # User-supplied Penalties
@@ -75,7 +75,7 @@ out <- hbal(Treat = 'D', X = c('X1', 'X2', 'X3'),  Y = 'Y', data = dat,
 summary(out)
 
 
-# Controling Serial Expansion
+# Controlling Serial Expansion
 out <- hbal(Treat = 'D', X = c('X1', 'X2', 'X3'),  Y = 'Y', data = dat, 
             expand.degree = 3, X.expand = c('X1', 'X2'))
 summary(out)
