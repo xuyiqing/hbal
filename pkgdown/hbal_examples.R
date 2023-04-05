@@ -1,5 +1,5 @@
 ### R Code for hbal Tutorial
-# v.1.2.8
+# v.1.2.9
 
 library(ggplot2)
 library(estimatr)

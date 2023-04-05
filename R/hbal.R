@@ -134,8 +134,8 @@ hbal <- function(
 	if(!is.null(seed)) set.seed(seed)
 
 	# covariates for expansion
-	if (expand.degree >= 0 && is.null(X.expand) == TRUE) {
-		if (print.level > 0) message("All variables will be serially expanded")
+	if (expand.degree > 1 && is.null(X.expand) == TRUE) {
+		if (print.level >= 1) message("All variables will be serially expanded")
 		if ((expand.degree == 2 & length(X)>30) | (expand.degree == 3 & length(X)>10)) {
 			if (force == TRUE) {
 				message("Too many variables to expand. This can take up significant memory.\nPlease consider including fewer covariates or using the \`X.expand\` option\n")
@@ -146,7 +146,7 @@ hbal <- function(
 		X.expand <- X
 	}
 	if (expand.degree == 1 && is.null(X.expand) == FALSE) {
-		if (print.level >= 0) {
+		if (print.level >= 1) {
 			message("\"X.expand\" is ignored because expand.degree = 1; no serial expansion will be performed")}
 		X.expand <- NULL
 	}
@@ -167,7 +167,7 @@ hbal <- function(
 	# listwise deletion
 	valid_rows <- complete.cases(data[, c(Treat, X.all, Y, w)])
 	if (sum(valid_rows) < nrow(data)) {
-		if (print.level >= 0) {message("Some rows are dropped because they contain missing/NA/infinite values\n")}
+		if (print.level >= 1) {message("Some rows are dropped because they contain missing/NA/infinite values\n")}
 		data <- data[valid_rows,]		
 	}
 
@@ -204,7 +204,7 @@ hbal <- function(
 	# Variable positions: X.levelonly.pos, X.expand.pos, X.keep.pos
 
 	# check X variation
-	X.novar <- X.all[which(apply(data[,X.all], 2, sd) == 0)] # controls of no variations
+	X.novar <- X.all[which(apply(data[, X.all, drop = FALSE], 2, sd) == 0)] # controls of no variations
 	if (length(X.novar) > 0 && print.level >= 0) {
 		message(paste("The following variable(s) have no variations and are automatically dropped:", paste0(X.novar, collapse = ", "),"\n"))
 		X.all <- setdiff(X.all, X.novar)
@@ -331,7 +331,7 @@ hbal <- function(
 	
 	if (length(grouping)==1){
 		cv <- FALSE
-		if (print.level >= 0) message("length(grouping) = 1, setting \'cv = FALSE\'")
+		if (print.level >= 1) message("length(grouping) = 1, setting \'cv = FALSE\'")
 	}
 
 	full.c <- cbind(rep(1,ncontrols), full.c)
@@ -351,7 +351,7 @@ hbal <- function(
 	if (!is.null(term.alpha)){
 		penalty.names <- names(term.alpha)
 		if (length(match(penalty.names, colnames(X)))==0) {
-			if (print.level >= 0) message("Invalid variable name(s); \"term.alpha\" is ignored\n")
+			if (print.level >= 1) message("Invalid variable name(s); \"term.alpha\" is ignored\n")
 			penalty.names <- penalty.val <- penalty.pos <- NULL
 		} else {
 			penalty.val <- term.alpha
@@ -383,7 +383,7 @@ hbal <- function(
 	if (cv %in% c(TRUE, FALSE) == FALSE) {stop("cv needs to be of type logical")}
 	if (cv==TRUE && length(grouping)==1){
 		cv <- FALSE
-		if (print.level > 0) {
+		if (print.level >= 1) {
 			message("length(grouping)==1, no need to cross-validate tuning parameters. \n
 				Either double selection selected 0 higher order term or the supplied grouping has length 1")}
 	}
@@ -505,8 +505,8 @@ hbal <- function(
 	## balance table
 	bal.tab <- matrix(NA, length(Covar), 5) # tr, co, co.w, diff, diff.w
 	rownames(bal.tab) <- Covar
-	treat <- X.sav[Treatment==1,] # treated
-	control <- X.sav[Treatment==0,] # control
+	treat <- X.sav[Treatment==1, , drop = FALSE] # treated
+	control <- X.sav[Treatment==0, , drop = FALSE] # control
 	bal.tab[,1] <- apply(treat, 2, weighted.mean, w = base.weights.tr)
 	bal.tab[,2] <- apply(control, 2, weighted.mean, w = base.weights.co)	 
 	bal.tab[,3] <- apply(control, 2, weighted.mean, w = weights.co)	 
