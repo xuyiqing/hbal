@@ -42,7 +42,7 @@ covarExpand <- function(X, exp.degree=3, treatment=NULL, exclude=NULL){
 
 		X.P <- X.P[,unlist(pos)]
 		rank <- qr(X.P[treatment==0,])
-		X.P <- X.P[,rank$pivot[1:rank$rank]]
+		X.P <- X.P[,rank$pivot[1:rank$rank], drop = FALSE]
 		split.name <- strsplit(colnames(X.P), ".", fixed=TRUE)
 		new.name <- colnames(X)
 		new.name <- str_trunc(new.name, 5, side="right", ellipsis="")
@@ -89,7 +89,7 @@ covarExpand <- function(X, exp.degree=3, treatment=NULL, exclude=NULL){
 
 		X.P <- X.P[,unlist(pos)]
 		rank <- qr(X.P[treatment==0,])
-		X.P <- X.P[,rank$pivot[1:rank$rank]]
+		X.P <- X.P[,rank$pivot[1:rank$rank], drop = FALSE]
 		split.name <- strsplit(colnames(X.P), ".", fixed=TRUE)
 		new.name <- colnames(X)
 		new.name <- str_trunc(new.name, 5, side="right", ellipsis="")
