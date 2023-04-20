@@ -324,8 +324,8 @@ hbal <- function(
 			grouping[1] <- grouping[1] + (length(X.pos) - length(X.select.pos))			
 		}
 		# update X and X.sav
-		X <- X[, X.pos]		
-		X.sav <- X.sav[, X.pos] 		
+		X <- X[, X.pos, drop = FALSE]		
+		X.sav <- X.sav[, X.pos, drop = FALSE] 		
 	}
 
 	
@@ -335,7 +335,7 @@ hbal <- function(
 	}
 
 	full.c <- cbind(rep(1,ncontrols), full.c)
-	co.x <- X[Treatment==0,] # control group
+	co.x <- X[Treatment==0,,drop = FALSE] # control group
 	co.x <- cbind(rep(1,ncontrols),co.x)
 	
 	# treated group mean
