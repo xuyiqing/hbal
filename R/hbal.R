@@ -258,9 +258,9 @@ hbal <- function(
 	# series expansion of the covariates
 	if (expand.degree > 1) {
 		expand <- covarExpand(X.sav[, X.expand.pos, drop = FALSE], 
-			exp.degree = expand.degree, treatment = Treatment, exclude = exclude)
-		X.tmp <- expand$mat
-		grouping <- expand$grouping
+			exp.degree = expand.degree, treatment = Treatment, exclude = exclude) 
+		X.tmp <- expand$mat # expanded covariates in matrix form
+		grouping <- expand$grouping # grouping of the expanded covariates
 		if (expand.degree == 2) {group.labs <- c("linear", "squared", "two-way")} # three of them
 		if (expand.degree == 3) {group.labs <- c("linear", "two-way", "squared", "three-way", "squared*linear", "cubic")} # six of them
 		names(grouping) <- group.labs[1:length(grouping)]
