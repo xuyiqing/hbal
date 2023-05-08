@@ -1,3 +1,7 @@
+# hbal 1.2.11
+1. Allow approximate balance on the level terms (penalty tuned via cross-validation)
+2. Fix a bug with truncated variable names
+   
 # hbal 1.2.9
 Fix a bug which occurs when there is only one covariate
 

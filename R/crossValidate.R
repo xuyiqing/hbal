@@ -1,7 +1,7 @@
 #' @title Ridge Penalty Selection through Cross Validation
 #' @aliases CrossValidate
 #' @description Internal function called by \code{hbal} to select ridge penalties through cross-validation.
-#' @param alpha                   alpha. Controls degree of regularization.
+#' @param group.alpha                   group.alpha. Controls degree of regularization.
 #' @param penalty.pos             positions of user-supplied penalties.
 #' @param penalty.val             values of user-supplied penalties.
 #' @param group.exact             binary indicator of whether each covariate group should be penalized.
@@ -18,13 +18,13 @@
 #' @param full.t                  (unresidualized) ovariate matrix for treatment group.
 #' @param full.c                  (unresidualized) ovariate matrix for control group.
 #' @param shuffle.treat           whether to create folds for the treated units
-#' @return alpha, lambda
+#' @return group.alpha, lambda
 #' @importFrom stats na.omit coef
 #' @importFrom glmnet cv.glmnet
 #' @author Yiqing Xu, Eddie Yang
 
 crossValidate <- function(
-	alpha=NULL,
+	group.alpha=NULL,
 	penalty.pos=NULL,
 	penalty.val=NULL,
 	group.exact=NULL,
@@ -42,18 +42,19 @@ crossValidate <- function(
 	full.c=NULL,
 	shuffle.treat=NULL){
 
-	if (any(!is.finite(alpha))){
+	if (any(!is.finite(group.alpha))){
 		return(Inf)
 	}
 	
 	res <- rep(NA, folds) #store cross validation results
 	coe <- NULL
 
-	# loop over each alpha value
+	# loop over each group.alpha value
 	if (!is.null(group.exact)){
-		alpha[which(group.exact==1)] <- 0
+		group.alpha[which(group.exact==1)] <- 0
 	}
-	penalty <- rep(c(0, alpha), times=grouping)
+	#penalty <- rep(c(0, group.alpha), times=grouping)
+	penalty <- rep(group.alpha, times=grouping)
 	if (!is.null(penalty.pos)){
 		penalty[penalty.pos] <- penalty.val
 	}
@@ -62,7 +63,7 @@ crossValidate <- function(
 	Coefs <- coefs
 
 	counter <- 0
-	# loop over each fold for each alpha
+	# loop over each fold for each group.alpha
 	for (k in 1:folds){
 		co.test.k <- which(fold.co==k)
 		tr.test.k <- which(fold.tr==k)
@@ -77,7 +78,9 @@ crossValidate <- function(
 			train.total <- c(1, colMeans(treatment))
 			test.treat <- full.t
 		}
-		if(!is.null(sub.coef) && all(is.finite(sub.coef)) && max(abs(sub.coef))<=10) Coefs <- sub.coef
+		if(!is.null(sub.coef) && all(is.finite(sub.coef)) && max(abs(sub.coef))<=10) {
+			Coefs <- sub.coef
+		}	
 		out <- try(
 			hb(
 				tr_total=as.matrix(train.total),

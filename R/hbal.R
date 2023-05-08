@@ -5,7 +5,7 @@
 #' treatment group. \code{hbal} automatically expands the covariate space to include
 #' higher order terms and uses cross-validation to select variable penalties for the 
 #' balancing conditions.
-#' @usage hbal(data, Treat, X, Y, base.weights = NULL, coefs = NULL ,
+#' @usage hbal(data, Treat, X, Y, base.weights = NULL, coefs = NULL 
 #'      max.iterations = 200, cv = TRUE, folds = 4, 
 #'      expand.degree = 3, ds = FALSE, alpha = NULL, 
 #'      group.alpha=NULL, constraint.tolerance = 1e-3, 
@@ -31,6 +31,7 @@
 #' @param print.level          details of printed output.
 #' @param grouping             different groupings of the covariates. Must be specified if expand is \code{FALSE}.
 #' @param group.labs           labels for user-supplied groups
+#' @param linear.exact		   seek exact balance on the level terms
 #' @param shuffle.treat        whether to use cross-validation on the treated units. Default is \code{TRUE}.
 #' @param exclude              list of covariate name pairs or triplets to be excluded.
 #' @param force                binary indicator of whether to expand covariates when there are too many
@@ -94,7 +95,7 @@ hbal <- function(
 	expand.degree = 1,
 	coefs = NULL,
 	max.iterations = 200,
-	cv = FALSE,
+	cv = NULL,
 	folds = 4,
 	ds = FALSE,
 	group.exact = NULL,
@@ -104,10 +105,11 @@ hbal <- function(
 	print.level = 0,
 	grouping = NULL,
 	group.labs = NULL,
+	linear.exact = TRUE,
 	shuffle.treat = TRUE,
 	exclude = NULL,
 	force = FALSE,
-	seed = NULL
+	seed = 94035
 	){
 
 	# ntreated: number of treated units
@@ -328,12 +330,6 @@ hbal <- function(
 		X.sav <- X.sav[, X.pos, drop = FALSE] 		
 	}
 
-	
-	if (length(grouping)==1){
-		cv <- FALSE
-		if (print.level >= 1) message("length(grouping) = 1, setting \'cv = FALSE\'")
-	}
-
 	full.c <- cbind(rep(1,ncontrols), full.c)
 	co.x <- X[Treatment==0,,drop = FALSE] # control group
 	co.x <- cbind(rep(1,ncontrols),co.x)
@@ -380,13 +376,18 @@ hbal <- function(
 	if (length(coefs) != ncol(co.x)) {stop("coefs needs to have same length as number of covariates plus one")}
 
 	# Prepare for cross-validation
-	if (cv %in% c(TRUE, FALSE) == FALSE) {stop("cv needs to be of type logical")}
-	if (cv==TRUE && length(grouping)==1){
+	if (is.null(cv) == FALSE) {
+		if (cv %in% c(TRUE, FALSE) == FALSE) {stop("cv needs to be of type logical")}
+		# if (cv==TRUE && length(grouping)==1){
+		# 	cv <- FALSE
+		# 	if (print.level >= 1) {
+		# 		message("length(grouping)==1, no need to cross-validate tuning parameters. \n
+		# 			Either double selection selected 0 higher order term or the supplied grouping has length 1")}
+		# }
+	} else {
 		cv <- FALSE
-		if (print.level >= 1) {
-			message("length(grouping)==1, no need to cross-validate tuning parameters. \n
-				Either double selection selected 0 higher order term or the supplied grouping has length 1")}
 	}
+	
 	
 	# check group.alpha; if correct, no need to cv
 	if (is.null(group.alpha)==FALSE) {
@@ -421,46 +422,64 @@ hbal <- function(
 		}
 	}	
 
+	if (linear.exact == TRUE) {
+		if (is.null(group.exact) == TRUE) {
+			group.exact <- c(1, rep(0, length(grouping)-1))
+		} else {
+			group.exact[1] <- 1
+		}
+	}
+
 
 	# Cross-validation
 	if (cv==TRUE){
+		message("Crossvalidation...\n")
 		fold.num.co <- rep(1:folds, ceiling(ncontrols/folds))
 		fold.co <- sample(fold.num.co, ncontrols, replace=FALSE) 
 		fold.num.tr <- rep(1:folds, ceiling(ntreated/folds))
 		fold.tr <- sample(fold.num.tr, ntreated, replace=FALSE)
 
-		min.c <- nloptr(x0 = rep(1, length(grouping)-1),
-                eval_f = crossValidate,
-                lb = rep(0, length(grouping)-1),
-                ub = rep(100, length(grouping)-1),
-                opts = list('algorithm'='NLOPT_LN_COBYLA',
-                            'maxeval' =200,
-			    'ftol_rel'=1e-3,
-			    'ftol_abs'=1e-5,
-			    'xtol_abs'=1e-3,
-                            'print_level'=print.level),
-                penalty.pos=penalty.pos,
-                penalty.val=penalty.val,
-                group.exact=group.exact[-1],
-                grouping=grouping,
-                folds=folds,
-                treatment = X[Treatment==1,],
-                fold.co = fold.co,
-                fold.tr=fold.tr,
-                coefs=coefs,
-                control = co.x,
-                constraint.tolerance = constraint.tolerance,
-                print.level = print.level,
-                base.weight = base.weights.co,
-                full.t=full.t,
-                full.c=full.c,
-                shuffle.treat=shuffle.treat)
+		min.c <- nloptr(x0 = rep(0, length(grouping)),
+			eval_f = crossValidate,
+			lb = rep(0, length(grouping)),
+			ub = rep(100, length(grouping)),
+			opts = list('algorithm'='NLOPT_LN_COBYLA',
+						'maxeval' =200,
+			'ftol_rel'=1e-3,
+			'ftol_abs'=1e-5,
+			'xtol_abs'=1e-3,
+			'print_level'=print.level),
+			penalty.pos=penalty.pos,
+			penalty.val=penalty.val,
+			group.exact=group.exact,
+			grouping=grouping,
+			folds=folds,
+			treatment = X[Treatment==1,],
+			fold.co = fold.co,
+			fold.tr=fold.tr,
+			coefs=coefs,
+			control = co.x,
+			constraint.tolerance = constraint.tolerance,
+			  print.level = print.level,
+			base.weight = base.weights.co,
+			full.t=full.t,
+			full.c=full.c,
+			shuffle.treat=shuffle.treat)
+
+		names(min.c)		
+		min.c$lower_bounds
+		min.c$iterations
+		min.c$message
+		min.c$solution		
+		min.c$iterations
+		min.c$objective
 
 		if(!is.null(group.exact)){
-			min.c$solution[which(group.exact[-1]==1)] <- 0
+			min.c$solution[which(group.exact==1)] <- 0
 		}
-		# save CV results: penalty (same length of covariates)
-		group.alpha <- c(0, min.c$solution)  # add 0 for the level term
+		# save CV results: penalty (same length of "grouping")
+		group.alpha <- min.c$solution		
+		
 	} #end of tuning
 
 	# expand to penalty for individual terms

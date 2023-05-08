@@ -12,9 +12,9 @@ hbal(data, Treat, X, Y = NULL, w = NULL,
      ds = FALSE, group.exact = NULL, 
      group.alpha = NULL, term.alpha = NULL,
      constraint.tolerance = 1e-3, print.level = 0, 
-     grouping = NULL, group.labs = NULL,
-     shuffle.treat = TRUE, exclude = NULL, 
-     force = FALSE, seed=NULL)
+     grouping = NULL, group.labs = NULL, 
+     linear.exact = TRUE, shuffle.treat = TRUE, 
+     exclude = NULL, force = FALSE, seed = 94035)
 }
 \arguments{
 \item{data}{a dataframe that contains the treatment, outcome, and covariates.}
@@ -56,6 +56,8 @@ hbal(data, Treat, X, Y = NULL, w = NULL,
 \item{grouping}{a vector indicating different groupings of the covariates.}
 
 \item{group.labs}{labels for user-supplied groups}
+
+\item{linear.exact}{whether to seek exact balancing on the level terms. The default is \code{TRUE}.}
 
 \item{shuffle.treat}{whether to use cross-validation on the treated units. The default is \code{TRUE}.}
 
