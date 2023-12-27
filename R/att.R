@@ -2,15 +2,17 @@
 #' @aliases att
 #' @description \code{att} estimates the average treatment effect on the treated (ATT) from an 
 #' hbal object returned by \code{hbal}. 
-#' @usage att(hbalobject, method="lm_robust", dr=TRUE, ...)
+#' @usage att(hbalobject, method="lm_robust", dr=TRUE, displayAll=FALSE, ...)
 #' @param hbalobject  an object of class \code{hbal} as returned by \code{hbal}.
 #' @param method      estimation method for the ATT. Default is the Lin (2016) estimator. 
 #' @param dr      	  doubly robust, whether an outcome model is included in estimating the ATT.
+#' @param displayAll  only displays treatment effect by default.
 #' @param ...         arguments passed to lm_lin or lm_robust
 #' @details This is a wrapper for \code{lm_robust} and \code{lm_lin} from the \link{estimatr} package. 
 #' @return A matrix of estimates with their robust standard errors
 #' @importFrom estimatr lm_lin lm_robust
 #' @importFrom stats as.formula
+#' @importFrom generics tidy
 #' @author Yiqing Xu, Eddie Yang
 #' @examples
 #' #EXAMPLE 1
@@ -30,6 +32,7 @@ att <- function(
 	hbalobject,
 	method="lm_robust",
 	dr=TRUE,
+	displayAll=FALSE,
 	...
 	){
 	if(!inherits(hbalobject, "hbal")){
@@ -74,5 +77,13 @@ att <- function(
 			out <- lm_lin(formula = as.formula(paste0(Y, ' ~ ', Tr)), covariates=covariates, weights=w, data=dat, ...)
 		}
 	}
-	return(out)
+	if (displayAll == FALSE)
+	{
+	  return(tidy(out)[2, -9])	  
+	}
+	else
+	{
+	  return(out)
+	}
+	
 }

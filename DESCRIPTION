@@ -1,8 +1,8 @@
 Package: hbal
 Type: Package
 Title: Hierarchically Regularized Entropy Balancing
-Version: 1.2.11
-Date: 2023-05-07
+Version: 1.2.12
+Date: 2023-12-21
 Authors@R: c(
   person("Yiqing", "Xu", , "yiqingxu@stanford.edu", c("aut", "cre"), comment = c(ORCID = "0000-0003-2041-6671")),
   person("Eddie", "Yang", , "z5yang@ucsd.edu", c("aut"))
@@ -12,7 +12,7 @@ Description: Implements hierarchically regularized entropy balancing proposed by
 URL: https://yiqingxu.org/packages/hbal/
 License: MIT + file LICENSE
 Depends: R (>= 3.6.0)
-Imports: Rcpp (>= 1.0.1), estimatr, glmnet, gtable, gridExtra, ggplot2, stringr, nloptr
+Imports: Rcpp (>= 1.0.1), estimatr, glmnet, gtable, gridExtra, ggplot2, stringr, nloptr, generics
 Suggests: 
     MASS,
     knitr,
@@ -22,5 +22,5 @@ Suggests:
 LinkingTo: Rcpp, RcppEigen
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.3
 NeedsCompilation: yes

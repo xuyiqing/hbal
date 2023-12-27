@@ -5,20 +5,24 @@
 \alias{plot}
 \title{Plotting Covariate Balance from an \code{hbal} Object}
 \usage{
-\method{plot}{hbal}(x, type = 'balance', log = TRUE, base_size = 10,...)
+\method{plot}{hbal}(x, type = 'balance', log = TRUE, base_size = 10, ...)
 }
 \arguments{
 \item{x}{an object of class \code{hbalobject} as returned by \code{hbal}.}
-\item{type}{type of graph to plot, either 'balance' or 'weight'.}
-\item{log}{binary indicator for logrithmic scale when \code{type = 'weight'}.}
-\item{base_size}{base font size for lables when \code{type = 'balance'}.}
+
+\item{type}{type of graph to plot.}
+
+\item{log}{log scale for the weight plot}
+
+\item{base_size}{base font size}
+
 \item{...}{Further arguments to be passed to \code{plot.hbal()}.}
 }
 \value{
-A matrix of ggplots of covariate balance by group or a histgram of balancing weights
+A matrix of ggplots of covariate balance by group
 }
 \description{
-This function plots the covariate difference between the control and treatment groups in standardized means before and after weighting and the distribution of balancing weights.
+This function plots the covariate difference between the control and treatment groups in standardized means before and after weighting.
 }
 \author{
 Yiqing Xu, Eddie Yang

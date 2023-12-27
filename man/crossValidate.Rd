@@ -4,10 +4,9 @@
 \alias{crossValidate}
 \alias{CrossValidate}
 \title{Ridge Penalty Selection through Cross Validation}
-\keyword{internal}
 \usage{
 crossValidate(
-  alpha = NULL,
+  group.alpha = NULL,
   penalty.pos = NULL,
   penalty.val = NULL,
   group.exact = NULL,
@@ -27,7 +26,7 @@ crossValidate(
 )
 }
 \arguments{
-\item{alpha}{alpha. Controls degree of regularization.}
+\item{group.alpha}{group.alpha. Controls degree of regularization.}
 
 \item{penalty.pos}{positions of user-supplied penalties.}
 
@@ -62,7 +61,7 @@ crossValidate(
 \item{shuffle.treat}{whether to create folds for the treated units}
 }
 \value{
-alpha, lambda
+group.alpha, lambda
 }
 \description{
 Internal function called by \code{hbal} to select ridge penalties through cross-validation.

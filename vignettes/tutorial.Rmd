@@ -125,7 +125,7 @@ We can use `att()` on a `hbal` object to directly get an ATT estimate.  Note tha
 
 * weighted linear regression with a full set of interactions between the treatment indicator and demeaned covariates, or Lin's method, by setting `method = ""lm_lin"`.  
 
-Additional arguments accepted by `lm_robust()` or `lm_lin()`, such as `se_type` and `clusters`, can be passed to `att()`, for example: 
+By default, `att()` only displays treatment effect(`displayAll = FALSE`). Additional arguments accepted by `lm_robust()` or `lm_lin()`, such as `se_type` and `clusters`, can be passed to `att()`, for example: 
 ```{r}
 att(out, dr = FALSE)
 att(out)

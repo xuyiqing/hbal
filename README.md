@@ -65,6 +65,7 @@ require(nloptr)
 require(Rcpp)
 require(RcppEigen)
 require(stringr)
+require(generics)
 ```
 
 ------------------------------------------------------------------------

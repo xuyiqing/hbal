@@ -4,19 +4,25 @@
 \alias{att}
 \title{Estimating the ATT from an hbal object}
 \usage{
-att(hbalobject, method="lm_robust", dr=TRUE, ...)
+att(hbalobject, method="lm_robust", dr=TRUE, displayAll=FALSE, ...)
 }
 \arguments{
 \item{hbalobject}{an object of class \code{hbal} as returned by \code{hbal}.}
-\item{method}{estimation method for the ATT. The default is the Lin (2013) estimator.}
+
+\item{method}{estimation method for the ATT. Default is the Lin (2016) estimator.}
+
 \item{dr}{doubly robust, whether an outcome model is included in estimating the ATT.}
-\item{...}{arguments passed to \code{lm_lin} or \code{lm_robust}}
+
+\item{displayAll}{only displays treatment effect by default.}
+
+\item{...}{arguments passed to lm_lin or lm_robust}
 }
 \value{
-A matrix of estimates with their robust standard errors.
+A matrix of estimates with their robust standard errors
 }
 \description{
-\code{att} estimates the average treatment effect on the treated (ATT) from an hbal object returned by \code{hbal}.
+\code{att} estimates the average treatment effect on the treated (ATT) from an 
+hbal object returned by \code{hbal}.
 }
 \details{
 This is a wrapper for \code{lm_robust} and \code{lm_lin} from the \link{estimatr} package.

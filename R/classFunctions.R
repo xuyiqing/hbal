@@ -1,10 +1,11 @@
 #' @title Plotting Covariate Balance from an \code{hbal} Object
 #' @aliases plot
 #' @description This function plots the covariate difference between the control and treatment groups in standardized means before and after weighting.
-#' @usage \method{plot}{hbal}(x, type = 'balance', ...)
+#' @usage \method{plot}{hbal}(x, type = 'balance', log = TRUE, base_size = 10, ...)
 #' @param x       an object of class \code{hbalobject} as returned by \code{hbal}.
 #' @param type    type of graph to plot.
 #' @param log     log scale for the weight plot
+#' @param base_size     base font size
 #' @param ...     Further arguments to be passed to \code{plot.hbal()}.
 #' @return A matrix of ggplots of covariate balance by group
 #' @import ggplot2
@@ -71,9 +72,9 @@ plot.hbal <- function(x,
 #' @title Summarizing from an \code{hbal} Object
 #' @aliases summary
 #' @description This function prints a summary from an \code{hbal} Object.
-#' @usage \method{summary}{hbal}(object, ...)
+#' @usage \method{summary}{hbal}(object, print.level = 0, ...)
 #' @param object  an object of class \code{hbalobject} as returned by \code{hbal}.
-#' @param print.level  level of detials to be printed
+#' @param print.level  level of details to be printed
 #' @param ...     Further arguments to be passed to \code{summary.hbal()}.
 #' @return a summary table
 #' @importFrom stats sd

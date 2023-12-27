@@ -6,12 +6,14 @@
 \usage{
 covarExpand(X, exp.degree = 3, treatment = NULL, exclude = NULL)
 }
-\keyword{internal}
 \arguments{
-\item{X}{a matrix of covariates.}
+\item{X}{matrix of covariates.}
+
 \item{exp.degree}{the degree of the polynomial.}
-\item{treatment}{a vector of treatment status}
-\item{exclude}{a vector of covariate name pairs or triplets to be excluded.}
+
+\item{treatment}{treatment indicator}
+
+\item{exclude}{list of covariate name pairs or triplets to be excluded.}
 }
 \value{
 A matrix of serially expanded covariates

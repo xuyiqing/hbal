@@ -3,7 +3,6 @@
 \name{.onAttach}
 \alias{.onAttach}
 \title{Subsidiary hbal Function}
-\keyword{internal}
 \usage{
 .onAttach(lib, pkg)
 }

@@ -5,12 +5,13 @@
 #' treatment group. \code{hbal} automatically expands the covariate space to include
 #' higher order terms and uses cross-validation to select variable penalties for the 
 #' balancing conditions.
-#' @usage hbal(data, Treat, X, Y, base.weights = NULL, coefs = NULL 
-#'      max.iterations = 200, cv = TRUE, folds = 4, 
-#'      expand.degree = 3, ds = FALSE, alpha = NULL, 
-#'      group.alpha=NULL, constraint.tolerance = 1e-3, 
-#'      print.level = -1, grouping = NULL, 
-#'      shuffle.treat=TRUE, exclude=NULL, seed=NULL)
+#' @usage hbal(data, Treat, X, Y = NULL, w = NULL, 
+#'      X.expand = NULL, X.keep = NULL, expand.degree = 1,
+#'      coefs = NULL, max.iterations = 200, cv = NULL, folds = 4,
+#'      ds = FALSE, group.exact = NULL, group.alpha = NULL,
+#'      term.alpha = NULL, constraint.tolerance = 1e-3, print.level = 0,
+#'      grouping = NULL, group.labs = NULL, linear.exact = TRUE, shuffle.treat = TRUE,
+#'      exclude = NULL,force = FALSE, seed = 94035)
 #' @param data                 a dataframe that contains the treatment, outcome, and covariates.   
 #' @param Treat                a character string of the treatment variable.
 #' @param X                    a character vector of covariate names to balance on.
@@ -49,6 +50,10 @@
 #' \item{Y}{vector of outcome}
 #' @author Yiqing Xu, Eddie Yang
 #' @importFrom stats var
+#' @importFrom stats setNames
+#' @importFrom stats complete.cases
+#' @importFrom stats weighted.mean
+#' @importFrom stats density
 #' @importFrom nloptr nloptr
 #' @useDynLib hbal, .registration = TRUE
 #' @references Xu, Y., & Yang, E. (2022). Hierarchically Regularized Entropy Balancing. Political Analysis, 1-8. doi:10.1017/pan.2022.12
@@ -135,6 +140,25 @@ hbal <- function(
 	mcall <- match.call()
 	if(!is.null(seed)) set.seed(seed)
 
+	
+	#renames the covariates
+	new_names <- paste0("X", seq_along(X))
+	colnames(data)[colnames(data) %in% X] <- new_names
+	if (is.null(X.expand) == FALSE)
+	{
+	  mapping <- setNames(new_names, X)
+	  mapped_list <- mapping[match(X.expand, names(mapping))]
+	  X.expand <- unname(mapped_list)
+	}
+	if (is.null(X.keep) == FALSE)
+	{
+	  mapping <- setNames(new_names, X)
+	  mapped_list <- mapping[match(X.keep, names(mapping))]
+	  X.keep <- unname(mapped_list)
+	}
+	old_names = X
+	X = new_names
+	
 	# covariates for expansion
 	if (expand.degree > 1 && is.null(X.expand) == TRUE) {
 		if (print.level >= 1) message("All variables will be serially expanded")
@@ -504,7 +528,13 @@ hbal <- function(
 			constraint_tolerance=constraint.tolerance,
 			print_level=print.level
 			)
-
+  
+	# non converge warning
+	if(!z$converged)
+	{
+	  message("Not converged. Try setting ds = TRUE or using X.keep and exclude option.\n")
+	}
+	
 	# save weights and coefficients
 	
 
@@ -519,11 +549,16 @@ hbal <- function(
 	grouping[1] <- grouping[1]-1 
 	alpha <- alpha[-1]
 	Covar <- colnames(X.sav)
+	#rename the covar
+	for(i in 1:length(new_names)) Covar <- stringr::str_replace_all(Covar, new_names[i], str_trunc(old_names[i], 5, side="right", ellipsis=""))
+	Covar_nonum <- Covar
+	Covar <- paste(Covar, seq_along(Covar), sep = ".")
+	colnames(X.sav) <- Covar
 	names(alpha) <- Covar
 	
 	## balance table
 	bal.tab <- matrix(NA, length(Covar), 5) # tr, co, co.w, diff, diff.w
-	rownames(bal.tab) <- Covar
+	rownames(bal.tab) <- Covar_nonum
 	treat <- X.sav[Treatment==1, , drop = FALSE] # treated
 	control <- X.sav[Treatment==0, , drop = FALSE] # control
 	bal.tab[,1] <- apply(treat, 2, weighted.mean, w = base.weights.tr)
