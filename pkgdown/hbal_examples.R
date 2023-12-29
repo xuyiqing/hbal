@@ -1,5 +1,5 @@
 ### R Code for hbal Tutorial
-# v.1.2.9
+# v.1.2.12
 
 library(ggplot2)
 library(estimatr)
@@ -45,6 +45,7 @@ summary(out, print.level = 1) # more info
 att(out, dr = FALSE)
 att(out)
 att(out, method = "lm_lin", se_type = "stata")
+att(out, displayAll = TRUE)
 
 out <- hbal(Treat = 'D', X = c('X1', 'X2', 'X3'),  Y = 'Y', 
             data = dat, expand.degree = 3, cv = TRUE)

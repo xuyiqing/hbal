@@ -3,6 +3,7 @@
 \docType{data}
 \name{hbal-data}
 \alias{hbal-data}
+\keyword{internal}
 \title{Data from Black and Owens (2016) and Hazlett (2020)}
 \source{
 \itemize{

@@ -13,6 +13,8 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 stable](https://img.shields.io/badge/lifecycle-stable-green.svg)](https://www.tidyverse.org/lifecycle/#stablel)
 [![License:
 MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![downloads:
+CRAN](https://cranlogs.r-pkg.org/badges/grand-total/hbal)](https://www.datasciencemeta.com/rpackages)
 <!-- badges: end -->
 
 **R** package for implementing hierarchically regularized entropy
@@ -41,14 +43,14 @@ Balancing](https://www.cambridge.org/core/journals/political-analysis/article/hi
 You can install the **hbal** package from CRAN:
 
 ``` r
-install.packages('hbal') 
+install.packages("hbal") 
 ```
 
 You can also install the up-to-date development version from Github:
 
 ``` r
-install.packages('devtools') # if not already installed
-devtools::install_github('xuyiqing/hbal')
+install.packages("devtools") # if not already installed
+devtools::install_github("xuyiqing/hbal")
 ```
 
 **hbal** depends on the following packages, which will be installed
@@ -56,27 +58,29 @@ automatically when **hbal** is being installed; you can also install
 them manually:
 
 ``` r
-require(estimatr)  
-require(glmnet) 
-require(ggplot2)
-require(gridExtra)
-require(gtable)
-require(nloptr)
-require(Rcpp)
-require(RcppEigen)
-require(stringr)
-require(generics)
+install_all <- function(packages) {
+  installed_pkgs <- installed.packages()[, "Package"]
+  for (pkg in packages) {
+    if (!pkg %in% installed_pkgs) {
+      install.packages(pkg)
+    }
+  }
+}
+
+packages <- c("estimatr", "glmnet", "ggplot2", "gridExtra", "gtable",
+              "nloptr", "Rcpp", "RcppEigen", "stringr", "generics")
+install_all(packages)
 ```
 
 ------------------------------------------------------------------------
 
 ### Notes on installation failures
 
-1.  Mac users who have updated to MacOS BigSur or higher will likely
-    encounter compilation problems. See
+1.  Intel-Mac users who have updated to MacOS BigSur or higher will
+    likely encounter compilation problems. See
     [here](http://yiqingxu.org/public/BigSurError.pdf) for a potential
     solution.
-2.  Windows users please consider upgrading R to 4.0.0 or higher and
+2.  Windows users please consider upgrading R to 4.3.0 or higher and
     installing the [latest
     Rtools](https://cran.r-project.org/bin/windows/Rtools/) to avoid
     C++17 complier errors when installing fastplm.

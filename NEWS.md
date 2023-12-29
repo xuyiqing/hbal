@@ -1,7 +1,7 @@
 # hbal 1.2.12
-1. Only display the treatment effect by default
+1. In `att()`, only display the treatment effect by default
 2. Fix a bug with truncated variable names
-3. Warning when the algorithm is not converged
+3. Show a warning when the algorithm is not converged
 
 # hbal 1.2.11
 1. Allow approximate balance on the level terms (penalty tuned via cross-validation)

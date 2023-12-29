@@ -3,6 +3,7 @@
 \name{doubleSelection}
 \alias{doubleSelection}
 \title{Double Selection}
+\keyword{internal}
 \usage{
 doubleSelection(X, W, Y, grouping)
 }

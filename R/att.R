@@ -79,7 +79,10 @@ att <- function(
 	}
 	if (displayAll == FALSE)
 	{
-	  return(tidy(out)[2, -9])	  
+		out <- tidy(out)[2, -c(1, 9), drop = FALSE]
+		colnames(out) <-  c("Estimate", "Std. Error", "t value", "Pr(>|t|)", "CI Lower", "CI Upper", "DF")
+		rownames(out) <- Tr	
+		return(out)	  
 	}
 	else
 	{

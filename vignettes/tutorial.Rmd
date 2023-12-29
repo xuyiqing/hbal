@@ -132,6 +132,10 @@ att(out)
 att(out, method = "lm_lin", se_type = "stata")
 ```
 
+Setting `displayAll = TRUE` reveals the coefficients of the intercept and covariates. 
+```{r}
+att(out, displayAll = TRUE)
+```
 
 Furthermore, `hbal()` allows variable penalties on the balancing conditions for different groups of covariates. Penalties are automatically determined using cross-validation. This minimizes the variance of the weights, increases the feasibility of the balancing problem, and is the approach advocated in @XuYang2022. We can do so by setting `cv = TRUE`. Note that, by default, `hbal()` only penalizes higher-order terms and seeks to achieve exact balance on linear terms.
 
@@ -185,7 +189,7 @@ out <- hbal(Treat = 'D', X = c('X1', 'X2', 'X3'),  Y = 'Y', data = dat,
 summary(out)
 ```
 
-### Controling Serial Expansion
+### Controlling Serial Expansion
 
 Sometimes we may not want to perform serial expansion on all covariates but instead expand on a select set of covariates, we can do so by using the `X.expand` argument to specify the covariates we want to expand on. For example, we can expand only on **X1**:
 ```{r}
@@ -195,7 +199,7 @@ summary(out)
 ```
 
 ### Selecting Covariates
-Performing serial expansion on many covariates can result in a prohibitive number of covariates that need to be balanced on. In such cases, users many want to reduce the number of covariate by using the double selection method by @belloni2014inference. This screens the expanded covariates and only keeps those that are are predictive for the treatment assignment or the outcome. Users can enable double selection by setting `ds = TRUE`. In the following case, almost all the higher-order terms except `X1*X2` and `X2*X3` are screened out by the double selection procedure.
+Performing serial expansion on many covariates can result in a prohibitive number of covariates that need to be balanced on. In such cases, users many want to reduce the number of covariates by using the double selection method by @belloni2014inference. This screens the expanded covariates and only keeps those that are predictive for the treatment assignment or the outcome. Users can enable double selection by setting `ds = TRUE`. In the following case, almost all the higher-order terms except `X1*X2` and `X2*X3` are screened out by the double selection procedure.
 ```{r}
 out <- hbal(Treat = 'D', X = c('X1', 'X2', 'X3'),  Y = 'Y', data = dat, 
             expand.degree = 3, ds = TRUE) 
