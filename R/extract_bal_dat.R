@@ -43,7 +43,7 @@ extract_bal_dat = function(hbal_object){
       filter(str_detect(measure, "Std")) |> 
       mutate(adjust = case_when(measure == "Std.Diff.(O)" ~ "Before Adjustment",
                                 measure == "Std.Diff.(W)" ~ "After Adjustment"),
-             covar.group = rep(rep(names(third_order$grouping), third_order$grouping), 2))
+             covar.group = rep(rep(names(hbal_object$grouping), hbal_object$grouping), 2))
     
     
     return(bal_plot_dat)  
