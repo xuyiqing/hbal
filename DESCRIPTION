@@ -10,6 +10,7 @@ Authors@R: c(
 Maintainer: Yiqing Xu <yiqingxu@stanford.edu>
 Description: Implements hierarchically regularized entropy balancing proposed by Xu and Yang (2022) <doi:10.1017/pan.2022.12>. The method adjusts the covariate distributions of the control group to match those of the treatment group. 'hbal' automatically expands the covariate space to include higher order terms and uses cross-validation to select variable penalties for the balancing conditions.
 URL: https://yiqingxu.org/packages/hbal/
+BugReports: https://github.com/xuyiqing/hbal/issues
 License: MIT + file LICENSE
 Depends: R (>= 3.6.0)
 Imports: Rcpp (>= 1.0.1), estimatr, glmnet, gtable, gridExtra, ggplot2, stringr, nloptr, generics
