@@ -2,7 +2,6 @@
 % Please edit documentation in R/onAttach.R
 \name{.onAttach}
 \alias{.onAttach}
-\keyword{internal}
 \title{Subsidiary hbal Function}
 \usage{
 .onAttach(lib, pkg)

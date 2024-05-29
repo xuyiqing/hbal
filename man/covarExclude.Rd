@@ -2,7 +2,6 @@
 % Please edit documentation in R/covarExclude.R
 \name{covarExclude}
 \alias{covarExclude}
-\keyword{internal}
 \title{Match Column Names to be Excluded}
 \usage{
 covarExclude(colname, exclude)

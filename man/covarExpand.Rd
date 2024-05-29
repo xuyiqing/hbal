@@ -2,7 +2,6 @@
 % Please edit documentation in R/covarExpand.R
 \name{covarExpand}
 \alias{covarExpand}
-\keyword{internal}
 \title{Serial Expansion of Covariates}
 \usage{
 covarExpand(X, exp.degree = 3, treatment = NULL, exclude = NULL)

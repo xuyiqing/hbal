@@ -3,7 +3,6 @@
 \name{updateCoef}
 \alias{updateCoef}
 \title{Update lambda}
-\keyword{internal}
 \usage{
 updateCoef(old.coef, new.coef, counter)
 }

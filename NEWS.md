@@ -1,3 +1,7 @@
+# hbal 1.2.13
+1. In `att()`, add the method "elnet" by Athey (2018)
+2. Fix a bug with incorrect variable names
+
 # hbal 1.2.12
 1. In `att()`, only display the treatment effect by default
 2. Fix a bug with truncated variable names

@@ -2,7 +2,7 @@
 % Please edit documentation in R/crossValidate.R
 \name{crossValidate}
 \alias{crossValidate}
-\keyword{internal}
+\alias{CrossValidate}
 \title{Ridge Penalty Selection through Cross Validation}
 \usage{
 crossValidate(

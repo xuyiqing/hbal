@@ -550,7 +550,7 @@ hbal <- function(
 	alpha <- alpha[-1]
 	Covar <- colnames(X.sav)
 	#rename the covar
-	for(i in 1:length(new_names)) Covar <- stringr::str_replace_all(Covar, new_names[i], str_trunc(old_names[i], 5, side="right", ellipsis=""))
+	for(i in 1:length(new_names)) Covar <- stringr::str_replace_all(Covar, paste0("\\b",new_names[i], "\\b"), str_trunc(old_names[i], 5, side="right", ellipsis=""))
 	Covar_nonum <- Covar
 	Covar <- paste(Covar, seq_along(Covar), sep = ".")
 	colnames(X.sav) <- Covar
