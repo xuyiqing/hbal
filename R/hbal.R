@@ -369,13 +369,19 @@ hbal <- function(
 
 	# penalty on specific terms
 	if (!is.null(term.alpha)){
-		penalty.names <- names(term.alpha)
+	  if (expand.degree > 1) {
+	    warning("\"term.alpha\ does not work with feature expansion; ignored.")
+	    term.alpha <- NULL
+	  }
+	}
+	if (!is.null(term.alpha)){
+	 	penalty.names <- names(term.alpha)
 		if (length(match(penalty.names, colnames(X)))==0) {
 			if (print.level >= 1) message("Invalid variable name(s); \"term.alpha\" is ignored\n")
 			penalty.names <- penalty.val <- penalty.pos <- NULL
 		} else {
 			penalty.val <- term.alpha
-			penalty.pos <- match(penalty.names, colnames(X))+1
+			penalty.pos <- match(penalty.names, old_names)+1
 		}		
 	}else{
 		penalty.names <- penalty.val <- penalty.pos <- NULL

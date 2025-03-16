@@ -44,7 +44,7 @@ hbal(data, Treat, X, Y = NULL, w = NULL,
 
 \item{group.alpha}{penalty for each covariate group}
 
-\item{term.alpha}{named vector of ridge penalties, only takes 0 or 1.}
+\item{term.alpha}{a named vector of user-specified ridge penalties. The names need to be variable names. Value should be non-negative (0 means exact balancing). Only work with `expand.degree = 1`}
 
 \item{constraint.tolerance}{tolerance level for overall imbalance. Default is 1e-3.}
 
