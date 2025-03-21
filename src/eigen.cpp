@@ -269,6 +269,7 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
 
         double abs_error = (hessian*newton - gradient).norm()/gradient.norm();
         if (abs_error > 0.01){
+            Rcpp::Rcout << "Matrix inversion resulted in large error." << std::endl; //new: add message when matrix inversion is unsuccessful
             break;
         }
 
@@ -286,9 +287,10 @@ List hb (Eigen::VectorXd tr_total, // Ntr * 1
             
             if(print_level>=3){Rcpp::Rcout << "LS Step Length is " << minimum << std::endl;};
 
-            if(minimum <= 0.002){
+            if(minimum <= 0.0001){ // changed 0.001 -> 0.0001
                 counter += 1;
                 if (counter > 1){
+                    Rcpp::Rcout << "Minimum step criterion is triggered while optimizing." << std::endl; //new: add message when step length is very small (can happen when initial penalty is large or when optimization is difficult)
                     break;
                 }  
             };
