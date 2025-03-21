@@ -518,7 +518,8 @@ hbal <- function(
 	# apply individual penalty values for specific terms
 	if (!is.null(penalty.pos)) { # fill in specific alpha for individual terms
 		alpha[penalty.pos] <- penalty.val
-	}		
+	}
+	alpha[1]  <- 0 # normalizing term should not have penalty		
 
 	##################
 	# Main Algorithm
