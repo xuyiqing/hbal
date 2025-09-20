@@ -27,7 +27,7 @@ A matrix of estimates with their robust standard errors
 hbal object returned by \code{hbal}.
 }
 \details{
-This is a wrapper for \code{lm_robust} and \code{lm_lin} from the \link{estimatr} package.
+This is a wrapper for \code{lm_robust} and \code{lm_lin} from the \pkg{estimatr} package.
 }
 \examples{
 #EXAMPLE 1

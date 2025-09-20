@@ -109,7 +109,7 @@ att <- function(
 	  var.hat <-  est1[2] + est0[2]
 	  df <- df0 + df1
 	  # out
-	  out <- data.frame("Estimate" = tau.hat, "Std. Error" = sqrt(var.hat), "t value" = tau.hat/sqrt(var.hat), "Pr(>|t|)" = 2*pt(-tau.hat/sqrt(var.hat), df = df), "CI Lower" = tau.hat - 1.96 * sqrt(var.hat), "CI Upper" = tau.hat + 1.96 * sqrt(var.hat), "DF" = df)
+	  out <- data.frame("Estimate" = tau.hat, "Std. Error" = sqrt(var.hat), "t value" = tau.hat/sqrt(var.hat), "Pr(>|t|)" = 2*stats::pt(-tau.hat/sqrt(var.hat), df = df), "CI Lower" = tau.hat - 1.96 * sqrt(var.hat), "CI Upper" = tau.hat + 1.96 * sqrt(var.hat), "DF" = df)
 	  colnames(out) <-  c("Estimate", "Std. Error", "t value", "Pr(>|t|)", "CI Lower", "CI Upper", "DF")
 	  rownames(out) <- Tr	
 	  return(out)
