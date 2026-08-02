@@ -43,7 +43,13 @@ att <- function(
 		stop("hbalobject must be an hbal object from a call to hbal()")
     }
     elpss <- list(...)
-	if (dr == FALSE & method == "lm_lin") {
+	# The vignette defines dr = FALSE as "difference in weighted means ... as a
+	# result, `method` is ignored", so the fallback must not be conditioned on
+	# which method was asked for. The previous test was `method == "lin"`, a
+	# string none of the branches below use ("lm_robust", "lm_lin", "elnet"),
+	# so the fallback never fired and dr was silently ignored for lm_lin and
+	# elnet alike.
+	if (dr == FALSE) {
 		method <- "lm_robust"
 	}
 	if (is.null(hbalobject$Y)==TRUE) {
