@@ -43,7 +43,7 @@ att <- function(
 		stop("hbalobject must be an hbal object from a call to hbal()")
     }
     elpss <- list(...)
-	if (dr == FALSE & method == "lin") {
+	if (dr == FALSE & method == "lm_lin") {
 		method <- "lm_robust"
 	}
 	if (is.null(hbalobject$Y)==TRUE) {
