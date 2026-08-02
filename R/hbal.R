@@ -153,7 +153,13 @@ hbal <- function(
 	  prefix <- paste0(prefix, "_")
 	}
 	new_names <- paste0(prefix, seq_along(X))
-	colnames(data)[colnames(data) %in% X] <- new_names
+	# `colnames(data) %in% X` selects positions in DATA-FRAME order, but
+	# new_names is built in USER `X` order, and the X.expand / X.keep mapping
+	# below (setNames(new_names, X)) also assumes X order. When the two orders
+	# differ the names permute: every covariate is relabelled as another, and
+	# X.expand ends up expanding a different variable than the one requested.
+	# match() indexes in X order, so new_names[i] always lands on X[i].
+	colnames(data)[match(X, colnames(data))] <- new_names
 	if (is.null(X.expand) == FALSE)
 	{
 	  mapping <- setNames(new_names, X)
