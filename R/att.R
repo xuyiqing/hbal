@@ -10,7 +10,10 @@
 #' @param alpha       tuning paramter for glmnet
 #' @param ...         arguments passed to lm_lin or lm_robust
 #' @details This is a wrapper for \code{lm_robust} and \code{lm_lin} from the \link{estimatr} package. 
-#' @return A matrix of estimates with their robust standard errors
+#' @return A data frame with one row and seven columns (Estimate, Std. Error,
+#'   t value, Pr(>|t|), CI Lower, CI Upper, DF) when \code{displayAll = FALSE}
+#'   (the default) or \code{method = "elnet"}; otherwise the fitted model
+#'   object returned by \code{lm_robust} or \code{lm_lin}.
 #' @importFrom estimatr lm_lin lm_robust
 #' @importFrom stats as.formula
 #' @importFrom stats predict
@@ -30,6 +33,43 @@
 #' out <- hbal(Treat = 'treat', X = c('X1', 'X2'), Y = 'Y', data=dat)
 #' sout <- summary(att(out))
 #' @export
+
+# Internal helper for att(): given whatever generics::tidy() returned on an
+# estimatr fit (a plain data.frame under estimatr < 2.0.0, a tibble under
+# estimatr >= 2.0.0), select the treatment row and the seven display columns
+# by name, and return a plain data.frame with the package's display column
+# names and the treatment name as its row name. Not exported.
+# @noRd
+.att_tidy_select <- function(tidy_out, Tr) {
+	tidy_out <- as.data.frame(tidy_out, stringsAsFactors = FALSE)
+
+	row_idx <- which(tidy_out[["term"]] == Tr)
+	if (length(row_idx) != 1) {
+		stop(
+			"att(): expected exactly one row with term == \"", Tr, "\" in the ",
+			"tidy() output from estimatr, found ", length(row_idx), ". ",
+			"This usually means the treatment term name changed or estimatr's ",
+			"tidy() output is not in the expected shape."
+		)
+	}
+
+	required_cols <- c("estimate", "std.error", "statistic", "p.value",
+						"conf.low", "conf.high", "df")
+	missing_cols <- setdiff(required_cols, colnames(tidy_out))
+	if (length(missing_cols) > 0) {
+		stop(
+			"att(): the tidy() output from estimatr is missing expected ",
+			"column(s): ", paste(missing_cols, collapse = ", "), ". ",
+			"This usually means an incompatible estimatr version is installed."
+		)
+	}
+
+	out <- tidy_out[row_idx, required_cols, drop = FALSE]
+	colnames(out) <- c("Estimate", "Std. Error", "t value", "Pr(>|t|)",
+						"CI Lower", "CI Upper", "DF")
+	rownames(out) <- Tr
+	out
+}
 
 att <- function(
 	hbalobject,
@@ -116,10 +156,8 @@ att <- function(
 	}
 	# DisplayAll Option of ATT
 	if (displayAll == FALSE){
-		out <- tidy(out)[2, -c(1, 9), drop = FALSE]
-		colnames(out) <-  c("Estimate", "Std. Error", "t value", "Pr(>|t|)", "CI Lower", "CI Upper", "DF")
-		rownames(out) <- Tr	
-		return(out)	  
+		out <- .att_tidy_select(tidy(out), Tr)
+		return(out)
 	}
 	else
 	{

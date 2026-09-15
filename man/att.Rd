@@ -20,7 +20,10 @@ att(hbalobject, method="lm_robust", dr=TRUE, displayAll=FALSE, alpha=0.9, ...)
 \item{...}{arguments passed to lm_lin or lm_robust}
 }
 \value{
-A matrix of estimates with their robust standard errors
+A data frame with one row and seven columns (Estimate, Std. Error, t value,
+Pr(>|t|), CI Lower, CI Upper, DF) when \code{displayAll = FALSE} (the
+default) or \code{method = "elnet"}; otherwise the fitted model object
+returned by \code{lm_robust} or \code{lm_lin}.
 }
 \description{
 \code{att} estimates the average treatment effect on the treated (ATT) from an 
