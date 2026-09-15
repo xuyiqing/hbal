@@ -2,21 +2,98 @@
 #' @aliases att
 #' @description \code{att} estimates the average treatment effect on the treated (ATT) from an 
 #' hbal object returned by \code{hbal}. 
-#' @usage att(hbalobject, method="lm_robust", dr=TRUE, displayAll=FALSE, alpha=0.9, ...)
+#' @usage att(hbalobject, method="aipw", dr=TRUE, displayAll=FALSE, alpha=0.9,
+#'     seed=NULL, nfolds=5, ...)
 #' @param hbalobject  an object of class \code{hbal} as returned by \code{hbal}.
-#' @param method      estimation method for the ATT. Default is the Lin (2016) estimator. 
-#' @param dr      	  doubly robust, whether an outcome model is included in estimating the ATT.
-#' @param displayAll  only displays treatment effect by default.
-#' @param alpha       tuning paramter for glmnet
-#' @param ...         arguments passed to lm_lin or lm_robust
-#' @details This is a wrapper for \code{lm_robust} and \code{lm_lin} from the \link{estimatr} package. 
+#' @param method      estimation method for the ATT. The default \code{"aipw"} (new in
+#'   version 1.3.0) is a cross-fitted, Neyman-orthogonal augmented balancing-weights
+#'   estimator (see Details). \code{"lm_robust"} reproduces the default of versions
+#'   before 1.3.0 (weighted regression via \code{lm_robust}); \code{"lm_lin"}
+#'   (Lin 2013) and \code{"elnet"} (Athey, Imbens and Wager 2018) are also available.
+#' @param dr          doubly robust, whether an outcome model is included in estimating
+#'   the ATT. With \code{dr = FALSE}, \code{"aipw"} and \code{"lm_robust"} reduce to the
+#'   weighted difference in means.
+#' @param displayAll  only displays treatment effect by default. If \code{TRUE},
+#'   returns the fitted \code{lm_robust} or \code{lm_lin} object, or, for
+#'   \code{method = "aipw"}, a list with the estimate and its components (see Value).
+#' @param alpha       tuning parameter for glmnet (\code{method = "elnet"} only).
+#' @param seed        a single number that fixes the cross-fitting fold assignment of
+#'   \code{method = "aipw"}; \code{NULL} (the default) assigns folds in the row order
+#'   of the controls. The assignment is a deterministic function of \code{seed};
+#'   \code{set.seed()} is never called. Ignored by the other methods.
+#' @param nfolds      number of cross-fitting folds for \code{method = "aipw"}. Default
+#'   is 5. Reduced automatically, with a message, when the control group is small
+#'   relative to the number of covariates (see Details). Ignored by the other methods.
+#' @param ...         arguments passed to lm_lin or lm_robust (e.g. \code{se_type},
+#'   \code{clusters}). Not accepted by \code{method = "aipw"}.
+#' @details The default \code{method = "aipw"} combines the hbal weights with a
+#'   control-group outcome model in an augmented (AIPW-style) moment condition that is
+#'   Neyman-orthogonal: its first-order sensitivity to estimation error in either
+#'   nuisance component (the outcome model, given hbal's balance on \code{mat}; the
+#'   weights, given a correct outcome model) is zero. Let \eqn{w_i} be the base weights
+#'   of the treated units, \eqn{W_1}{W1} their sum, \eqn{\gamma_i}{gamma_i} the hbal
+#'   weights of the controls (\code{weights.co}, which also sum to \eqn{W_1}{W1}), and
+#'   \eqn{\hat{\mu}_0}{mu0} a linear regression of the outcome on the columns of
+#'   \code{hbalobject$mat}, fitted by weighted least squares on the controls only
+#'   (aliased columns are dropped automatically). The estimate is
+#'   \deqn{\hat{\tau} = \frac{1}{W_1}\Big[\sum_{T_i = 1} w_i (Y_i - \hat{m}_i) -
+#'   \sum_{T_i = 0} \gamma_i \hat{e}_i\Big],}{tau = (1 / W1) [ sum_{T=1} w_i (Y_i - m_i) -
+#'   sum_{T=0} gamma_i e_i ],}
+#'   where \eqn{\hat{m}_i}{m_i} is the outcome model fitted on all controls and evaluated
+#'   at treated unit \eqn{i}, and \eqn{\hat{e}_i}{e_i} is the cross-fitted residual of
+#'   control \eqn{i}: the controls are split into \code{nfolds} folds and each control's
+#'   residual uses the fit obtained without its own fold. The number of folds actually
+#'   used is \eqn{K = \max(1, \min(\mathrm{nfolds}, \lfloor n_0 / (2p) \rfloor))}{K = max(1, min(nfolds, floor(n0 / (2p))))},
+#'   with \eqn{n_0}{n0} controls and \eqn{p} columns in \code{mat}; \eqn{K = 1} means no
+#'   cross-fitting. The standard error is influence-function based: with
+#'   \eqn{\psi_i = w_i T_i (Y_i - \hat{m}_i - \hat{\tau}) - \gamma_i (1 - T_i) \hat{e}_i}{psi_i = w_i T_i (Y_i - m_i - tau) - gamma_i (1 - T_i) e_i},
+#'   the variance estimate is \eqn{\sum_i \psi_i^2 / W_1^2}{sum_i psi_i^2 / W1^2}, treating
+#'   the weights and the outcome fit as fixed; p-values and the 95 percent confidence
+#'   interval use a t distribution with \eqn{n - 1} degrees of freedom. With
+#'   \code{dr = FALSE} the outcome model is dropped (\eqn{\hat{m}_i = 0}{m_i = 0},
+#'   \eqn{\hat{e}_i = Y_i}{e_i = Y_i}) and the same formulas give the weighted difference
+#'   in means. Fold assignment is deterministic: repeated calls with the same
+#'   \code{seed} (including \code{NULL}) return identical results.
+#'
+#'   \code{method = "lm_robust"} (the default before version 1.3.0) and
+#'   \code{method = "lm_lin"} are wrappers for \code{lm_robust} and \code{lm_lin} from
+#'   the \pkg{estimatr} package, fitted with the hbal weights; \code{method = "elnet"}
+#'   implements the approximate residual balancing estimator of Athey, Imbens and Wager
+#'   (2018) via \pkg{glmnet}.
 #' @return A data frame with one row and seven columns (Estimate, Std. Error,
 #'   t value, Pr(>|t|), CI Lower, CI Upper, DF) when \code{displayAll = FALSE}
-#'   (the default) or \code{method = "elnet"}; otherwise the fitted model
-#'   object returned by \code{lm_robust} or \code{lm_lin}.
+#'   (the default) or \code{method = "elnet"}. When \code{displayAll = TRUE}: for
+#'   \code{method = "lm_robust"} or \code{"lm_lin"}, the fitted model object returned
+#'   by \code{lm_robust} or \code{lm_lin}; for \code{method = "aipw"}, a plain list
+#'   with elements
+#'   \describe{
+#'     \item{estimate}{the ATT point estimate.}
+#'     \item{se}{its influence-function standard error.}
+#'     \item{df}{degrees of freedom of the t distribution used for the p-value and
+#'     the confidence interval, \eqn{n - 1}.}
+#'     \item{method}{\code{"aipw"}.}
+#'     \item{dr}{the \code{dr} value used.}
+#'     \item{influence}{numeric vector of length \eqn{n}: the per-unit moment
+#'     contributions \eqn{\psi_i}{psi_i} (see Details), in the row order of
+#'     \code{hbalobject}; they sum to zero.}
+#'     \item{fold}{integer vector of length \eqn{n}: the cross-fitting fold of each
+#'     control (\code{NA} for treated units, and for every unit when \code{dr = FALSE}).}
+#'     \item{nfolds}{the number of folds actually used (\code{NA} when \code{dr = FALSE}).}
+#'     \item{nuisance}{a list with \code{coef_full} (coefficients of the outcome model
+#'     fitted on all controls, named \code{"(Intercept)"} followed by the columns of
+#'     \code{mat}), \code{coef_folds} (a list of the \code{nfolds} fold-specific
+#'     coefficient vectors), and \code{rank_full} (the rank of the full-control
+#'     design); \code{NULL}, \code{list()} and \code{NA} respectively when \code{dr = FALSE}.}
+#'     \item{weights}{a list with \code{treated} (the base weights of the treated
+#'     units) and \code{control} (the hbal weights of the controls), each in the row
+#'     order of \code{hbalobject$mat} within its group.}
+#'   }
 #' @importFrom estimatr lm_lin lm_robust
 #' @importFrom stats as.formula
 #' @importFrom stats predict
+#' @importFrom stats lm.wfit
+#' @importFrom stats pt
+#' @importFrom stats qt
 #' @importFrom generics tidy
 #' @importFrom glmnet cv.glmnet
 #' @author Yiqing Xu, Eddie Yang
@@ -31,7 +108,8 @@
 #' y <- 0.5 * treat + X[,1] + X[,2] + rnorm(N) # Outcome
 #' dat <- data.frame(treat=treat, X, Y=y)
 #' out <- hbal(Treat = 'treat', X = c('X1', 'X2'), Y = 'Y', data=dat)
-#' sout <- summary(att(out))
+#' sout <- summary(att(out))       # default: cross-fitted orthogonal estimator (aipw)
+#' att(out, method = "lm_robust")  # the default before version 1.3.0
 #' @export
 
 # Internal helper for att(): given whatever generics::tidy() returned on an
@@ -73,10 +151,12 @@
 
 att <- function(
 	hbalobject,
-	method="lm_robust",
+	method="aipw",
 	dr=TRUE,
 	displayAll=FALSE,
 	alpha = 0.9,
+	seed = NULL,
+	nfolds = 5,
 	...
 	){
 	if(!inherits(hbalobject, "hbal")){
@@ -98,8 +178,33 @@ att <- function(
 	colnames(dat) <- c(Y, Tr, Covar)
 	w <- "w" # this line is useless; just to get around CRAN checker
 	dat$w <- hbalobject$weights
+	# Cross-fitted, Neyman-orthogonal augmented estimator (default since 1.3.0).
+	# Self-contained: builds its own output in R/att_aipw.R and never reaches the
+	# estimatr / tidy() tail below. seed and nfolds are validated here only; the
+	# legacy methods ignore them.
+	if (method == "aipw") {
+		if (length(elpss) > 0) {
+			dots_names <- names(elpss)
+			if (is.null(dots_names)) dots_names <- rep("", length(elpss))
+			dots_names[dots_names == ""] <- "<unnamed>"
+			stop(sprintf("att(): method = \"aipw\" does not accept: %s. These arguments (e.g. se_type, clusters) apply only to method = \"lm_robust\" or \"lm_lin\".",
+				paste(dots_names, collapse = ", ")))
+		}
+		if (!(length(nfolds) == 1 && is.numeric(nfolds) && is.finite(nfolds) && nfolds == round(nfolds) && nfolds >= 1)) {
+			stop("att(): \"nfolds\" must be a single positive whole number")
+		}
+		if (!is.null(seed) && !(length(seed) == 1 && is.numeric(seed) && is.finite(seed))) {
+			stop("att(): \"seed\" must be NULL or a single finite number")
+		}
+		res <- .aipw_att(hbalobject, dr = dr, seed = seed, nfolds = nfolds)
+		if (displayAll == FALSE) {
+			return(.aipw_table(res, Tr))
+		} else {
+			return(res)
+		}
+	}
 	# linear regression
-	if (method=="lm_robust"){
+	else if (method=="lm_robust"){
 		if(dr){
 			ff <- as.formula(paste0(Y, ' ~ ', Tr, ' + ', paste0(Covar, collapse=" + ")))
 		}else{
@@ -113,7 +218,7 @@ att <- function(
 		}
 	}
 	# Lin (2013): regression with interactions
-	if (method=="lm_lin"){
+	else if (method=="lm_lin"){
 		covariates <- as.formula(paste0("~ ", paste0(Covar, collapse=" + ")))
 		if (is.null(elpss[['se_type']])){
 			out <- lm_lin(formula = as.formula(paste0(Y, ' ~ ', Tr)), covariates=covariates, weights=w, data=dat, se_type='stata', ...)
@@ -122,7 +227,7 @@ att <- function(
 		}
 	}
 	# Athey (2018): Approximate residual balancing
-	if (method == "elnet"){
+	else if (method == "elnet"){
 	  # Estimate est0
 	  XW <- as.matrix(dat[hbalobject$Treatment==0, Covar, drop = FALSE])
 	  XT <- as.matrix(dat[hbalobject$Treatment==1, Covar, drop = FALSE])
@@ -153,6 +258,9 @@ att <- function(
 	  colnames(out) <-  c("Estimate", "Std. Error", "t value", "Pr(>|t|)", "CI Lower", "CI Upper", "DF")
 	  rownames(out) <- Tr	
 	  return(out)
+	}
+	else {
+		stop(sprintf("att(): unrecognized method \"%s\". Valid values are \"aipw\", \"lm_robust\", \"lm_lin\", \"elnet\".", method))
 	}
 	# DisplayAll Option of ATT
 	if (displayAll == FALSE){

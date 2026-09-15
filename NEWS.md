@@ -1,3 +1,8 @@
+# hbal 1.3.0
+1. **`att()`'s default estimator has changed.** The default is now a cross-fitted, Neyman-orthogonal augmented-balancing-weights (AIPW-style) estimator (`method = "aipw"`); the previous default is unchanged and available via `att(out, method = "lm_robust")`.
+2. `att()` gains `seed` and `nfolds` arguments for the new default (`method = "aipw"`); both are silently ignored by `"lm_robust"`, `"lm_lin"`, and `"elnet"`.
+3. `att()` now errors on an unrecognized `method` value instead of failing with an opaque internal error.
+
 # hbal 1.2.16
 1. Fix `att()` to work with estimatr >= 2.0.0, whose `tidy()` now returns a tibble, without warnings, while remaining identical under estimatr < 2.0.0.
 
