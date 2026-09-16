@@ -18,7 +18,9 @@
 #' @param full.t                  (unresidualized) ovariate matrix for treatment group.
 #' @param full.c                  (unresidualized) ovariate matrix for control group.
 #' @param shuffle.treat           whether to create folds for the treated units
-#' @return group.alpha, lambda
+#' @return A single numeric value: the mean cross-validation loss at the supplied
+#'   penalties, or \code{Inf} when that mean is not finite. \code{hbal} minimizes it
+#'   over the penalties with \code{nloptr}.
 #' @importFrom stats na.omit coef
 #' @importFrom glmnet cv.glmnet
 #' @author Yiqing Xu, Eddie Yang

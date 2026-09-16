@@ -61,7 +61,9 @@ crossValidate(
 \item{shuffle.treat}{whether to create folds for the treated units}
 }
 \value{
-group.alpha, lambda
+A single numeric value: the mean cross-validation loss at the supplied
+penalties, or \code{Inf} when that mean is not finite. \code{hbal} minimizes it
+over the penalties with \code{nloptr}.
 }
 \description{
 Internal function called by \code{hbal} to select ridge penalties through cross-validation.

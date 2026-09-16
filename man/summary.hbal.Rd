@@ -15,7 +15,10 @@
 \item{...}{Further arguments to be passed to \code{summary.hbal()}.}
 }
 \value{
-a summary table
+Called for its side effect of printing a summary of the \code{hbal} object:
+the call, the numbers of treated and control units, the covariate groups with
+their penalties, and the balance table. The balance table
+(\code{object$bal.tab}) is returned invisibly.
 }
 \description{
 This function prints a summary from an \code{hbal} Object.

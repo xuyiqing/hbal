@@ -1,0 +1,36 @@
+# Example 1: Lalonde Data {#sec-lalonde}
+
+```{r setup-04, include=FALSE}
+knitr::opts_chunk$set(fig.width = 10, fig.height = 7)
+library(hbal)
+```
+
+
+To show the use of **habl** in practice, here we use **habl** on a dataset that contains the subset of the @lalonde1986evaluating dataset from @dehejia1999causal and the Panel Study of Income Dynamics (PSID-1), which is also shipped with **hbal**. 
+```{r}
+data(hbal)
+head(lalonde)
+```
+
+First, we adjust for the linear terms only:
+```{r}
+xvars <- c("age","black","educ","hisp","married","re74","re75","nodegr","u74","u75") # covariates
+# hbal w/ level terms only
+hbal.out <- hbal(Treat = 'nsw', X = xvars,  Y = 're78', data = lalonde) 
+summary(hbal.out)
+att(hbal.out)
+```
+
+Next, we add higher-order terms. The confidence intervals of both estimates cover the experimental benchmark (~$1800). As a result of cross-validation, no penalty is imposed on the linear and squared terms.  Note that `exclude=list(c("educ", "nodegr"))` removes the nonsensical interaction between `educ` and `nodegr`.
+```{r}
+hbal.full.out <- hbal(Treat = 'nsw', X = xvars, Y = 're78', data = lalonde, 
+                      expand.degree = 2, cv = TRUE, exclude=list(c("educ", "nodegr")))
+summary(hbal.full.out)
+att(hbal.full.out)
+```
+
+We can check the penalties applied to each group and the cavariate balance before and after balancing.
+```{r, fig.height = 8, fig.align = "left"}
+hbal.full.out$group.penalty
+plot(hbal.full.out)
+```

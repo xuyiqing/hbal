@@ -11,6 +11,9 @@
 
 \item{pkg}{package name}
 }
+\value{
+No return value, called for the side effect of printing the package startup message.
+}
 \description{
 Function to load package description.
 }

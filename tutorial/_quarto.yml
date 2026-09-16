@@ -1,0 +1,37 @@
+project:
+  type: book
+
+book:
+  title: "hbal -- User Manual"
+  sidebar:
+    style: docked
+    background: light
+  chapters:
+    - index.qmd
+    - 01-basic-usage.Rmd
+    - 02-att.Rmd
+    - 03-additional-options.Rmd
+    - 04-lalonde.Rmd
+    - 05-black-owens.Rmd
+    - aa-changelog.Rmd
+    - references.qmd
+
+delete_merged_file: true
+
+bibliography: references.bib
+
+nocite: |
+  @*
+
+format:
+  html:
+    theme: cosmo
+    df-print: paged
+    code-fold: false
+    code-tools: true
+    code-link: true
+
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: "#>"

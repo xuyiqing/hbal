@@ -4,6 +4,12 @@
 3. `att()` gains `seed` and `nfolds` arguments for `method = "abw"` (ignored by the other methods); `method = "abw"` does not accept `...` arguments such as `se_type` or `clusters`, which still work with `"lm_robust"` and `"lm_lin"`.
 4. `att()` now errors on an unrecognized `method` value instead of failing with an opaque internal error.
 5. `att()` with `method = "abw"` now warns when `hbalobject$converged` is 0 (the entropy-balancing weights did not converge), since the estimate and standard error may then be unreliable.
+6. The package tutorial is now a Quarto book at `tutorial/` (previously `vignettes/tutorial.Rmd`); render it locally with `quarto render` from that directory.
+7. `plot()` for `hbal` objects no longer calls the deprecated `ggplot2::aes_string()`; the plots are unchanged and the deprecation warning is gone.
+8. `plot()`'s weight histogram now labels its x axis "Weights (log)"; it has always shown the natural log of the weights, and the plot itself is unchanged.
+9. `?hbal` now lists the elements the returned object actually has, and describes what the default settings do, including that `cv`'s default (`NULL`) means no cross-validation.
+10. The documented return values of `plot()`, `summary()`, `covarExpand()` and `crossValidate()` now match what those functions return.
+11. `src/*.o` and `src/*.so` are no longer tracked in the repository, so installing from a GitHub clone always recompiles the C++ code.
 
 # hbal 1.2.16
 1. Fix `att()` to work with estimatr >= 2.0.0, whose `tidy()` now returns a tibble, without warnings, while remaining identical under estimatr < 2.0.0.

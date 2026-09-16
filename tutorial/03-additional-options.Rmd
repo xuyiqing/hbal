@@ -1,0 +1,61 @@
+# Additional Options {#sec-options}
+
+```{r setup-03, include=FALSE}
+knitr::opts_chunk$set(fig.width = 10, fig.height = 7)
+library(hbal)
+set.seed(1984)
+N <- 1500
+X1 <- rnorm(N)
+X2 <- rnorm(N)
+X3 <- rbinom(N, size = 1, prob = .5)
+D_star <- 0.5 * X1 + 0.3 * X2 + 0.2 * X1 * X2 - 0.5 * X1 * X3 - 1
+D <- ifelse(D_star > rnorm(N), 1, 0) # Treatment indicator
+y <- 0.5 * D + X1 + X2 + X2 * X3 + rnorm(N) # Outcome
+dat <- data.frame(D = D, X1 = X1, X2 = X2, X3 = X3, Y = y)
+```
+
+## Controlling Exact/Approximate Balancing
+
+Users can manually control which group of covariates to be exactly balanced and which group to be approximately balanced (via regularization) by using the `group.exact` argument. It takes in a binary vector with length equal to the number of covariate groups, with 1 indicating exact balance on that group and 0 indicating approximate balance. Appropriate penalties are then searched through cross-validation. When using this option, please make that the length of vector supplied equals the number of groups. 
+
+For example, we can ask `hbal()` to achieve exact balance on the linear terms and two-way interactions and approximate balance for the rest:
+```{r}
+out <- hbal(Treat = 'D', X = c('X1', 'X2'),  Y = 'Y', data = dat, 
+            expand.degree = 3, cv = TRUE, group.exact = c(1, 1, 0, 0, 0))
+summary(out)
+```
+
+## User-Supplied Penalties
+If researchers have prior knowledge about covariates and would like to supply specific penalties for each group of covariates, we can do so by passing a vector of penalties to the `group.alpha` argument. For example, we can manually set penalties to be 0 for the the linear terms and two-way interactions and 100 for other groups:
+```{r}
+out <- hbal(Treat = 'D', X = c('X1', 'X2', 'X3'),  Y = 'Y', data = dat, 
+            expand.degree = 3, group.alpha = c(0, 0, 100, 100, 100, 100))
+summary(out)
+```
+
+## Controlling Serial Expansion
+
+Sometimes we may not want to perform serial expansion on all covariates but instead expand on a select set of covariates, we can do so by using the `X.expand` argument to specify the covariates we want to expand on. For example, we can expand only on **X1**:
+```{r}
+out <- hbal(Treat = 'D', X = c('X1', 'X2', 'X3'),  Y = 'Y', data = dat, 
+            expand.degree = 3, X.expand = c('X1', 'X2'))
+summary(out)
+```
+
+## Selecting Covariates
+Performing serial expansion on many covariates can result in a prohibitive number of covariates that need to be balanced on. In such cases, users many want to reduce the number of covariates by using the double selection method by @belloni2014inference. This screens the expanded covariates and only keeps those that are predictive for the treatment assignment or the outcome. Users can enable double selection by setting `ds = TRUE`. In the following case, almost all the higher-order terms except `X1*X2` and `X2*X3` are screened out by the double selection procedure.
+```{r}
+out <- hbal(Treat = 'D', X = c('X1', 'X2', 'X3'),  Y = 'Y', data = dat, 
+            expand.degree = 3, ds = TRUE) 
+summary(out)
+att(out)
+```
+
+## Keeping/Excluding Covariates
+If there are covariates that users would like to keep in the balancing conditions regardless of whether they are selected in double selection, we can use the `X.keep` argument to specify the covariates to keep. On the other hand, if a priori we know some combinations of the covariates are nonsensical, we can exclude them explicitly by using the `exclude` argument. For example, we can exclude any interaction that involves **X1** and **X2**:
+```{r}
+out <- hbal(Treat = 'D', X = c('X1', 'X2', 'X3'),  Y = 'Y', data = dat, 
+            expand.degree = 3, exclude = list(c('X1', 'X2')))
+summary(out) # X1.X2 and X1.X1.X2 removed from balancing scheme
+att(out) 
+```

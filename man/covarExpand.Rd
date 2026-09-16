@@ -16,7 +16,10 @@ covarExpand(X, exp.degree = 3, treatment = NULL, exclude = NULL)
 \item{exclude}{list of covariate name pairs or triplets to be excluded.}
 }
 \value{
-A matrix of serially expanded covariates
+A list with two elements: \code{mat}, the matrix of serially expanded
+covariates, and \code{grouping}, an integer vector giving the number of columns
+of \code{mat} in each term group (three groups when \code{exp.degree = 2}, six
+when \code{exp.degree = 3}).
 }
 \description{
 Internal function called by \code{hbal} to serially expand covariates.

@@ -1,0 +1,69 @@
+# Basic Usage {#sec-basics}
+
+```{r setup-01, include=FALSE}
+knitr::opts_chunk$set(fig.width = 10, fig.height = 7)
+library(ggplot2)
+require(ebal)
+```
+
+
+We simulate a toy cross-sectional dataset with a binary treatment to illustrate the basic usage of **hbal**. Note that treatment assignment depends on all three covariates. 
+```{r, message=FALSE}
+library(hbal)
+set.seed(1984)
+N <- 1500
+X1 <- rnorm(N)
+X2 <- rnorm(N)
+X3 <- rbinom(N, size = 1, prob = .5)
+D_star <- 0.5 * X1 + 0.3 * X2 + 0.2 * X1 * X2 - 0.5 * X1 * X3 - 1
+D <- ifelse(D_star > rnorm(N), 1, 0) # Treatment indicator
+y <- 0.5 * D + X1 + X2 + X2 * X3 + rnorm(N) # Outcome
+dat <- data.frame(D = D, X1 = X1, X2 = X2, X3 = X3, Y = y)
+head(dat)
+```
+
+**hbal** is an extension of entropy balancing, or **ebal** proposed by @hainmueller2012entropy. By default, **hbal** replicates **ebal** by performing exact balancing on all covariates and no serial expansion, i.e., `expand.degree = 1` (default). We can demonstrate this equivalence by showing the hbal weights are exactly the same to the ebal weights from the **ebal** package in this case. 
+
+```{r, fig.height = 6, fig.width = 6, fig.align = "left", dpi=100}
+library(ebal)
+ebal.out <- ebalance(Treat = dat$D, X = dat[,c('X1', 'X2', 'X3')]) # ebal
+hbal.out <- hbal(Treat = 'D', X = c('X1', 'X2', 'X3'),  Y = 'Y',  data = dat) # hbal
+
+# plot weights
+W <- data.frame(x = ebal.out$w, y = hbal.out$weights.co)
+ggplot(aes(x = x, y = y), data = W) + geom_point() + theme_bw() + 
+  labs(x = "ebal weights", y="hbal weights", title = "ebal weights vs. hbal weights")
+```
+
+`hbal()` returns a list of 15 objects:
+
+```{r}
+names(hbal.out)
+```
+1. **converged**: Binary indicator of whether the algorithm has converged.
+2. **weights**: Resulting weights, including the base weights for the treated and solution weights for the controls (see below).
+3. **weights.co**: Solution weights for the controls. Can be plugged into any downstream estimator.
+4. **coefs**: Values of Lagrangian multipliers. They are used to calculate the solution `weights`.
+5. **Treatment**: The treatment status vector.
+6. **mat**: Data matrix, including the outcome variable (the first column), the treatment variable (the second column), and expanded covariates (the remaining columns).
+7. **grouping**: A vector of the number of variables in each covariate group. The length of the vector equals the number of groups.
+8. **group.penalty**: Penalties for different groups of covariates. This is the regularization parameter $\alpha$ in @XuYang2022.
+9. **term.penalty**: Penalties for individual covariates. The length of the vector equals the number of balancing terms, including expanded ones.
+10. **bal.tal**: A balance table.
+11. **base.weights**: A vector of base weights, originally from variable `w` supplied by users. The length of the vector equals the number of rows entering the balancing scheme.
+12. **Treat**: A character string that stores the treatment variable name. 
+13. **Outcome**: The outcome vector, if `Y` is supplied.
+14. **Y**: A character string that stores the outcome variable name, if `Y` is supplied.. 
+15. **call**: A string of the function call.
+
+The `summary()` function provides additional information on the balancing scheme, including the numbers of treated and control units, groups and corresponding penalties, and a balance table, in which `Std.Diff.(O)` and `Std.Diff.(W)` represent standardized difference before and after balancing, respectively. For example, in this case, only the linear terms are being balanced on. 
+```{r}
+summary(hbal.out)
+```
+
+In addition to balancing on just the linear/level terms of the covariates, `hbal()` allows balancing on a serial expansion of the covariates. This is achieved by setting the `expand.degree` argument. Currently, `hbal()` supports both second order serial expansion (two-way interactions and square terms; `expand.degree = 2`) and third order serial expansion (two-way interactions, square terms, linear*square interactions, and cubic terms; `expand.degree = 3`). For example, we can do exact balancing on third order serial expansion of the covariates:
+```{r}
+out <- hbal(Y = 'Y', Treat = 'D', X = c('X1', 'X2', 'X3'),  
+            data = dat, expand.degree = 3)
+summary(out)
+```

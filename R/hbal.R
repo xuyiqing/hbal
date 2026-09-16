@@ -22,12 +22,16 @@
 #' @param expand.degree        degree of series expansion. 1 means no expansion. Default is 1.
 #' @param coefs                initial coefficients for the reweighting algorithm (lambdas).
 #' @param max.iterations       maximum number of iterations. Default is 200.
-#' @param cv                   whether to use cross validation. Default is \code{TRUE}.
+#' @param cv                   whether to use cross-validation to select the ridge
+#'   penalties. The default, \code{NULL}, is treated as \code{FALSE}: no
+#'   cross-validation is run and, unless \code{group.alpha} is supplied, every
+#'   penalty is 0, which asks for exact balance. Set \code{cv = TRUE} to choose
+#'   the penalties by cross-validation.
 #' @param folds                number of folds for cross validation. Only used when cv is \code{TRUE}.
 #' @param ds                   whether to perform double selection prior to balancing. Default is \code{FALSE}.
 #' @param group.exact          binary indicator of whether each covariate group should be exact balanced.
 #' @param group.alpha          penalty for each covariate group 
-#' @param term.alpha           named vector of ridge penalties, only takes 0 or 1.
+#' @param term.alpha           a named vector of user-specified ridge penalties. The names need to be variable names. Value should be non-negative (0 means exact balancing). Only work with `expand.degree = 1`
 #' @param constraint.tolerance tolerance level for overall imbalance. Default is 1e-3.
 #' @param print.level          details of printed output.
 #' @param grouping             different groupings of the covariates. Must be specified if expand is \code{FALSE}.
@@ -36,19 +40,38 @@
 #' @param shuffle.treat        whether to use cross-validation on the treated units. Default is \code{TRUE}.
 #' @param exclude              list of covariate name pairs or triplets to be excluded.
 #' @param force                binary indicator of whether to expand covariates when there are too many
-#' @param seed                 random seed to be set. Set random seed when cv=\code{TRUE} for reproducibility.
-#' @details In the simplest set-up, user can just pass in \{Treatment, X, Y\}. The default settings will serially expand
-#' X to include higher order terms, hierarchically residualize these terms, perform double selection to only keep the relevant
-#' variables and use cross-validation to select penalities for different groupings of the covariates. 
+#' @param seed                 random seed passed to \code{set.seed} at the start of
+#'   the call, so that cross-validation is reproducible when \code{cv = TRUE}. The
+#'   default is 94035; use \code{seed = NULL} to leave the random number generator
+#'   untouched.
+#' @details In the simplest set-up, the user can just pass in \{Treat, X, Y\}. With the
+#' default settings \code{hbal} seeks exact balance on the covariates as supplied: there
+#' is no series expansion (\code{expand.degree = 1}), no double selection
+#' (\code{ds = FALSE}) and no cross-validation (\code{cv} resolves to \code{FALSE}), and
+#' every ridge penalty is 0. Set \code{expand.degree} to 2 or 3 to serially expand X to
+#' include higher order terms and hierarchically residualize them, \code{ds = TRUE} to
+#' perform double selection and keep only the relevant variables, and \code{cv = TRUE} to
+#' select penalties for the different groupings of the covariates by cross-validation.
 #' @return 
-#' An list object of class \code{hbal} with the following elements:
+#' A list object of class \code{hbal} with the elements below. Rows of \code{data}
+#' with a missing value in the treatment, the outcome, any covariate or the
+#' weighting variable are dropped before estimation, so every per-unit element has
+#' one entry per retained row, in the order of \code{data}.
 #' \item{converged}{integer, 1 if the entropy-balancing algorithm converged within \code{max.iterations} and 0 otherwise. \code{att} warns when it is 0.}
-#' \item{coefs}{vector that contains coefficients from the reweighting algorithm.}
-#' \item{mat}{matrix of serially expanded covariates if expand=\code{TRUE}. Otherwise, the original covariate matrix is returned.}
-#' \item{penalty}{vector of ridge penalties used for each covariate} 
-#' \item{weights}{vector that contains the control group weights assigned by hbal.}
-#' \item{W}{vector of treatment status}
-#' \item{Y}{vector of outcome}
+#' \item{weights}{numeric vector over all units: the hbal weight of each control unit and the base weight of each treated unit.}
+#' \item{weights.co}{numeric vector over the control units: their entropy-balancing weights, normalized to sum to the total base weight of the treated units.}
+#' \item{coefs}{numeric vector of the Lagrangian multipliers returned by the reweighting algorithm, one per column of \code{mat} plus one for the normalizing constraint.}
+#' \item{Treatment}{numeric vector of the treatment indicator, 1 for treated and 0 for control.}
+#' \item{mat}{numeric matrix of the covariates actually balanced on, on their original scale, after series expansion (\code{expand.degree}), removal of collinear columns and double selection (\code{ds}). Its column names are the covariate names with a position suffix.}
+#' \item{grouping}{named numeric vector giving the number of columns of \code{mat} in each covariate group; the names are the group labels.}
+#' \item{group.penalty}{named numeric vector with one ridge penalty per covariate group: chosen by cross-validation when \code{cv = TRUE}, taken from \code{group.alpha} when that is supplied, and 0 otherwise.}
+#' \item{term.penalty}{named numeric vector with one ridge penalty per column of \code{mat}.}
+#' \item{bal.tab}{numeric matrix with one row per column of \code{mat} and the columns \code{Tr.Mean}, \code{Co.Mean}, \code{W.Co.Mean}, \code{Std.Diff.(O)} and \code{Std.Diff.(W)}, rounded to two decimals.}
+#' \item{base.weights}{numeric vector of the base weights: the variable named by \code{w}, or 1 for every unit when \code{w} is \code{NULL}.}
+#' \item{Treat}{character string, the name of the treatment variable.}
+#' \item{Outcome}{numeric vector of the outcome. Present only when \code{Y} is supplied.}
+#' \item{Y}{character string, the name of the outcome variable. Present only when \code{Y} is supplied.}
+#' \item{call}{the matched call.}
 #' @author Yiqing Xu, Eddie Yang
 #' @importFrom stats var
 #' @importFrom stats setNames

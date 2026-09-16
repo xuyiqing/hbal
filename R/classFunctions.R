@@ -7,7 +7,11 @@
 #' @param log     log scale for the weight plot
 #' @param base_size     base font size
 #' @param ...     Further arguments to be passed to \code{plot.hbal()}.
-#' @return A matrix of ggplots of covariate balance by group
+#' @return For \code{type = "weight"}, a \code{ggplot} object holding the histogram and
+#'   density of the control units' balancing weights (on the log scale when
+#'   \code{log = TRUE}); it is drawn when printed. For any other \code{type}, the
+#'   covariate-balance panels are drawn on the current graphics device and the
+#'   assembled \code{gtable} is returned invisibly.
 #' @import ggplot2
 #' @import gridExtra
 #' @importFrom stringr str_length str_pad
@@ -25,11 +29,11 @@ plot.hbal <- function(x,
 		cat('sum(weights) normalized to the number of treated units\n')
 		w <- x$weights.co
 		if (log  == TRUE) {
-			dat <- data.frame(x = log(w)); xlab <- 'Weights (log10)'					
+			dat <- data.frame(x = log(w)); xlab <- 'Weights (log)'					
 		} else {
 			dat <- data.frame(x = w); xlab <- 'Weights'			
 		}
-		ggplot(data=dat, aes_string(x="x")) + geom_histogram(aes(y=after_stat(density)), color="black", fill="white", bins = 50) + 
+		ggplot(data=dat, aes(x = .data[["x"]])) + geom_histogram(aes(y=after_stat(density)), color="black", fill="white", bins = 50) + 
 			labs(y='Density', x=xlab) + geom_density(alpha=.2, fill="#FF6666") + theme_classic() 			
 	}else{
 		plots <- list()
@@ -49,7 +53,7 @@ plot.hbal <- function(x,
 			end <- start+x$grouping[i]-1
 			out.sub[[i]] <- rbind(out[start:end,], out[(start+length(std.diff.before)):(end+length(std.diff.before)),])
 			l <- max(abs(out.sub[[i]]$val), 0.15)
-			plots[[i]] <- ggplot(aes_string(x="val", y="y"), data=out.sub[[i]]) + geom_point(size=3, shape = 21, colour = "black", aes_string(fill="group")) +
+			plots[[i]] <- ggplot(aes(x = .data[["val"]], y = .data[["y"]]), data=out.sub[[i]]) + geom_point(size=3, shape = 21, colour = "black", aes(fill = .data[["group"]])) +
 							scale_fill_manual(values = c("white","black")) + 
 							scale_y_discrete(limits=rev(var.names[start:end]), labels=str_pad(rev(var.names[start:end]),max_length, side = "left")) + xlim(-l, l) + 
 							geom_vline(xintercept = -0.1, lty=2) + geom_vline(xintercept = 0.1, lty=2) + theme_bw(base_size = base_size) + labs(x="Std. Diff.", y="") + 
@@ -76,7 +80,10 @@ plot.hbal <- function(x,
 #' @param object  an object of class \code{hbalobject} as returned by \code{hbal}.
 #' @param print.level  level of details to be printed
 #' @param ...     Further arguments to be passed to \code{summary.hbal()}.
-#' @return a summary table
+#' @return Called for its side effect of printing a summary of the \code{hbal} object:
+#'   the call, the numbers of treated and control units, the covariate groups with
+#'   their penalties, and the balance table. The balance table
+#'   (\code{object$bal.tab}) is returned invisibly.
 #' @importFrom stats sd
 #' @author Yiqing Xu, Eddie Yang
 #' @export
