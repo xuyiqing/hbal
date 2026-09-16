@@ -11,7 +11,7 @@ test_that("plot.hbal() draws the weight histogram with no deprecation warning", 
 	# class= is required: a bare expect_no_warning() sets ignore_deprecation = TRUE
 	# and would pass even while aes_string() is still warning.
 	expect_no_warning(
-		expect_output(p <- plot(out, type = "weight"), "sum\\(weights\\) normalized"),
+		expect_message(p <- plot(out, type = "weight"), "sum\\(weights\\) normalized"),
 		class = "lifecycle_warning_deprecated"
 	)
 	expect_s3_class(p, "ggplot")

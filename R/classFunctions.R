@@ -26,7 +26,7 @@ plot.hbal <- function(x,
 	base_size = 10,
 	...){
 	if (type == 'weight'){
-		cat('sum(weights) normalized to the number of treated units\n')
+		message("sum(weights) normalized to the number of treated units")
 		w <- x$weights.co
 		if (log  == TRUE) {
 			dat <- data.frame(x = log(w)); xlab <- 'Weights (log)'					

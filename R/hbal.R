@@ -138,7 +138,7 @@ hbal <- function(
 	shuffle.treat = TRUE,
 	exclude = NULL,
 	force = FALSE,
-	seed = 94035
+	seed = NULL
 	){
 
 	# ntreated: number of treated units
