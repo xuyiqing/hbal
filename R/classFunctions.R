@@ -29,7 +29,7 @@ plot.hbal <- function(x,
 		} else {
 			dat <- data.frame(x = w); xlab <- 'Weights'			
 		}
-		ggplot(data=dat, aes_string(x="x")) + geom_histogram(aes(y=after_stat(density)), color="black", fill="white", bins = 50) + 
+		ggplot(data=dat, aes(x = .data[["x"]])) + geom_histogram(aes(y=after_stat(density)), color="black", fill="white", bins = 50) + 
 			labs(y='Density', x=xlab) + geom_density(alpha=.2, fill="#FF6666") + theme_classic() 			
 	}else{
 		plots <- list()
@@ -49,7 +49,7 @@ plot.hbal <- function(x,
 			end <- start+x$grouping[i]-1
 			out.sub[[i]] <- rbind(out[start:end,], out[(start+length(std.diff.before)):(end+length(std.diff.before)),])
 			l <- max(abs(out.sub[[i]]$val), 0.15)
-			plots[[i]] <- ggplot(aes_string(x="val", y="y"), data=out.sub[[i]]) + geom_point(size=3, shape = 21, colour = "black", aes_string(fill="group")) +
+			plots[[i]] <- ggplot(aes(x = .data[["val"]], y = .data[["y"]]), data=out.sub[[i]]) + geom_point(size=3, shape = 21, colour = "black", aes(fill = .data[["group"]])) +
 							scale_fill_manual(values = c("white","black")) + 
 							scale_y_discrete(limits=rev(var.names[start:end]), labels=str_pad(rev(var.names[start:end]),max_length, side = "left")) + xlim(-l, l) + 
 							geom_vline(xintercept = -0.1, lty=2) + geom_vline(xintercept = 0.1, lty=2) + theme_bw(base_size = base_size) + labs(x="Std. Diff.", y="") + 
