@@ -40,18 +40,30 @@ Balancing](https://www.cambridge.org/core/journals/political-analysis/article/hi
 
 ## Installation
 
-You can install the **hbal** package from CRAN:
+You can install **hbal** in three ways. The CRAN release is the stable
+version:
 
 ``` r
-install.packages("hbal") 
+install.packages("hbal")
 ```
 
-You can also install the up-to-date development version from Github:
+The `main` branch on GitHub mirrors the CRAN release:
 
 ``` r
 install.packages("devtools") # if not already installed
 devtools::install_github("xuyiqing/hbal")
 ```
+
+The `dev` branch carries the up-to-date development version. New
+features and fixes land there first and reach CRAN with the next
+release:
+
+``` r
+devtools::install_github("xuyiqing/hbal@dev")
+```
+
+Installing from GitHub compiles the package’s C++ code. That needs a
+compiler: Rtools on Windows, or the Xcode command-line tools on macOS.
 
 **hbal** depends on the following packages, which will be installed
 automatically when **hbal** is being installed; you can also install

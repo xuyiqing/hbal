@@ -19,7 +19,11 @@
 \item{...}{Further arguments to be passed to \code{plot.hbal()}.}
 }
 \value{
-A matrix of ggplots of covariate balance by group
+For \code{type = "weight"}, a \code{ggplot} object holding the histogram and
+density of the control units' balancing weights (on the log scale when
+\code{log = TRUE}); it is drawn when printed. For any other \code{type}, the
+covariate-balance panels are drawn on the current graphics device and the
+assembled \code{gtable} is returned invisibly.
 }
 \description{
 This function plots the covariate difference between the control and treatment groups in standardized means before and after weighting.

@@ -5,7 +5,10 @@
 #' @param exp.degree           the degree of the polynomial. 
 #' @param treatment            treatment indicator
 #' @param exclude              list of covariate name pairs or triplets to be excluded.
-#' @return A matrix of serially expanded covariates
+#' @return A list with two elements: \code{mat}, the matrix of serially expanded
+#'   covariates, and \code{grouping}, an integer vector giving the number of columns
+#'   of \code{mat} in each term group (three groups when \code{exp.degree = 2}, six
+#'   when \code{exp.degree = 3}).
 #' @author Yiqing Xu, Eddie Yang
 #' @importFrom stats poly
 #' @importFrom stringr str_trunc

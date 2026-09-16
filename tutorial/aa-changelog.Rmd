@@ -9,6 +9,10 @@
 * `att()` with `method = "abw"` now warns when `hbalobject$converged` is 0 (the entropy-balancing weights did not converge), since the estimate and standard error may then be unreliable.
 * The package tutorial is now a Quarto book at `tutorial/` (previously `vignettes/tutorial.Rmd`); render it locally with `quarto render` from that directory.
 * `plot()` for `hbal` objects no longer calls the deprecated `ggplot2::aes_string()`; the plots are unchanged and the deprecation warning is gone.
+* `plot()`'s weight histogram now labels its x axis "Weights (log)"; it has always shown the natural log of the weights, and the plot itself is unchanged.
+* `?hbal` now lists the elements the returned object actually has, and describes what the default settings do, including that `cv`'s default (`NULL`) means no cross-validation.
+* The documented return values of `plot()`, `summary()`, `covarExpand()` and `crossValidate()` now match what those functions return.
+* `src/*.o` and `src/*.so` are no longer tracked in the repository, so installing from a GitHub clone always recompiles the C++ code.
 
 ## v1.2.16
 
