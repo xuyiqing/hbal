@@ -36,3 +36,8 @@ tutorial/*_files/
 .DS_Store
 
 man/.DS_Store
+
+# Compiled objects from R CMD INSTALL / make in src/
+src/*.o
+src/*.so
+src/*.dll

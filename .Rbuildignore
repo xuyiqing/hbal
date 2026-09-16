@@ -7,3 +7,8 @@
 ^NEWS.md
 ^ARCHITECTURE\.md$
 ^tutorial$
+^cran-comments\.md$
+^\.git$
+^tests/testthat/_problems$
+^tests/testthat/_snaps$
+^tests/testthat/testthat-problems\.rds$
