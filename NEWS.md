@@ -1,3 +1,6 @@
+# hbal 1.2.16
+1. Fix `att()` to work with estimatr >= 2.0.0, whose `tidy()` now returns a tibble, without warnings, while remaining identical under estimatr < 2.0.0.
+
 # hbal 1.2.13
 1. In `att()`, add the method "elnet" by Athey (2018)
 2. Fix a bug with incorrect variable names
