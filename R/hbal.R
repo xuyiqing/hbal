@@ -42,6 +42,7 @@
 #' variables and use cross-validation to select penalities for different groupings of the covariates. 
 #' @return 
 #' An list object of class \code{hbal} with the following elements:
+#' \item{converged}{integer, 1 if the entropy-balancing algorithm converged within \code{max.iterations} and 0 otherwise. \code{att} warns when it is 0.}
 #' \item{coefs}{vector that contains coefficients from the reweighting algorithm.}
 #' \item{mat}{matrix of serially expanded covariates if expand=\code{TRUE}. Otherwise, the original covariate matrix is returned.}
 #' \item{penalty}{vector of ridge penalties used for each covariate} 

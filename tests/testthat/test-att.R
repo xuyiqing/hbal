@@ -20,7 +20,7 @@ test_that("att() returns the documented output shape with no warnings or message
 
 	expect_no_warning(att(out, method = "lm_lin"))
 	expect_no_warning(att(out, dr = FALSE))
-	expect_no_warning(att(out, se_type = "HC2"))
+	expect_no_warning(att(out, method = "lm_robust", se_type = "HC2"))
 })
 
 test_that(".att_tidy_select() handles a tibble-classed input without warning", {

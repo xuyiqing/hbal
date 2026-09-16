@@ -1,7 +1,7 @@
 Package: hbal
 Type: Package
 Title: Hierarchically Regularized Entropy Balancing
-Version: 1.2.16
+Version: 1.3.0
 Date: 2026-09-16
 Authors@R: c(
   person("Yiqing", "Xu", , "yiqingxu@stanford.edu", c("aut", "cre"), comment = c(ORCID = "0000-0003-2041-6671")),
