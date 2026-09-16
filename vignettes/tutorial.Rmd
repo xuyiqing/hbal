@@ -117,24 +117,40 @@ summary(out)
 
 ### Obtaining the ATT
 
-We can use `att()` on a `hbal` object to directly get an ATT estimate.  Note that `att()` uses linear regression with robust standard errors (`lm_robust()` from the **estimatr** package) to calculate the ATT. `att()` allows users to use one of the following three methods to estimate the ATT:
+We can use `att()` on an `hbal` object to get an ATT estimate. Since version 1.3.0, the default estimator is an augmented balancing weights estimator (`method = "abw"`; @benmichael2021balancing, @brunssmith2023augmented). It combines the hbal weights with an outcome model in three steps:
 
-* difference in weighted means by setting `dr = FASLE`, in which `dr` represents *doubly robust*; as a result, `method` is ignored;
+1. Fit a regression of the outcome on the columns of `mat`, using the control units only. The regression is a ridge regression on standardized columns with an unpenalized intercept. Its penalty is chosen once from the full control sample by generalized cross-validation [@golub1979generalized] over a fixed grid, with a cap on the effective degrees of freedom so that the fit can never interpolate the controls. No random numbers are involved.
 
-* weighted linear regression by setting `method = ""lm_robust"` (default);
+2. Predict the untreated outcome of each treated unit from that regression. Then correct the prediction with the hbal-weighted average of the control residuals. The residual term corrects the regression where it is wrong; the regression corrects the weights where the balance is only approximate.
 
-* weighted linear regression with a full set of interactions between the treatment indicator and demeaned covariates, or Lin's method, by setting `method = ""lm_lin"`.  
+3. Take the weighted mean of the treated outcomes and subtract the corrected prediction.
 
-By default, `att()` only displays treatment effect(`displayAll = FALSE`). Additional arguments accepted by `lm_robust()` or `lm_lin()`, such as `se_type` and `clusters`, can be passed to `att()`, for example: 
+The resulting estimator is doubly robust. It is also Neyman-orthogonal: a small error in either the outcome regression or the weights has no first-order effect on the estimate. The control residuals in step 2 are cross-fitted. The controls are split into `nfolds` folds (default 5), and each control's residual comes from a regression fitted without its own fold. The `seed` argument fixes the fold assignment. The assignment is a deterministic function of `seed`, and `att()` never calls `set.seed()`, so `att(out)` returns the same numbers on every call, with or without a seed. If the control group is small relative to the number of columns in `mat`, `att()` uses fewer folds and says so in a message. Standard errors come from the influence function of the estimator, treating the weights and the outcome regression as fixed. The p-value and the 95 percent confidence interval use a t distribution with n - 1 degrees of freedom.
+
+The three estimators available before version 1.3.0 remain available through the `method` argument and give exactly the numbers they gave before:
+
+* `method = "lm_robust"`: weighted linear regression with robust standard errors, using `lm_robust()` from the **estimatr** package. This was the default before version 1.3.0. Set it explicitly to reproduce results from earlier versions.
+
+* `method = "lm_lin"`: weighted linear regression with a full set of interactions between the treatment indicator and the demeaned covariates, or Lin's method [@lin2013agnostic], using `lm_lin()` from **estimatr**.
+
+* `method = "elnet"`: approximate residual balancing [@athey2018approximate], which fits an elastic-net outcome model with **glmnet**.
+
+Additional arguments accepted by `lm_robust()` or `lm_lin()`, such as `se_type` and `clusters`, can be passed to `att()` with those two methods only. The default method does not accept them and stops with an error that points to `method = "lm_robust"`. Setting `dr = FALSE` drops the outcome model. With `dr = FALSE`, the default method and `method = "lm_robust"` both return the difference in weighted means; they differ only in how the standard error is computed. Note that `att(out, dr = FALSE)` now uses the default method, so add `method = "lm_robust"` to reproduce the standard errors from earlier versions.
+
+If the entropy-balancing algorithm did not converge (`out$converged` is 0), `att()` warns that the estimate and its standard error may be unreliable. The warning names the usual remedies: refit `hbal()` with `cv = TRUE`, a lower `expand.degree`, or the `ds`, `X.keep`, or `exclude` options.
+
 ```{r}
-att(out, dr = FALSE)
 att(out)
+att(out, method = "lm_robust")
 att(out, method = "lm_lin", se_type = "stata")
+att(out, dr = FALSE)
 ```
 
-Setting `displayAll = TRUE` reveals the coefficients of the intercept and covariates. 
+By default, `att()` only displays the treatment effect (`displayAll = FALSE`). With `displayAll = TRUE`, the default method returns a list with the estimate, its standard error, the per-unit influence values, the fold assignment, the coefficients of the outcome regression, and the weights. For `method = "lm_robust"` or `"lm_lin"`, `displayAll = TRUE` returns the fitted **estimatr** object instead.
 ```{r}
-att(out, displayAll = TRUE)
+res <- att(out, displayAll = TRUE)
+str(res, max.level = 1)
+round(res$nuisance$coef_full, 3)
 ```
 
 Furthermore, `hbal()` allows variable penalties on the balancing conditions for different groups of covariates. Penalties are automatically determined using cross-validation. This minimizes the variance of the weights, increases the feasibility of the balancing problem, and is the approach advocated in @XuYang2022. We can do so by setting `cv = TRUE`. Note that, by default, `hbal()` only penalizes higher-order terms and seeks to achieve exact balance on linear terms.
@@ -233,7 +249,7 @@ summary(hbal.out)
 att(hbal.out)
 ```
 
-Adding higher-order terms makes the treatment effect estimate closer to the experimental benchmark (~$1800). As a result of cross-validation, no penalty is imposed on the linear and squared terms.  Note that `exclude=list(c("educ", "nodegr"))` removes the nonsensical interaction between `educ` and `nodegr`.
+Next, we add higher-order terms. The confidence intervals of both estimates cover the experimental benchmark (~$1800). As a result of cross-validation, no penalty is imposed on the linear and squared terms.  Note that `exclude=list(c("educ", "nodegr"))` removes the nonsensical interaction between `educ` and `nodegr`.
 ```{r}
 hbal.full.out <- hbal(Treat = 'nsw', X = xvars, Y = 're78', data = lalonde, 
                       expand.degree = 2, cv = TRUE, exclude=list(c("educ", "nodegr")))
