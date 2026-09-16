@@ -10,6 +10,9 @@
 9. `?hbal` now lists the elements the returned object actually has, and describes what the default settings do, including that `cv`'s default (`NULL`) means no cross-validation.
 10. The documented return values of `plot()`, `summary()`, `covarExpand()` and `crossValidate()` now match what those functions return.
 11. `src/*.o` and `src/*.so` are no longer tracked in the repository, so installing from a GitHub clone always recompiles the C++ code.
+12. `hbal()` no longer sets a random seed by default: the `seed` argument now defaults to `NULL`; pass `seed = 94035` to reproduce cross-validated results from earlier versions.
+13. `plot()` for `hbal` objects reports the weight normalization with `message()` instead of `cat()`, so it can be silenced.
+14. The sources and licenses of the bundled `lalonde` and `contenderJudges` datasets are now documented.
 
 # hbal 1.2.16
 1. Fix `att()` to work with estimatr >= 2.0.0, whose `tidy()` now returns a tibble, without warnings, while remaining identical under estimatr < 2.0.0.

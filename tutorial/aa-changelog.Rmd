@@ -13,6 +13,9 @@
 * `?hbal` now lists the elements the returned object actually has, and describes what the default settings do, including that `cv`'s default (`NULL`) means no cross-validation.
 * The documented return values of `plot()`, `summary()`, `covarExpand()` and `crossValidate()` now match what those functions return.
 * `src/*.o` and `src/*.so` are no longer tracked in the repository, so installing from a GitHub clone always recompiles the C++ code.
+* `hbal()` no longer sets a random seed by default: the `seed` argument now defaults to `NULL`; pass `seed = 94035` to reproduce cross-validated results from earlier versions.
+* `plot()` for `hbal` objects reports the weight normalization with `message()` instead of `cat()`, so it can be silenced.
+* The sources and licenses of the bundled `lalonde` and `contenderJudges` datasets are now documented.
 
 ## v1.2.16
 

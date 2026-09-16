@@ -11,7 +11,7 @@
 #'      ds = FALSE, group.exact = NULL, group.alpha = NULL,
 #'      term.alpha = NULL, constraint.tolerance = 1e-3, print.level = 0,
 #'      grouping = NULL, group.labs = NULL, linear.exact = TRUE, shuffle.treat = TRUE,
-#'      exclude = NULL,force = FALSE, seed = 94035)
+#'      exclude = NULL,force = FALSE, seed = NULL)
 #' @param data                 a dataframe that contains the treatment, outcome, and covariates.   
 #' @param Treat                a character string of the treatment variable.
 #' @param X                    a character vector of covariate names to balance on.
@@ -40,10 +40,12 @@
 #' @param shuffle.treat        whether to use cross-validation on the treated units. Default is \code{TRUE}.
 #' @param exclude              list of covariate name pairs or triplets to be excluded.
 #' @param force                binary indicator of whether to expand covariates when there are too many
-#' @param seed                 random seed passed to \code{set.seed} at the start of
-#'   the call, so that cross-validation is reproducible when \code{cv = TRUE}. The
-#'   default is 94035; use \code{seed = NULL} to leave the random number generator
-#'   untouched.
+#' @param seed                 random seed passed to \code{set.seed()} at the start
+#'   of the cross-validation when \code{cv = TRUE}. The default, \code{NULL}, leaves
+#'   the random number generator untouched, so repeated cross-validated fits can
+#'   differ. Supply a seed for reproducible results. \code{seed = 94035} was the
+#'   default in hbal 1.2.15 and earlier and reproduces the cross-validated results
+#'   of those versions exactly. Ignored when no cross-validation is run.
 #' @details In the simplest set-up, the user can just pass in \{Treat, X, Y\}. With the
 #' default settings \code{hbal} seeks exact balance on the covariates as supplied: there
 #' is no series expansion (\code{expand.degree = 1}), no double selection
@@ -96,21 +98,22 @@
 #' 
 #' # Example 2
 #' ## Simulation from Kang and Shafer (2007).
-#' library(MASS)
-#' set.seed(1984)
-#' n <- 500
-#' X <- mvrnorm(n, mu = rep(0, 4), Sigma = diag(4))
-#' prop <- 1 / (1 + exp(X[,1] - 0.5 * X[,2] + 0.25*X[,3] + 0.1 * X[,4]))
-#' # Treatment indicator
-#' treat <- rbinom(n, 1, prop)
-#' # Outcome
-#' y <- 210 + 27.4*X[,1] + 13.7*X[,2] + 13.7*X[,3] + 13.7*X[,4] + rnorm(n)
-#' # Observed covariates
-#' X.mis <- cbind(exp(X[,1]/2), X[,2]*(1+exp(X[,1]))^(-1)+10, 
-#'     (X[,1]*X[,3]/25+.6)^3, (X[,2]+X[,4]+20)^2)
-#' dat <- data.frame(treat=treat, X.mis, Y=y)
-#' out <- hbal(Treat = 'treat', X = c('X1', 'X2', 'X3', 'X4'), Y='Y', data=dat)
-#' summary(att(out))
+#' if (requireNamespace("MASS", quietly = TRUE)) {
+#'   set.seed(1984)
+#'   n <- 500
+#'   X <- MASS::mvrnorm(n, mu = rep(0, 4), Sigma = diag(4))
+#'   prop <- 1 / (1 + exp(X[,1] - 0.5 * X[,2] + 0.25*X[,3] + 0.1 * X[,4]))
+#'   # Treatment indicator
+#'   treat <- rbinom(n, 1, prop)
+#'   # Outcome
+#'   y <- 210 + 27.4*X[,1] + 13.7*X[,2] + 13.7*X[,3] + 13.7*X[,4] + rnorm(n)
+#'   # Observed covariates
+#'   X.mis <- cbind(exp(X[,1]/2), X[,2]*(1+exp(X[,1]))^(-1)+10,
+#'       (X[,1]*X[,3]/25+.6)^3, (X[,2]+X[,4]+20)^2)
+#'   dat <- data.frame(treat=treat, X.mis, Y=y)
+#'   out <- hbal(Treat = 'treat', X = c('X1', 'X2', 'X3', 'X4'), Y='Y', data=dat)
+#'   summary(att(out))
+#' }
 #' @export
 
 hbal <- function(
