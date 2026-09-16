@@ -2,40 +2,52 @@
 #' @aliases att
 #' @description \code{att} estimates the average treatment effect on the treated (ATT) from an 
 #' hbal object returned by \code{hbal}. 
-#' @usage att(hbalobject, method="aipw", dr=TRUE, displayAll=FALSE, alpha=0.9,
+#' @usage att(hbalobject, method="abw", dr=TRUE, displayAll=FALSE, alpha=0.9,
 #'     seed=NULL, nfolds=5, ...)
 #' @param hbalobject  an object of class \code{hbal} as returned by \code{hbal}.
-#' @param method      estimation method for the ATT. The default \code{"aipw"} (new in
-#'   version 1.3.0) is a cross-fitted, Neyman-orthogonal augmented balancing-weights
-#'   estimator (see Details). \code{"lm_robust"} reproduces the default of versions
-#'   before 1.3.0 (weighted regression via \code{lm_robust}); \code{"lm_lin"}
-#'   (Lin 2013) and \code{"elnet"} (Athey, Imbens and Wager 2018) are also available.
+#' @param method      estimation method for the ATT. The default \code{"abw"}
+#'   (Augmented Balancing Weights; new in version 1.3.0) is a cross-fitted,
+#'   Neyman-orthogonal estimator that combines the hbal weights with a
+#'   ridge-regularized control-group outcome model (see Details).
+#'   \code{"lm_robust"} reproduces the default of versions before 1.3.0 (weighted
+#'   regression via \code{lm_robust}); \code{"lm_lin"} (Lin 2013) and
+#'   \code{"elnet"} (Athey, Imbens and Wager 2018) are also available.
 #' @param dr          doubly robust, whether an outcome model is included in estimating
-#'   the ATT. With \code{dr = FALSE}, \code{"aipw"} and \code{"lm_robust"} reduce to the
+#'   the ATT. With \code{dr = FALSE}, \code{"abw"} and \code{"lm_robust"} reduce to the
 #'   weighted difference in means.
 #' @param displayAll  only displays treatment effect by default. If \code{TRUE},
 #'   returns the fitted \code{lm_robust} or \code{lm_lin} object, or, for
-#'   \code{method = "aipw"}, a list with the estimate and its components (see Value).
+#'   \code{method = "abw"}, a list with the estimate and its components (see Value).
 #' @param alpha       tuning parameter for glmnet (\code{method = "elnet"} only).
 #' @param seed        a single number that fixes the cross-fitting fold assignment of
-#'   \code{method = "aipw"}; \code{NULL} (the default) assigns folds in the row order
+#'   \code{method = "abw"}; \code{NULL} (the default) assigns folds in the row order
 #'   of the controls. The assignment is a deterministic function of \code{seed};
 #'   \code{set.seed()} is never called. Ignored by the other methods.
-#' @param nfolds      number of cross-fitting folds for \code{method = "aipw"}. Default
+#' @param nfolds      number of cross-fitting folds for \code{method = "abw"}. Default
 #'   is 5. Reduced automatically, with a message, when the control group is small
 #'   relative to the number of covariates (see Details). Ignored by the other methods.
 #' @param ...         arguments passed to lm_lin or lm_robust (e.g. \code{se_type},
-#'   \code{clusters}). Not accepted by \code{method = "aipw"}.
-#' @details The default \code{method = "aipw"} combines the hbal weights with a
-#'   control-group outcome model in an augmented (AIPW-style) moment condition that is
-#'   Neyman-orthogonal: its first-order sensitivity to estimation error in either
-#'   nuisance component (the outcome model, given hbal's balance on \code{mat}; the
-#'   weights, given a correct outcome model) is zero. Let \eqn{w_i} be the base weights
-#'   of the treated units, \eqn{W_1}{W1} their sum, \eqn{\gamma_i}{gamma_i} the hbal
-#'   weights of the controls (\code{weights.co}, which also sum to \eqn{W_1}{W1}), and
-#'   \eqn{\hat{\mu}_0}{mu0} a linear regression of the outcome on the columns of
-#'   \code{hbalobject$mat}, fitted by weighted least squares on the controls only
-#'   (aliased columns are dropped automatically). The estimate is
+#'   \code{clusters}). Not accepted by \code{method = "abw"}.
+#' @details The default \code{method = "abw"} (Augmented Balancing Weights;
+#'   Ben-Michael, Feller, Hirshberg and Zubizarreta 2021; Bruns-Smith, Dukes, Feller
+#'   and Ogburn 2023) combines the hbal weights with a control-group outcome model in
+#'   an augmented moment condition that is Neyman-orthogonal: its first-order
+#'   sensitivity to estimation error in either nuisance component (the outcome model,
+#'   given hbal's balance on \code{mat}; the weights, given a correct outcome model)
+#'   is zero. Let \eqn{w_i} be the base weights of the treated units, \eqn{W_1}{W1}
+#'   their sum, \eqn{\gamma_i}{gamma_i} the hbal weights of the controls
+#'   (\code{weights.co}, which also sum to \eqn{W_1}{W1}), and \eqn{\hat{\mu}_0}{mu0}
+#'   a ridge regression of the outcome on the columns of \code{hbalobject$mat},
+#'   fitted on the controls only: every column is standardized with the mean and
+#'   standard deviation of the controls used in the fit, the intercept is not
+#'   penalized, and the penalty is set once per call from the full control sample by
+#'   the Hoerl and Kennard (1970) plug-in
+#'   \eqn{\lambda = p \hat{\sigma}^2 / \sum_j \hat{\beta}_j^2}{lambda = p * sigma2 / sum_j beta_j^2},
+#'   with \eqn{\hat{\sigma}^2}{sigma2} the weighted residual variance and
+#'   \eqn{\hat{\beta}_j}{beta_j} the weighted least-squares slopes of the
+#'   standardized design (no cross-validation and no random numbers are involved;
+#'   \eqn{\lambda = 0}{lambda = 0}, i.e. weighted least squares, whenever the plug-in
+#'   is degenerate). The estimate is
 #'   \deqn{\hat{\tau} = \frac{1}{W_1}\Big[\sum_{T_i = 1} w_i (Y_i - \hat{m}_i) -
 #'   \sum_{T_i = 0} \gamma_i \hat{e}_i\Big],}{tau = (1 / W1) [ sum_{T=1} w_i (Y_i - m_i) -
 #'   sum_{T=0} gamma_i e_i ],}
@@ -53,7 +65,11 @@
 #'   \code{dr = FALSE} the outcome model is dropped (\eqn{\hat{m}_i = 0}{m_i = 0},
 #'   \eqn{\hat{e}_i = Y_i}{e_i = Y_i}) and the same formulas give the weighted difference
 #'   in means. Fold assignment is deterministic: repeated calls with the same
-#'   \code{seed} (including \code{NULL}) return identical results.
+#'   \code{seed} (including \code{NULL}) return identical results. If the
+#'   entropy-balancing weights of \code{hbalobject} did not converge
+#'   (\code{hbalobject$converged} is \code{FALSE}), \code{att} issues a warning for
+#'   either value of \code{dr}, because the estimate and its standard error may then
+#'   be unreliable.
 #'
 #'   \code{method = "lm_robust"} (the default before version 1.3.0) and
 #'   \code{method = "lm_lin"} are wrappers for \code{lm_robust} and \code{lm_lin} from
@@ -64,14 +80,14 @@
 #'   t value, Pr(>|t|), CI Lower, CI Upper, DF) when \code{displayAll = FALSE}
 #'   (the default) or \code{method = "elnet"}. When \code{displayAll = TRUE}: for
 #'   \code{method = "lm_robust"} or \code{"lm_lin"}, the fitted model object returned
-#'   by \code{lm_robust} or \code{lm_lin}; for \code{method = "aipw"}, a plain list
+#'   by \code{lm_robust} or \code{lm_lin}; for \code{method = "abw"}, a plain list
 #'   with elements
 #'   \describe{
 #'     \item{estimate}{the ATT point estimate.}
 #'     \item{se}{its influence-function standard error.}
 #'     \item{df}{degrees of freedom of the t distribution used for the p-value and
 #'     the confidence interval, \eqn{n - 1}.}
-#'     \item{method}{\code{"aipw"}.}
+#'     \item{method}{\code{"abw"}.}
 #'     \item{dr}{the \code{dr} value used.}
 #'     \item{influence}{numeric vector of length \eqn{n}: the per-unit moment
 #'     contributions \eqn{\psi_i}{psi_i} (see Details), in the row order of
@@ -79,11 +95,13 @@
 #'     \item{fold}{integer vector of length \eqn{n}: the cross-fitting fold of each
 #'     control (\code{NA} for treated units, and for every unit when \code{dr = FALSE}).}
 #'     \item{nfolds}{the number of folds actually used (\code{NA} when \code{dr = FALSE}).}
-#'     \item{nuisance}{a list with \code{coef_full} (coefficients of the outcome model
-#'     fitted on all controls, named \code{"(Intercept)"} followed by the columns of
-#'     \code{mat}), \code{coef_folds} (a list of the \code{nfolds} fold-specific
-#'     coefficient vectors), and \code{rank_full} (the rank of the full-control
-#'     design); \code{NULL}, \code{list()} and \code{NA} respectively when \code{dr = FALSE}.}
+#'     \item{nuisance}{a list with \code{coef_full} (coefficients of the ridge outcome
+#'     model fitted on all controls, on the original scale of \code{mat}, named
+#'     \code{"(Intercept)"} followed by the columns of \code{mat}), \code{coef_folds}
+#'     (a list of the \code{nfolds} fold-specific coefficient vectors), and
+#'     \code{rank_full} (the rank of the full-control design including the
+#'     intercept); \code{NULL}, \code{list()} and \code{NA} respectively when
+#'     \code{dr = FALSE}.}
 #'     \item{weights}{a list with \code{treated} (the base weights of the treated
 #'     units) and \code{control} (the hbal weights of the controls), each in the row
 #'     order of \code{hbalobject$mat} within its group.}
@@ -91,7 +109,6 @@
 #' @importFrom estimatr lm_lin lm_robust
 #' @importFrom stats as.formula
 #' @importFrom stats predict
-#' @importFrom stats lm.wfit
 #' @importFrom stats pt
 #' @importFrom stats qt
 #' @importFrom generics tidy
@@ -108,7 +125,7 @@
 #' y <- 0.5 * treat + X[,1] + X[,2] + rnorm(N) # Outcome
 #' dat <- data.frame(treat=treat, X, Y=y)
 #' out <- hbal(Treat = 'treat', X = c('X1', 'X2'), Y = 'Y', data=dat)
-#' sout <- summary(att(out))       # default: cross-fitted orthogonal estimator (aipw)
+#' sout <- summary(att(out))       # default: augmented balancing weights (abw)
 #' att(out, method = "lm_robust")  # the default before version 1.3.0
 #' @export
 
@@ -151,7 +168,7 @@
 
 att <- function(
 	hbalobject,
-	method="aipw",
+	method="abw",
 	dr=TRUE,
 	displayAll=FALSE,
 	alpha = 0.9,
@@ -179,15 +196,15 @@ att <- function(
 	w <- "w" # this line is useless; just to get around CRAN checker
 	dat$w <- hbalobject$weights
 	# Cross-fitted, Neyman-orthogonal augmented estimator (default since 1.3.0).
-	# Self-contained: builds its own output in R/att_aipw.R and never reaches the
+	# Self-contained: builds its own output in R/att_abw.R and never reaches the
 	# estimatr / tidy() tail below. seed and nfolds are validated here only; the
 	# legacy methods ignore them.
-	if (method == "aipw") {
+	if (method == "abw") {
 		if (length(elpss) > 0) {
 			dots_names <- names(elpss)
 			if (is.null(dots_names)) dots_names <- rep("", length(elpss))
 			dots_names[dots_names == ""] <- "<unnamed>"
-			stop(sprintf("att(): method = \"aipw\" does not accept: %s. These arguments (e.g. se_type, clusters) apply only to method = \"lm_robust\" or \"lm_lin\".",
+			stop(sprintf("att(): method = \"abw\" does not accept: %s. These arguments (e.g. se_type, clusters) apply only to method = \"lm_robust\" or \"lm_lin\".",
 				paste(dots_names, collapse = ", ")))
 		}
 		if (!(length(nfolds) == 1 && is.numeric(nfolds) && is.finite(nfolds) && nfolds == round(nfolds) && nfolds >= 1)) {
@@ -196,9 +213,9 @@ att <- function(
 		if (!is.null(seed) && !(length(seed) == 1 && is.numeric(seed) && is.finite(seed))) {
 			stop("att(): \"seed\" must be NULL or a single finite number")
 		}
-		res <- .aipw_att(hbalobject, dr = dr, seed = seed, nfolds = nfolds)
+		res <- .abw_att(hbalobject, dr = dr, seed = seed, nfolds = nfolds)
 		if (displayAll == FALSE) {
-			return(.aipw_table(res, Tr))
+			return(.abw_table(res, Tr))
 		} else {
 			return(res)
 		}
@@ -260,7 +277,7 @@ att <- function(
 	  return(out)
 	}
 	else {
-		stop(sprintf("att(): unrecognized method \"%s\". Valid values are \"aipw\", \"lm_robust\", \"lm_lin\", \"elnet\".", method))
+		stop(sprintf("att(): unrecognized method \"%s\". Valid values are \"abw\", \"lm_robust\", \"lm_lin\", \"elnet\".", method))
 	}
 	# DisplayAll Option of ATT
 	if (displayAll == FALSE){
