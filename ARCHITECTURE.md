@@ -282,7 +282,7 @@ graph TD
 
 ### The `abw` estimator in one paragraph
 
-With `w_i` the base weights of the treated units, `W1` their sum, `gamma_i` the hbal weights of the controls (`weights.co`, which also sum to `W1`), `m_i` the control-only ridge outcome model evaluated at treated unit `i`, and `e_i` the cross-fitted residual of control `i`:
+With `w_i` the base weights of the treated units, `W1` their sum, `gamma_i` the hbal weights of the controls (`weights.co`, which also sum to `W1`), `m_i` the control-only ridge outcome model (fitted on the controls weighted by `gamma_i`) evaluated at treated unit `i`, and `e_i` the cross-fitted residual of control `i`:
 
 ```
 tau   = (1 / W1) * [ sum_{T=1} w_i (Y_i - m_i)  -  sum_{T=0} gamma_i e_i ]

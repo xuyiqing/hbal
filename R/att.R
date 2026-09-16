@@ -38,7 +38,8 @@
 #'   their sum, \eqn{\gamma_i}{gamma_i} the hbal weights of the controls
 #'   (\code{weights.co}, which also sum to \eqn{W_1}{W1}), and \eqn{\hat{\mu}_0}{mu0}
 #'   a ridge regression of the outcome on the columns of \code{hbalobject$mat},
-#'   fitted on the controls only: every column is standardized with the mean and
+#'   fitted on the controls only and weighted by their \eqn{\gamma_i}{gamma_i}:
+#'   every column is standardized with the mean and
 #'   standard deviation of the controls used in the fit, the intercept is not
 #'   penalized, and the penalty \eqn{\lambda}{lambda} is chosen once per call from
 #'   the full control sample by generalized cross-validation (GCV; Golub, Heath and
@@ -59,7 +60,13 @@
 #'   residual uses the fit obtained without its own fold. The number of folds actually
 #'   used is \eqn{K = \max(1, \min(\mathrm{nfolds}, \lfloor n_0 / (2p) \rfloor))}{K = max(1, min(nfolds, floor(n0 / (2p))))},
 #'   (\eqn{n_0}{n0} and \eqn{p} as above); \eqn{K = 1} means no
-#'   cross-fitting. The standard error is influence-function based: with
+#'   cross-fitting. Setting \code{nfolds = 1} disables cross-fitting (the
+#'   correction term above becomes identically zero) and lowers root-mean-squared
+#'   error at small sample sizes in simulations accompanying this release, at the
+#'   cost of an understated standard error and, under outcome-model
+#'   misspecification, added bias; \code{nfolds = 5} (the default) is recommended
+#'   unless a smaller root-mean-squared error is wanted more than a reliable
+#'   standard error. The standard error is influence-function based: with
 #'   \eqn{\psi_i = w_i T_i (Y_i - \hat{m}_i - \hat{\tau}) - \gamma_i (1 - T_i) \hat{e}_i}{psi_i = w_i T_i (Y_i - m_i - tau) - gamma_i (1 - T_i) e_i},
 #'   the variance estimate is \eqn{\sum_i \psi_i^2 / W_1^2}{sum_i psi_i^2 / W1^2}, treating
 #'   the weights and the outcome fit as fixed; p-values and the 95 percent confidence
@@ -77,7 +84,28 @@
 #'   \code{method = "lm_lin"} are wrappers for \code{lm_robust} and \code{lm_lin} from
 #'   the \pkg{estimatr} package, fitted with the hbal weights; \code{method = "elnet"}
 #'   implements the approximate residual balancing estimator of Athey, Imbens and Wager
-#'   (2018) via \pkg{glmnet}.
+#'   (2018) via \pkg{glmnet}. For \code{method = "lm_robust"}, the default
+#'   \code{se_type} understates the standard error by 5 to 7 percent in the same
+#'   simulations; \code{se_type = "HC3"} corrects this for samples of 500 or fewer
+#'   but still runs about 5 percent short at 1,000.
+#' @references Ben-Michael, E., Feller, A., Hirshberg, D. A., and Zubizarreta, J. R.
+#'   (2021). The balancing act in causal inference. arXiv:2110.14831.
+#'
+#'   Bruns-Smith, D., Dukes, O., Feller, A., and Ogburn, E. L. (2023). Augmented
+#'   balancing weights as linear regression. arXiv:2304.14545.
+#'
+#'   Golub, G. H., Heath, M., and Wahba, G. (1979). Generalized cross-validation
+#'   as a method for choosing a good ridge parameter. Technometrics, 21(2),
+#'   215-223.
+#'
+#'   Athey, S., Imbens, G. W., and Wager, S. (2018). Approximate residual
+#'   balancing: debiased inference of average treatment effects in high
+#'   dimensions. Journal of the Royal Statistical Society: Series B, 80(4),
+#'   597-623.
+#'
+#'   Lin, W. (2013). Agnostic notes on regression adjustments to experimental
+#'   data: Reexamining Freedman's critique. The Annals of Applied Statistics,
+#'   7(1), 295-318.
 #' @return A data frame with one row and seven columns (Estimate, Std. Error,
 #'   t value, Pr(>|t|), CI Lower, CI Upper, DF) when \code{displayAll = FALSE}
 #'   (the default) or \code{method = "elnet"}. When \code{displayAll = TRUE}: for
