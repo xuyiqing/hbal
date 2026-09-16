@@ -40,14 +40,16 @@
 #'   a ridge regression of the outcome on the columns of \code{hbalobject$mat},
 #'   fitted on the controls only: every column is standardized with the mean and
 #'   standard deviation of the controls used in the fit, the intercept is not
-#'   penalized, and the penalty is set once per call from the full control sample by
-#'   the Hoerl and Kennard (1970) plug-in
-#'   \eqn{\lambda = p \hat{\sigma}^2 / \sum_j \hat{\beta}_j^2}{lambda = p * sigma2 / sum_j beta_j^2},
-#'   with \eqn{\hat{\sigma}^2}{sigma2} the weighted residual variance and
-#'   \eqn{\hat{\beta}_j}{beta_j} the weighted least-squares slopes of the
-#'   standardized design (no cross-validation and no random numbers are involved;
-#'   \eqn{\lambda = 0}{lambda = 0}, i.e. weighted least squares, whenever the plug-in
-#'   is degenerate). The estimate is
+#'   penalized, and the penalty \eqn{\lambda}{lambda} is chosen once per call from
+#'   the full control sample by generalized cross-validation (GCV; Golub, Heath and
+#'   Wahba 1979) over a fixed grid of candidate values, restricted to candidates
+#'   whose effective degrees of freedom do not exceed
+#'   \eqn{\min(p, n_0 / 2) + 1}{min(p, n0 / 2) + 1}, with \eqn{n_0}{n0} controls
+#'   and \eqn{p} columns in \code{mat}, so that the fit can never approach an
+#'   interpolation of the controls. The selection is deterministic: no data
+#'   splitting and no random numbers are involved, and \eqn{\lambda = 0}{lambda = 0}
+#'   (weighted least squares) is chosen whenever it is admissible and minimizes the
+#'   GCV score. The estimate is
 #'   \deqn{\hat{\tau} = \frac{1}{W_1}\Big[\sum_{T_i = 1} w_i (Y_i - \hat{m}_i) -
 #'   \sum_{T_i = 0} \gamma_i \hat{e}_i\Big],}{tau = (1 / W1) [ sum_{T=1} w_i (Y_i - m_i) -
 #'   sum_{T=0} gamma_i e_i ],}
@@ -56,7 +58,7 @@
 #'   control \eqn{i}: the controls are split into \code{nfolds} folds and each control's
 #'   residual uses the fit obtained without its own fold. The number of folds actually
 #'   used is \eqn{K = \max(1, \min(\mathrm{nfolds}, \lfloor n_0 / (2p) \rfloor))}{K = max(1, min(nfolds, floor(n0 / (2p))))},
-#'   with \eqn{n_0}{n0} controls and \eqn{p} columns in \code{mat}; \eqn{K = 1} means no
+#'   (\eqn{n_0}{n0} and \eqn{p} as above); \eqn{K = 1} means no
 #'   cross-fitting. The standard error is influence-function based: with
 #'   \eqn{\psi_i = w_i T_i (Y_i - \hat{m}_i - \hat{\tau}) - \gamma_i (1 - T_i) \hat{e}_i}{psi_i = w_i T_i (Y_i - m_i - tau) - gamma_i (1 - T_i) e_i},
 #'   the variance estimate is \eqn{\sum_i \psi_i^2 / W_1^2}{sum_i psi_i^2 / W1^2}, treating

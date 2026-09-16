@@ -3,7 +3,8 @@
 # since hbal 1.3.0. Nothing in this file is exported, and no function here
 # reads or writes .Random.seed (no set.seed(), sample(), runif(), ...): the fold
 # assignment is a deterministic hash of the `seed` argument, and the ridge
-# penalty of the outcome model is a deterministic plug-in (no cross-validation).
+# penalty of the outcome model is chosen by a deterministic grid search (GCV;
+# no data splitting).
 #
 # Notation (i indexes the rows of the hbal object in their original order):
 #   T_i      treatment indicator                        hbalobject$Treatment
@@ -32,10 +33,15 @@
 # regression of Y on the columns of X, each column standardized with the
 # training rows' own mean and standard deviation, intercept unpenalized:
 #   beta_s = argmin sum_i w_i (Y_i - [1, x_s_i] beta)^2 + lambda * ||beta[-1]||^2
-# lambda >= 0 is computed ONCE per att() call from the full control sample by
-# the Hoerl-Kennard (1970) plug-in lambda = p * sigma2 / ||beta_ols[-1]||^2
-# (sigma2 = weighted residual variance of the lambda = 0 fit) and reused for
-# every fit. lambda = 0 reproduces weighted least squares exactly.
+# lambda >= 0 is computed ONCE per att() call from the full control sample and
+# reused for every fit: generalized cross-validation (GCV; Golub, Heath and
+# Wahba 1979) minimized over the fixed grid .ABW_LAMBDA_GRID, restricted to
+# the candidates whose effective degrees of freedom
+#   edf(lambda) = tr[(A + pen)^{-1} A],   A = Zd' W Zd
+# do not exceed min(p, n0 / 2) + 1 (the + 1 is the unpenalized intercept), so
+# the fit can never approach an interpolation of the controls. No data
+# splitting and no random numbers are involved. lambda = 0 reproduces weighted
+# least squares exactly.
 
 # Multiplicative-hash constants (Knuth / xxHash primes) used to turn `seed`
 # into a deterministic permutation of the controls without touching R's RNG.
@@ -48,11 +54,18 @@
 # column, so that fold-level fits stay reasonably determined:
 # K <= floor(n0 / (.ABW_CONTROLS_PER_FOLD_PER_COVARIATE * p)).
 .ABW_CONTROLS_PER_FOLD_PER_COVARIATE <- 2
-# Defensive cap on the Hoerl-Kennard ridge penalty (standardized design), and
-# the threshold below which the OLS slope norm counts as degenerate (lambda
-# then falls back to 0, i.e. plain weighted least squares).
-.ABW_LAMBDA_MAX <- 50
-.ABW_BETA_NORM_TOL <- 1e-8
+# Candidate ridge penalties (standardized design) searched by GCV: 0 and
+# 10^j for j = -8, -7.75, ..., 6 (58 points in all). The grid's upper bound,
+# 1e6, is the most regularization the outcome model can receive.
+.ABW_LAMBDA_GRID <- c(0, 10^seq(-8, 6, by = 0.25))
+# Floating-point slack on the effective-degrees-of-freedom cap: edf(0) equals
+# p + 1 in exact arithmetic but is computed by a linear solve, and the cap is
+# exactly p + 1 whenever n0 >= 2p, where the unpenalized fit must stay
+# admissible; the comparison edf <= cap therefore gets this much tolerance.
+.ABW_EDF_TOL <- 1e-8
+# The GCV score n0 * RSS / (n0 - edf)^2 counts as +Inf when its denominator
+# is not larger than this.
+.ABW_GCV_DENOM_TOL <- 1e-8
 
 #' Deterministic permutation of the controls used for fold assignment
 #'
@@ -104,6 +117,27 @@
 	fold
 }
 
+#' Standardize the columns of a design matrix with their own mean and sd
+#'
+#' The one standardization used in this file, by the ridge fit (on its
+#' training rows) and by the penalty choice (on the full control sample), so
+#' that the design GCV evaluates is the design the fit uses.
+#'
+#' @param X covariate matrix (no intercept column).
+#' @return \code{list(Xs = <standardized matrix>, center = <numeric length
+#'   ncol(X)>, scale = <numeric length ncol(X)>)}.
+#' @keywords internal
+#' @noRd
+.abw_standardize <- function(X) {
+	center <- colMeans(X)
+	scl <- apply(X, 2, stats::sd)
+	# Zero-variance (or, for a one-row design, undefined) columns get scale 1;
+	# once centered they enter as all-zero columns. This should not occur
+	# post-hbal (defensive only).
+	scl[!is.finite(scl) | scl == 0] <- 1
+	list(Xs = scale(X, center = center, scale = scl), center = center, scale = scl)
+}
+
 #' Weighted ridge fit of the control outcome model on a standardized design
 #'
 #' Each column of \code{X} is centered and scaled with the training rows' own
@@ -123,18 +157,14 @@
 #' @noRd
 .abw_ridge_fit <- function(X, Y, w, lambda) {
 	p <- ncol(X)
-	center <- colMeans(X)
-	scl <- apply(X, 2, stats::sd)
-	# Zero-variance (or, for a one-row design, undefined) columns are left
-	# uncentered-scaled by 1; they then enter as all-zero columns. This should
-	# not occur post-hbal (defensive only).
-	scl[!is.finite(scl) | scl == 0] <- 1
-	Xs <- scale(X, center = center, scale = scl)
-	Zd <- cbind(1, Xs)
-	# The rank is consumed only by the Hoerl-Kennard plug-in (full-control
-	# sample, lambda = 0), as the residual degrees-of-freedom bookkeeping of
-	# its variance estimate. It is not a validity gate: with lambda > 0 the
-	# penalized normal equations are full rank whatever the rank of X.
+	std <- .abw_standardize(X)
+	center <- std$center
+	scl <- std$scale
+	Zd <- cbind(1, std$Xs)
+	# The rank of the standardized design (with intercept) is a diagnostic
+	# only, exposed as nuisance$rank_full for the full-control fit. It is not
+	# a validity gate and plays no part in the penalty choice: with lambda > 0
+	# the penalized normal equations are full rank whatever the rank of X.
 	rank <- qr(Zd)$rank
 	pen <- diag(c(0, rep(lambda, p)), nrow = p + 1L)
 	# solve() can fail only for an exactly (or computationally) singular
@@ -180,35 +210,71 @@
 	out
 }
 
-#' Hoerl-Kennard ridge penalty from the full control sample
+#' Ridge penalty by GCV on a fixed grid, gated by an effective-degrees-of-freedom cap
 #'
-#' Computed once per att() call, from the lambda = 0 (weighted least-squares)
-#' fit on ALL controls: lambda = p * sigma2 / ||beta_ols[-1]||^2 with sigma2
-#' the weighted residual variance, sum(w * resid^2) / max(sum(w) - rank, 1).
-#' Falls back to lambda = 0 (plain weighted least squares) when sigma2 is not
-#' finite and positive or when the slope norm is degenerate; capped at
-#' \code{.ABW_LAMBDA_MAX}.
+#' Computed once per att() call from ALL controls, on the same standardized
+#' design the ridge fit uses (\code{.abw_standardize()}). For every candidate
+#' in \code{.ABW_LAMBDA_GRID} the effective degrees of freedom of the ridge
+#' hat matrix, \code{edf(lambda) = tr[(A + pen)^-1 A]} with
+#' \code{A = Zd' W Zd}, is computed; a candidate is admissible when
+#' \code{edf(lambda) <= min(p, n0 / 2) + 1} (the + 1 is the never-penalized
+#' intercept, so the unpenalized fit, edf = p + 1, stays admissible whenever
+#' n0 >= 2p). Among the admissible candidates the Golub, Heath and Wahba
+#' (1979) GCV score \code{n0 * RSS(lambda) / (n0 - edf(lambda))^2} is
+#' minimized; ties go to the smallest lambda (the grid is ascending and
+#' \code{which.min()} returns the first minimum). Fallbacks, none of which
+#' can occur on a valid hbal object (hbal() guarantees n0 >= p + 1): a
+#' candidate whose linear solve fails or whose edf is not finite is
+#' inadmissible; an empty admissible set falls back to the largest grid
+#' value; a candidate whose GCV denominator is not positive, or whose score
+#' is not finite, scores +Inf; when every admissible score is +Inf the
+#' largest admissible lambda is used.
 #'
 #' @param X covariate matrix of all controls.
 #' @param Y outcomes of all controls.
 #' @param w weights of all controls.
-#' @return \code{list(lambda = <numeric scalar >= 0>, rank = <integer>,
-#'   sigma2 = <numeric>, beta_norm2 = <numeric>)}; only \code{lambda} is used
-#'   by the estimator, the rest is diagnostic.
+#' @return \code{list(lambda = <numeric scalar >= 0>, edf = <numeric, the
+#'   effective degrees of freedom at lambda>, cap = <numeric, the edf cap>,
+#'   n_eligible = <integer, number of admissible grid points>)}; only
+#'   \code{lambda} is used by the estimator, the rest is diagnostic.
 #' @keywords internal
 #' @noRd
 .abw_choose_lambda <- function(X, Y, w) {
 	p <- ncol(X)
-	fit0 <- .abw_ridge_fit(X, Y, w, lambda = 0)
-	resid <- Y - .abw_ridge_predict(fit0, X)
-	sigma2 <- sum(w * resid^2) / max(sum(w) - fit0$rank, 1)
-	beta_norm2 <- sum(fit0$beta_std[-1]^2)
-	lambda <- 0
-	if (is.finite(sigma2) && sigma2 > 0 &&
-	    is.finite(beta_norm2) && beta_norm2 > .ABW_BETA_NORM_TOL) {
-		lambda <- max(0, min(p * sigma2 / beta_norm2, .ABW_LAMBDA_MAX))
+	n0 <- nrow(X)
+	Zd <- cbind(1, .abw_standardize(X)$Xs)
+	A <- crossprod(Zd, Zd * w)
+	b <- crossprod(Zd, w * Y)
+	penalty <- function(lambda) diag(c(0, rep(lambda, p)), nrow = p + 1L)
+	# Effective degrees of freedom of the ridge hat matrix: p + 1 at lambda = 0
+	# (unpenalized) down to 1 as lambda -> Inf (intercept only). A failed solve
+	# (lambda = 0 on a rank-deficient design) makes the candidate inadmissible
+	# rather than an error.
+	edf <- function(lambda) {
+		tryCatch(sum(diag(solve(A + penalty(lambda), A))), error = function(e) NA_real_)
 	}
-	list(lambda = lambda, rank = fit0$rank, sigma2 = sigma2, beta_norm2 = beta_norm2)
+	cap <- min(p, n0 / 2) + 1
+	edf_grid <- vapply(.ABW_LAMBDA_GRID, edf, numeric(1))
+	admissible <- is.finite(edf_grid) & edf_grid <= cap + .ABW_EDF_TOL
+	eligible <- .ABW_LAMBDA_GRID[admissible]
+	edf_eligible <- edf_grid[admissible]
+	if (length(eligible) == 0L) {
+		eligible <- max(.ABW_LAMBDA_GRID)
+		edf_eligible <- edf(eligible)
+	}
+	gcv_score <- function(lambda, edf_lambda) {
+		beta <- tryCatch(solve(A + penalty(lambda), b), error = function(e) NULL)
+		if (is.null(beta)) return(Inf)
+		rss <- sum(w * (Y - Zd %*% beta)^2)
+		denom <- n0 - edf_lambda
+		if (is.finite(denom) && denom > .ABW_GCV_DENOM_TOL) n0 * rss / denom^2 else Inf
+	}
+	scores <- vapply(seq_along(eligible),
+	                 function(i) gcv_score(eligible[i], edf_eligible[i]), numeric(1))
+	scores[!is.finite(scores)] <- Inf
+	i <- if (all(is.infinite(scores))) length(eligible) else which.min(scores)
+	list(lambda = eligible[i], edf = edf_eligible[i], cap = cap,
+	     n_eligible = length(eligible))
 }
 
 #' Cross-fitted augmented ATT estimator (the workhorse behind att(method = "abw"))

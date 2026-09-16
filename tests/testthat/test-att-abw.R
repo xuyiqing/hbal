@@ -166,7 +166,7 @@ test_that("abw's point estimate stays bounded on a wide/small-effective-sample c
   # Coarse regression guard tied to the outcome's own scale, not a tight
   # statistical claim. On this fixture a plain weighted least-squares outcome
   # model (ridge penalty 0) gives an ATT of about 44 x range(Y); the ridge
-  # outcome model gives about 0.56 x range(Y).
+  # outcome model with the GCV-selected penalty gives about 0.3 x range(Y).
   out_nonconv <- make_wide_toy()
   testthat::skip_if(isTRUE(as.logical(out_nonconv$converged)),
                     "the wide fixture converged on this platform; it does not stress the intended mechanism")
@@ -202,4 +202,55 @@ test_that("nuisance$coef_full is on the scale of mat and reproduces the treated-
   expect_equal(m_from_coef, m_from_influence, tolerance = 1e-10)
   expect_named(res$nuisance$coef_full, c("(Intercept)", colnames(out$mat)))
   expect_length(res$nuisance$coef_folds, res$nfolds)
+})
+
+test_that("abw's ridge outcome model stays bounded at the exact interpolation boundary (regression: tester's BLOCK-2 fixture)", {
+  # Verbatim reproduction of the fixture on which a plug-in ridge penalty
+  # collapsed to ~0: the full-control design sits at the exact interpolation
+  # boundary (rank_full == n0 == 15), so the unpenalized fit interpolates the
+  # controls and extrapolates wildly to the treated rows (att(out)$Estimate was
+  # -3409.35, about 320 x diff(range(Outcome))). With the penalty chosen by GCV
+  # under the effective-degrees-of-freedom cap, such a fit is inadmissible.
+  set.seed(5)
+  n1 <- 80; n0 <- 15; p_raw <- 4
+  n <- n1 + n0
+  Xs <- as.data.frame(matrix(rnorm(n * p_raw), n, p_raw))
+  names(Xs) <- paste0("X", 1:p_raw)
+  Tr <- c(rep(1, n1), rep(0, n0))
+  Y <- 1 + 0.5 * Tr + rowSums(Xs) + rnorm(n)
+  dat <- data.frame(Tr = Tr, Xs, Y = Y)
+  out <- suppressMessages(hbal::hbal(Treat = "Tr", X = names(Xs), Y = "Y", data = dat,
+                                     expand.degree = 2, print.level = -1))
+  expect_equal(ncol(out$mat), 14L)          # documents the fixture: rank_full == n0 == 15 exactly
+  # suppressWarnings(): a non-convergence warning is expected and irrelevant here;
+  # suppressMessages(): n0 = 15 < 2p also triggers the K = 1 fold-count message.
+  res <- suppressWarnings(suppressMessages(att(out)))
+  expect_true(all(is.finite(unlist(res))))
+  expect_lt(abs(res$Estimate), 20 * diff(range(out$Outcome)))   # the bounded-estimate invariant
+  expect_lt(abs(res$Estimate), 1 * diff(range(out$Outcome)))    # much tighter, evidence-based: the
+                                                                 # GCV rule gives a ratio of about 0.075
+                                                                 # on this exact fixture; this catches a
+                                                                 # regression toward "technically under
+                                                                 # 20x but still huge" long before the
+                                                                 # 20x floor would
+  full <- suppressWarnings(suppressMessages(att(out, displayAll = TRUE)))
+  expect_equal(full$nuisance$rank_full, 15L)   # the boundary itself: rank_full == n0
+})
+
+test_that("the new lambda rule leaves well-conditioned estimates close to the previous plug-in's", {
+  # n0 = 150 >> 2p = 6: the effective-degrees-of-freedom cap never binds here,
+  # and GCV should agree closely with the value the Hoerl-Kennard plug-in of
+  # the previous revision gave on this exact fixture (0.5082179957). Guards
+  # against either rule over-shrinking ordinary, well-conditioned data.
+  res <- att(out)
+  expect_equal(res$Estimate, 0.5082179957, tolerance = 0.01)
+  lam <- hbal:::.abw_choose_lambda(as.matrix(out$mat)[out$Treatment == 0, , drop = FALSE],
+                                    out$Outcome[out$Treatment == 0],
+                                    out$weights[out$Treatment == 0])
+  expect_lt(lam$lambda, 10)
+  # the diagnostic helper's documented return contract
+  expect_named(lam, c("lambda", "edf", "cap", "n_eligible"))
+  expect_true(lam$lambda %in% hbal:::.ABW_LAMBDA_GRID)
+  expect_lte(lam$edf, lam$cap + 1e-8)
+  expect_equal(lam$cap, min(ncol(out$mat), sum(out$Treatment == 0) / 2) + 1)
 })

@@ -33,7 +33,8 @@ make_small_toy <- function() {
 # 100 treated units and default cv = FALSE. Used by the non-convergence-warning
 # test and the bounded-estimate test. On this fixture a plain weighted
 # least-squares outcome model (ridge penalty 0) returns an ATT about 44 times
-# the outcome range; the ridge outcome model returns about 0.56 times the range.
+# the outcome range; the ridge outcome model with the GCV-selected penalty
+# returns about 0.3 times the range.
 # Non-convergence is a property of the data and the solver, so the tests that
 # use it skip (rather than fail) on a platform where the fit happens to converge.
 make_wide_toy <- function(seed = 3, n1 = 100, n0 = 60, ncont = 2, expand.degree = 3) {
