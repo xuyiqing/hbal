@@ -6,18 +6,26 @@ This manual serves as a user guide for the **hbal** package in R, which implemen
 
 ## Installation
 
-You can install **hbal** from CRAN:
+You can install **hbal** in three ways. The CRAN release is the stable version:
 
 ```{r install-cran, eval = FALSE}
 install.packages("hbal")
 ```
 
-Or install the development version from GitHub:
+The `main` branch on GitHub mirrors the CRAN release:
 
-```{r install-github, eval = FALSE}
+```{r install-github-stable, eval = FALSE}
 install.packages("devtools") # if not already installed
 devtools::install_github("xuyiqing/hbal")
 ```
+
+The `dev` branch carries the up-to-date development version. New features and fixes land there first and reach CRAN with the next release. This manual is written against the development version, so if an example here does not run on your CRAN install, install from `dev`:
+
+```{r install-github-dev, eval = FALSE}
+devtools::install_github("xuyiqing/hbal@dev")
+```
+
+Installing from GitHub compiles the package's C++ code. That needs a compiler: Rtools on Windows, or the Xcode command-line tools on macOS.
 
 ```{r check-version}
 # Check installed version

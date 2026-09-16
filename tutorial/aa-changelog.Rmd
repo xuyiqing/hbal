@@ -7,6 +7,8 @@
 * `att()` gains `seed` and `nfolds` arguments for `method = "abw"` (ignored by the other methods); `method = "abw"` does not accept `...` arguments such as `se_type` or `clusters`, which still work with `"lm_robust"` and `"lm_lin"`.
 * `att()` now errors on an unrecognized `method` value instead of failing with an opaque internal error.
 * `att()` with `method = "abw"` now warns when `hbalobject$converged` is 0 (the entropy-balancing weights did not converge), since the estimate and standard error may then be unreliable.
+* The package tutorial is now a Quarto book at `tutorial/` (previously `vignettes/tutorial.Rmd`); render it locally with `quarto render` from that directory.
+* `plot()` for `hbal` objects no longer calls the deprecated `ggplot2::aes_string()`; the plots are unchanged and the deprecation warning is gone.
 
 ## v1.2.16
 
