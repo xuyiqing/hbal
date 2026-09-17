@@ -27,8 +27,7 @@ then achieves approximate balance on the expanded features using ridge
 penalties with a hierarchical structure.
 
 **Examples:** R code used in the
-[tutorial](https://yiqingxu.org/packages/hbal/articles/tutorial.html)
-can be downloaded from
+[tutorial](https://yiqingxu.org/packages/hbal/) can be downloaded from
 [here](https://raw.githubusercontent.com/xuyiqing/hbal/main/tutorial/hbal_examples.R).
 
 **Reference:** Eddie Yang & Yiqing Xu (2021). [Hierarchically
