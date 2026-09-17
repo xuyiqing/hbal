@@ -20,8 +20,8 @@ or the test suite under either.
   2.0.0 (the current CRAN version) and once with 'estimatr' 1.0.6
 * GitHub Actions: ubuntu-latest (R-devel, R-release, R-oldrel-1),
   windows-latest (R-release), macOS-latest (R-release)
-* TODO: win-builder, R-devel
-* TODO: macbuilder
+* win-builder (R-devel): 0 errors | 0 warnings | 0 notes
+* macbuilder (R-release, macOS arm64): 0 errors | 0 warnings | 0 notes
 
 ## R CMD check results
 
