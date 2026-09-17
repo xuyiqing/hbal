@@ -67,3 +67,27 @@ out <- hbal(Y = 'Y', Treat = 'D', X = c('X1', 'X2', 'X3'),
             data = dat, expand.degree = 3)
 summary(out)
 ```
+
+## Custom balance plots with `balanceData()`
+
+`plot()` draws the balance figure for you. When you want a different figure, `balanceData()` returns the numbers it draws.
+
+```{r bd-extract}
+bd <- balanceData(out)
+head(bd)
+```
+
+Every term of the expanded covariate matrix gets two rows, one before weighting and one after. `std.diff` is the standardized difference in means, `covar.group` is the expansion group the term belongs to, and `tr.mean`, `co.mean` and `w.co.mean` are the treated mean and the control mean before and after weighting. From this data frame you can restyle the figure, keep only the groups you care about, or show a handful of covariates instead of all of them.
+
+```{r bd-plot, fig.height = 6, fig.align = "left"}
+bd$term <- factor(bd$term, levels = rev(unique(bd$term)))
+
+ggplot(bd, aes(x = std.diff, y = term, fill = adjustment)) +
+  geom_vline(xintercept = c(-0.1, 0.1), linetype = 2) +
+  geom_point(size = 3, shape = 21, colour = "black") +
+  scale_fill_manual(values = c(before = "white", after = "black")) +
+  facet_wrap(~ covar.group, scales = "free_y") +
+  labs(x = "Std. Diff.", y = NULL) +
+  theme_bw() +
+  theme(legend.title = element_blank(), legend.position = "bottom")
+```

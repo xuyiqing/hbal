@@ -13,6 +13,9 @@
 12. `hbal()` no longer sets a random seed by default: the `seed` argument now defaults to `NULL`; pass `seed = 94035` to reproduce cross-validated results from earlier versions.
 13. `plot()` for `hbal` objects reports the weight normalization with `message()` instead of `cat()`, so it can be silenced.
 14. The sources and licenses of the bundled `lalonde` and `contenderJudges` datasets are now documented.
+15. `att(dr = FALSE)` is no longer silently ignored by `method = "lm_lin"` and `method = "elnet"`; both now return the weighted difference in means, as `"abw"` and `"lm_robust"` already did. The undocumented value `method = "lin"`, which the old guard accepted when `dr = FALSE`, is now rejected like any other unrecognized method. (#8, thanks `@soodoku`)
+16. `hbal()` no longer balances the wrong covariates when `data` already holds a column named `X1`, `X2`, ... that is not among `X`, or when `X` is not supplied in data-frame order; covariate labels in `bal.tab`, `mat` and the balance plot are unchanged. (#7, thanks `@soodoku`)
+17. New exported function `balanceData()` returns an `hbal` object's balance statistics as a long data frame with a covariate-group column — the data `plot()` draws, ready for a custom `ggplot2` figure. (#4, thanks `@joshuafayallen`)
 
 # hbal 1.2.16
 1. Fix `att()` to work with estimatr >= 2.0.0, whose `tidy()` now returns a tibble, without warnings, while remaining identical under estimatr < 2.0.0.

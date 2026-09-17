@@ -38,7 +38,7 @@ If the entropy-balancing algorithm did not converge (`out$converged` is 0), `att
 | Argument | Default | What it does |
 | --- | --- | --- |
 | `method` | `"abw"` | Which estimator to use: `"abw"` (default, above), `"lm_robust"`, `"lm_lin"`, or `"elnet"` (below). |
-| `dr` | `TRUE` | Whether to include the outcome model. `FALSE` drops it: `"abw"` and `"lm_robust"` then both return the weighted difference in means. |
+| `dr` | `TRUE` | Whether to include the outcome model. `FALSE` drops it for every method, which then returns the weighted difference in means. `"abw"` and `"lm_robust"` compute it directly; `"lm_lin"` and `"elnet"` are defined only with an outcome model, so `att()` estimates them as `"lm_robust"`. |
 | `nfolds` | `5` | Number of cross-fitting folds for `method = "abw"`. `att()` uses fewer, and says so in a message, when the control group is small relative to the number of columns in `mat`. Ignored by the other methods. |
 | `seed` | `NULL` | Fixes the cross-fitting fold assignment for `method = "abw"`. The assignment is a deterministic function of `seed`; `att()` never calls `set.seed()`, so results are identical across repeated calls with or without a seed. Ignored by the other methods. |
 | `displayAll` | `FALSE` | `FALSE` returns the one-row summary table. `TRUE` returns the full result instead: a list for `"abw"` (see above), the fitted model object for `"lm_robust"`/`"lm_lin"`. |
@@ -54,13 +54,21 @@ The three estimators available before version 1.3.0 remain available through the
 
 * `method = "elnet"`: approximate residual balancing [@athey2018approximate], which fits an elastic-net outcome model with **glmnet**.
 
-Additional arguments accepted by `lm_robust()` or `lm_lin()`, such as `se_type` and `clusters`, can be passed to `att()` with those two methods only. The default method does not accept them and stops with an error that points to `method = "lm_robust"` or `"lm_lin"`. Setting `dr = FALSE` drops the outcome model. With `dr = FALSE`, the default method and `method = "lm_robust"` both return the difference in weighted means; they differ only in how the standard error is computed. Note that `att(out, dr = FALSE)` now uses the default method, so add `method = "lm_robust"` to reproduce the standard errors from earlier versions.
+Additional arguments accepted by `lm_robust()` or `lm_lin()`, such as `se_type` and `clusters`, can be passed to `att()` with those two methods only. The default method does not accept them and stops with an error that points to `method = "lm_robust"` or `"lm_lin"`. Setting `dr = FALSE` drops the outcome model, and every method then returns the same estimate: the difference in weighted means. The default method and `method = "lm_robust"` compute it directly and differ only in how the standard error is computed. `method = "lm_lin"` and `method = "elnet"` are defined only with an outcome model, so with `dr = FALSE` they are estimated as `"lm_robust"` and return its estimate, standard error and degrees of freedom. Before version 1.3.0 those two methods accepted `dr = FALSE` and silently ignored it; version 1.3.0 fixes that. Note that `att(out, dr = FALSE)` now uses the default method, so add `method = "lm_robust"` to reproduce the standard errors from earlier versions.
 
 ```{r}
 att(out)
 att(out, method = "lm_robust")
 att(out, method = "lm_lin", se_type = "stata")
 att(out, dr = FALSE)
+```
+
+Under `dr = FALSE` the three legacy methods return one and the same row, because `"lm_lin"` and `"elnet"` are estimated as `"lm_robust"`.
+
+```{r att-dr-false-legacy}
+att(out, method = "lm_robust", dr = FALSE)
+att(out, method = "lm_lin", dr = FALSE)
+att(out, method = "elnet", dr = FALSE)
 ```
 
 By default, `att()` only displays the treatment effect (`displayAll = FALSE`). With `displayAll = TRUE`, the default method returns a list with the estimate, its standard error, the per-unit influence values, the fold assignment, the coefficients of the outcome regression, and the weights. For `method = "lm_robust"` or `"lm_lin"`, `displayAll = TRUE` returns the fitted **estimatr** object instead.
@@ -109,11 +117,11 @@ Both methods are close to unbiased when only the weights are approximately balan
 
 A third scenario (not shown above) makes the confounding a nonlinear function of the observed covariates, severe enough that no polynomial expansion of `mat` can represent it. There, neither estimator is consistent, but the default's bias is smaller at every N (1.74 vs 2.32 at N = 200) while its spread is larger (SD 8.89 vs 2.46 at N = 200, narrowing to 2.28 vs 1.01 by N = 1000).
 
-Furthermore, `hbal()` allows variable penalties on the balancing conditions for different groups of covariates. Penalties are automatically determined using cross-validation. This minimizes the variance of the weights, increases the feasibility of the balancing problem, and is the approach advocated in @XuYang2022. We can do so by setting `cv = TRUE`. Note that, by default, `hbal()` only penalizes higher-order terms and seeks to achieve exact balance on linear terms.
+Furthermore, `hbal()` allows variable penalties on the balancing conditions for different groups of covariates. Penalties are automatically determined using cross-validation. This minimizes the variance of the weights, increases the feasibility of the balancing problem, and is the approach advocated in @XuYang2022. We can do so by setting `cv = TRUE`. Note that, by default, `hbal()` only penalizes higher-order terms and seeks to achieve exact balance on linear terms. Cross-validation draws random numbers, so a `cv = TRUE` fit is not reproducible unless you pass a seed. `seed = 94035` is the value `hbal()` set internally up to version 1.2.15, so it reproduces the cross-validated results of those versions.
 
 ```{r}
 out <- hbal(Treat = 'D', X = c('X1', 'X2', 'X3'),  Y = 'Y', 
-            data = dat, expand.degree = 3, cv = TRUE)
+            data = dat, expand.degree = 3, cv = TRUE, seed = 94035)
 summary(out)
 att(out)
 ```
