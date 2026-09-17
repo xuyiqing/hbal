@@ -169,8 +169,25 @@ hbal <- function(
 
 	
 	#renames the covariates
-	new_names <- paste0("X", seq_along(X))
-	colnames(data)[colnames(data) %in% X] <- new_names
+	# The generated names must not clash with columns we are NOT renaming. If
+	# `data` already contains e.g. `X1`, renaming a covariate to `X1` creates
+	# duplicate column names and every later `data[, X.all]` can silently select
+	# the pre-existing column instead of the covariate the caller asked to
+	# balance. Lengthen the prefix until it is unique.
+	# `match(X, colnames(data))` also indexes in the caller's X order, which is
+	# the order new_names is built in and the order the X.expand / X.keep mapping
+	# below and term.alpha's penalty.pos assume; `colnames(data) %in% X` indexed
+	# in data-frame order, so the names permuted whenever the two differed.
+	# GitHub PR #7.
+	X.rename.pos <- match(X, colnames(data))
+	if (anyNA(X.rename.pos)) stop("Some variable(s) specified are not in the data")
+	other_names <- setdiff(colnames(data), X)
+	prefix <- "X"
+	while (any(paste0(prefix, seq_along(X)) %in% other_names)) {
+		prefix <- paste0(prefix, "_")
+	}
+	new_names <- paste0(prefix, seq_along(X))
+	colnames(data)[X.rename.pos] <- new_names
 	if (is.null(X.expand) == FALSE)
 	{
 	  mapping <- setNames(new_names, X)
