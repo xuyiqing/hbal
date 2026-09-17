@@ -34,6 +34,18 @@ The examples produce no warnings under either 'estimatr' version.
 None. tools::package_dependencies("hbal", reverse = TRUE) returns character(0),
 so no package on CRAN is affected by the change described below.
 
+## Bundled data
+
+The package ships two datasets, both in data/hbal.RData. contenderJudges is the
+circuit-court judges data of Black and Owens, deposited at Harvard Dataverse as
+doi:10.7910/DVN/25302. lalonde is the LaLonde (1986) / Dehejia and Wahba (1999)
+National Supported Work data as distributed in the replication archive of Xu and
+Yang (2022), deposited at Harvard Dataverse as doi:10.7910/DVN/QI2WP9. Both
+deposits are released under the Creative Commons CC0 1.0 Universal Public Domain
+Dedication, which permits redistribution and commercial use. Each dataset's help
+page now documents its source and license in a \source section; see ?lalonde and
+?contenderJudges.
+
 ## Notes for the reviewer
 
 * att()'s default estimator has changed in this release. The default is now
@@ -42,7 +54,11 @@ so no package on CRAN is affected by the change described below.
   att(x, method = "lm_robust"); "lm_lin" and "elnet" are unchanged as well.
   The change is user visible and is the first entry of the 1.3.0 section of
   NEWS.md.
-* hbal() takes a user-facing `seed` argument that it passes to set.seed(), so
-  that its optional cross-validation is reproducible. The default is a fixed
-  number and `seed = NULL` switches the call off entirely. The argument and its
-  default are unchanged from version 1.2.15.
+* hbal() no longer sets a random seed by default. Its `seed` argument has
+  defaulted to the hard-coded value 94035 since version 1.1.1, so every call ran
+  set.seed(94035) and overwrote the user's .Random.seed. The default is now
+  NULL, and a default call leaves the random number generator untouched. A call
+  that passes a seed explicitly behaves exactly as before: hbal(..., cv = TRUE,
+  seed = 94035) reproduces the cross-validated results of version 1.2.15
+  exactly. Results without cv = TRUE are unchanged either way, since the
+  non-cross-validated path draws no random numbers.
