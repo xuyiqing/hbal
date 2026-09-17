@@ -13,8 +13,11 @@
 #'   regression via \code{lm_robust}); \code{"lm_lin"} (Lin 2013) and
 #'   \code{"elnet"} (Athey, Imbens and Wager 2018) are also available.
 #' @param dr          doubly robust, whether an outcome model is included in estimating
-#'   the ATT. With \code{dr = FALSE}, \code{"abw"} and \code{"lm_robust"} reduce to the
-#'   weighted difference in means.
+#'   the ATT. With \code{dr = FALSE} every method returns the weighted difference in
+#'   means. \code{"abw"} and \code{"lm_robust"} compute it directly; \code{"lm_lin"} and
+#'   \code{"elnet"} are defined only with an outcome model, so \code{att} estimates them
+#'   as \code{"lm_robust"}, giving the same estimate, standard error and degrees of
+#'   freedom as \code{att(x, method = "lm_robust", dr = FALSE)}.
 #' @param displayAll  only displays treatment effect by default. If \code{TRUE},
 #'   returns the fitted \code{lm_robust} or \code{lm_lin} object, or, for
 #'   \code{method = "abw"}, a list with the estimate and its components (see Value).
@@ -88,6 +91,9 @@
 #'   \code{se_type} understates the standard error by 5 to 7 percent in the same
 #'   simulations; \code{se_type = "HC3"} corrects this for samples of 500 or fewer
 #'   but still runs about 5 percent short at 1,000.
+#'   Before version 1.3.0, \code{dr = FALSE} was accepted and silently ignored by
+#'   \code{method = "lm_lin"} and \code{method = "elnet"}; both now fall back to
+#'   \code{"lm_robust"}.
 #' @references Ben-Michael, E., Feller, A., Hirshberg, D. A., and Zubizarreta, J. R.
 #'   (2021). The balancing act in causal inference. arXiv:2110.14831.
 #'
@@ -210,7 +216,12 @@ att <- function(
 		stop("hbalobject must be an hbal object from a call to hbal()")
     }
     elpss <- list(...)
-	if (dr == FALSE & method == "lin") {
+	# "lm_lin" and "elnet" are defined only with an outcome model, so under
+	# dr = FALSE they fall back to "lm_robust", whose dr = FALSE branch is the
+	# weighted difference in means. "abw" and "lm_robust" consult dr themselves
+	# and must not be rerouted. The old test compared method against "lin", a
+	# string no branch below uses, so the fallback never fired (GitHub PR #8).
+	if (dr == FALSE && method %in% c("lm_lin", "elnet")) {
 		method <- "lm_robust"
 	}
 	if (is.null(hbalobject$Y)==TRUE) {
