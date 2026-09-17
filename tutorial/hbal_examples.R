@@ -45,6 +45,24 @@ out <- hbal(Y = 'Y', Treat = 'D', X = c('X1', 'X2', 'X3'),
             data = dat, expand.degree = 3)
 summary(out)
 
+
+## ----bd-extract---------------------------------------------------------------
+bd <- balanceData(out)
+head(bd)
+
+
+## ----bd-plot, fig.height = 6, fig.align = "left"------------------------------
+bd$term <- factor(bd$term, levels = rev(unique(bd$term)))
+
+ggplot(bd, aes(x = std.diff, y = term, fill = adjustment)) +
+  geom_vline(xintercept = c(-0.1, 0.1), linetype = 2) +
+  geom_point(size = 3, shape = 21, colour = "black") +
+  scale_fill_manual(values = c(before = "white", after = "black")) +
+  facet_wrap(~ covar.group, scales = "free_y") +
+  labs(x = "Std. Diff.", y = NULL) +
+  theme_bw() +
+  theme(legend.title = element_blank(), legend.position = "bottom")
+
 ## ----setup-02, include=FALSE--------------------------------------------------
 knitr::opts_chunk$set(fig.width = 10, fig.height = 7)
 library(hbal)
@@ -69,6 +87,12 @@ att(out, method = "lm_lin", se_type = "stata")
 att(out, dr = FALSE)
 
 
+## ----att-dr-false-legacy------------------------------------------------------
+att(out, method = "lm_robust", dr = FALSE)
+att(out, method = "lm_lin", dr = FALSE)
+att(out, method = "elnet", dr = FALSE)
+
+
 ## -----------------------------------------------------------------------------
 res <- att(out, displayAll = TRUE)
 str(res, max.level = 1)
@@ -77,7 +101,7 @@ round(res$nuisance$coef_full, 3)
 
 ## -----------------------------------------------------------------------------
 out <- hbal(Treat = 'D', X = c('X1', 'X2', 'X3'),  Y = 'Y', 
-            data = dat, expand.degree = 3, cv = TRUE)
+            data = dat, expand.degree = 3, cv = TRUE, seed = 94035)
 summary(out)
 att(out)
 

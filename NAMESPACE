@@ -3,6 +3,7 @@
 S3method(plot,hbal)
 S3method(summary,hbal)
 export(att)
+export(balanceData)
 export(covarExpand)
 export(hbal)
 import(ggplot2)

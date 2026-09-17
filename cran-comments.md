@@ -51,7 +51,9 @@ page now documents its source and license in a \source section; see ?lalonde and
 * att()'s default estimator has changed in this release. The default is now
   method = "abw", a cross-fitted, Neyman-orthogonal augmented balancing weights
   estimator. The previous default is unchanged and remains available as
-  att(x, method = "lm_robust"); "lm_lin" and "elnet" are unchanged as well.
+  att(x, method = "lm_robust"). "lm_lin" and "elnet" are unchanged except under
+  dr = FALSE, where they now return the weighted difference in means instead of
+  silently ignoring the argument; see item 15 of the 1.3.0 section of NEWS.md.
   The change is user visible and is the first entry of the 1.3.0 section of
   NEWS.md.
 * hbal() no longer sets a random seed by default. Its `seed` argument has
@@ -62,3 +64,11 @@ page now documents its source and license in a \source section; see ?lalonde and
   seed = 94035) reproduces the cross-validated results of version 1.2.15
   exactly. Results without cv = TRUE are unchanged either way, since the
   non-cross-validated path draws no random numbers.
+* hbal() renamed the covariates in X to X1..Xk internally, and the generated
+  names could collide with columns of `data` that were not being renamed, or be
+  assigned in the wrong order. Either way the function balanced covariates other
+  than the ones requested, without a warning. Both are fixed. Results change only
+  for calls that hit one of those two conditions; every other call is bit-identical,
+  which is checked by a numeric fixture in the test suite.
+* This release adds one exported function, balanceData(), which reshapes an
+  hbal object's balance table for plotting. It adds no dependency.
