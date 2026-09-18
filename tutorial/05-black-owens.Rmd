@@ -1,0 +1,33 @@
+# Example 2: Black and Owens (2016) {#sec-black-owens}
+
+```{r setup-05, include=FALSE}
+knitr::opts_chunk$set(fig.width = 10, fig.height = 7)
+library(hbal)
+```
+
+
+The second example comes from @black2016courting, in which the authors study the effect of promotion prospect to the Supreme Court on the behavior of circuit court judges. Here we focus on whether circuit court judges who are on the shortlist to fill Supreme Court vacancies ("contenders") ruled in line with the president as the outcome of interest. We load the dataset `contenderJudges`, which is shipped with **hbal**.
+```{r}
+data(hbal)
+```
+
+First, we take a look at the data structure. The outcome variable is `presIdeoVote` and the treatment variable is `treatFinal0`, indicating whether there was a Supreme Court vacancy at the time. There are also 7 covariates on judge and court characteristics and a variable `judge` that indicates the judges' names.
+```{r}
+str(contenderJudges)
+```
+
+We can estimate the effect of Supreme Court vacancy on judges' rulings while controlling for functions of the covariates (to the second order). We see that contender judges are more likely to rule in line with the ideology of the sitting president during a Supreme Court vacancy.
+
+```{r}
+xvars <- c("judgeJCS", "presDist", "panelDistJCS", "circmed", "sctmed", "coarevtc", "casepub")
+out <- hbal(Treat = 'treatFinal0', X = xvars, Y = 'presIdeoVote', data = contenderJudges,
+            expand.degree = 2, cv = TRUE)
+summary(out)
+att(out)
+```
+
+We can further check covariate balance before and after balancing by checking the balance plots. Here we see that the linear terms are exactly balanced between the treatment and the control groups. Imbalance among higher-order terms and interactions are also significantly reduced.
+
+```{r, fig.height = 8, fig.align = "left"}
+plot(out)
+```

@@ -11,7 +11,7 @@
 #'      ds = FALSE, group.exact = NULL, group.alpha = NULL,
 #'      term.alpha = NULL, constraint.tolerance = 1e-3, print.level = 0,
 #'      grouping = NULL, group.labs = NULL, linear.exact = TRUE, shuffle.treat = TRUE,
-#'      exclude = NULL,force = FALSE, seed = 94035)
+#'      exclude = NULL,force = FALSE, seed = NULL)
 #' @param data                 a dataframe that contains the treatment, outcome, and covariates.   
 #' @param Treat                a character string of the treatment variable.
 #' @param X                    a character vector of covariate names to balance on.
@@ -22,12 +22,16 @@
 #' @param expand.degree        degree of series expansion. 1 means no expansion. Default is 1.
 #' @param coefs                initial coefficients for the reweighting algorithm (lambdas).
 #' @param max.iterations       maximum number of iterations. Default is 200.
-#' @param cv                   whether to use cross validation. Default is \code{TRUE}.
+#' @param cv                   whether to use cross-validation to select the ridge
+#'   penalties. The default, \code{NULL}, is treated as \code{FALSE}: no
+#'   cross-validation is run and, unless \code{group.alpha} is supplied, every
+#'   penalty is 0, which asks for exact balance. Set \code{cv = TRUE} to choose
+#'   the penalties by cross-validation.
 #' @param folds                number of folds for cross validation. Only used when cv is \code{TRUE}.
 #' @param ds                   whether to perform double selection prior to balancing. Default is \code{FALSE}.
 #' @param group.exact          binary indicator of whether each covariate group should be exact balanced.
 #' @param group.alpha          penalty for each covariate group 
-#' @param term.alpha           named vector of ridge penalties, only takes 0 or 1.
+#' @param term.alpha           a named vector of user-specified ridge penalties. The names need to be variable names. Value should be non-negative (0 means exact balancing). Only work with `expand.degree = 1`
 #' @param constraint.tolerance tolerance level for overall imbalance. Default is 1e-3.
 #' @param print.level          details of printed output.
 #' @param grouping             different groupings of the covariates. Must be specified if expand is \code{FALSE}.
@@ -36,18 +40,40 @@
 #' @param shuffle.treat        whether to use cross-validation on the treated units. Default is \code{TRUE}.
 #' @param exclude              list of covariate name pairs or triplets to be excluded.
 #' @param force                binary indicator of whether to expand covariates when there are too many
-#' @param seed                 random seed to be set. Set random seed when cv=\code{TRUE} for reproducibility.
-#' @details In the simplest set-up, user can just pass in \{Treatment, X, Y\}. The default settings will serially expand
-#' X to include higher order terms, hierarchically residualize these terms, perform double selection to only keep the relevant
-#' variables and use cross-validation to select penalities for different groupings of the covariates. 
+#' @param seed                 random seed passed to \code{set.seed()} at the start
+#'   of the cross-validation when \code{cv = TRUE}. The default, \code{NULL}, leaves
+#'   the random number generator untouched, so repeated cross-validated fits can
+#'   differ. Supply a seed for reproducible results. \code{seed = 94035} was the
+#'   default in hbal 1.2.15 and earlier and reproduces the cross-validated results
+#'   of those versions exactly. Ignored when no cross-validation is run.
+#' @details In the simplest set-up, the user can just pass in \{Treat, X, Y\}. With the
+#' default settings \code{hbal} seeks exact balance on the covariates as supplied: there
+#' is no series expansion (\code{expand.degree = 1}), no double selection
+#' (\code{ds = FALSE}) and no cross-validation (\code{cv} resolves to \code{FALSE}), and
+#' every ridge penalty is 0. Set \code{expand.degree} to 2 or 3 to serially expand X to
+#' include higher order terms and hierarchically residualize them, \code{ds = TRUE} to
+#' perform double selection and keep only the relevant variables, and \code{cv = TRUE} to
+#' select penalties for the different groupings of the covariates by cross-validation.
 #' @return 
-#' An list object of class \code{hbal} with the following elements:
-#' \item{coefs}{vector that contains coefficients from the reweighting algorithm.}
-#' \item{mat}{matrix of serially expanded covariates if expand=\code{TRUE}. Otherwise, the original covariate matrix is returned.}
-#' \item{penalty}{vector of ridge penalties used for each covariate} 
-#' \item{weights}{vector that contains the control group weights assigned by hbal.}
-#' \item{W}{vector of treatment status}
-#' \item{Y}{vector of outcome}
+#' A list object of class \code{hbal} with the elements below. Rows of \code{data}
+#' with a missing value in the treatment, the outcome, any covariate or the
+#' weighting variable are dropped before estimation, so every per-unit element has
+#' one entry per retained row, in the order of \code{data}.
+#' \item{converged}{integer, 1 if the entropy-balancing algorithm converged within \code{max.iterations} and 0 otherwise. \code{att} warns when it is 0.}
+#' \item{weights}{numeric vector over all units: the hbal weight of each control unit and the base weight of each treated unit.}
+#' \item{weights.co}{numeric vector over the control units: their entropy-balancing weights, normalized to sum to the total base weight of the treated units.}
+#' \item{coefs}{numeric vector of the Lagrangian multipliers returned by the reweighting algorithm, one per column of \code{mat} plus one for the normalizing constraint.}
+#' \item{Treatment}{numeric vector of the treatment indicator, 1 for treated and 0 for control.}
+#' \item{mat}{numeric matrix of the covariates actually balanced on, on their original scale, after series expansion (\code{expand.degree}), removal of collinear columns and double selection (\code{ds}). Its column names are the covariate names with a position suffix.}
+#' \item{grouping}{named numeric vector giving the number of columns of \code{mat} in each covariate group; the names are the group labels.}
+#' \item{group.penalty}{named numeric vector with one ridge penalty per covariate group: chosen by cross-validation when \code{cv = TRUE}, taken from \code{group.alpha} when that is supplied, and 0 otherwise.}
+#' \item{term.penalty}{named numeric vector with one ridge penalty per column of \code{mat}.}
+#' \item{bal.tab}{numeric matrix with one row per column of \code{mat} and the columns \code{Tr.Mean}, \code{Co.Mean}, \code{W.Co.Mean}, \code{Std.Diff.(O)} and \code{Std.Diff.(W)}, rounded to two decimals.}
+#' \item{base.weights}{numeric vector of the base weights: the variable named by \code{w}, or 1 for every unit when \code{w} is \code{NULL}.}
+#' \item{Treat}{character string, the name of the treatment variable.}
+#' \item{Outcome}{numeric vector of the outcome. Present only when \code{Y} is supplied.}
+#' \item{Y}{character string, the name of the outcome variable. Present only when \code{Y} is supplied.}
+#' \item{call}{the matched call.}
 #' @author Yiqing Xu, Eddie Yang
 #' @importFrom stats var
 #' @importFrom stats setNames
@@ -72,21 +98,22 @@
 #' 
 #' # Example 2
 #' ## Simulation from Kang and Shafer (2007).
-#' library(MASS)
-#' set.seed(1984)
-#' n <- 500
-#' X <- mvrnorm(n, mu = rep(0, 4), Sigma = diag(4))
-#' prop <- 1 / (1 + exp(X[,1] - 0.5 * X[,2] + 0.25*X[,3] + 0.1 * X[,4]))
-#' # Treatment indicator
-#' treat <- rbinom(n, 1, prop)
-#' # Outcome
-#' y <- 210 + 27.4*X[,1] + 13.7*X[,2] + 13.7*X[,3] + 13.7*X[,4] + rnorm(n)
-#' # Observed covariates
-#' X.mis <- cbind(exp(X[,1]/2), X[,2]*(1+exp(X[,1]))^(-1)+10, 
-#'     (X[,1]*X[,3]/25+.6)^3, (X[,2]+X[,4]+20)^2)
-#' dat <- data.frame(treat=treat, X.mis, Y=y)
-#' out <- hbal(Treat = 'treat', X = c('X1', 'X2', 'X3', 'X4'), Y='Y', data=dat)
-#' summary(att(out))
+#' if (requireNamespace("MASS", quietly = TRUE)) {
+#'   set.seed(1984)
+#'   n <- 500
+#'   X <- MASS::mvrnorm(n, mu = rep(0, 4), Sigma = diag(4))
+#'   prop <- 1 / (1 + exp(X[,1] - 0.5 * X[,2] + 0.25*X[,3] + 0.1 * X[,4]))
+#'   # Treatment indicator
+#'   treat <- rbinom(n, 1, prop)
+#'   # Outcome
+#'   y <- 210 + 27.4*X[,1] + 13.7*X[,2] + 13.7*X[,3] + 13.7*X[,4] + rnorm(n)
+#'   # Observed covariates
+#'   X.mis <- cbind(exp(X[,1]/2), X[,2]*(1+exp(X[,1]))^(-1)+10,
+#'       (X[,1]*X[,3]/25+.6)^3, (X[,2]+X[,4]+20)^2)
+#'   dat <- data.frame(treat=treat, X.mis, Y=y)
+#'   out <- hbal(Treat = 'treat', X = c('X1', 'X2', 'X3', 'X4'), Y='Y', data=dat)
+#'   summary(att(out))
+#' }
 #' @export
 
 hbal <- function(
@@ -114,7 +141,7 @@ hbal <- function(
 	shuffle.treat = TRUE,
 	exclude = NULL,
 	force = FALSE,
-	seed = 94035
+	seed = NULL
 	){
 
 	# ntreated: number of treated units
@@ -142,8 +169,25 @@ hbal <- function(
 
 	
 	#renames the covariates
-	new_names <- paste0("X", seq_along(X))
-	colnames(data)[colnames(data) %in% X] <- new_names
+	# The generated names must not clash with columns we are NOT renaming. If
+	# `data` already contains e.g. `X1`, renaming a covariate to `X1` creates
+	# duplicate column names and every later `data[, X.all]` can silently select
+	# the pre-existing column instead of the covariate the caller asked to
+	# balance. Lengthen the prefix until it is unique.
+	# `match(X, colnames(data))` also indexes in the caller's X order, which is
+	# the order new_names is built in and the order the X.expand / X.keep mapping
+	# below and term.alpha's penalty.pos assume; `colnames(data) %in% X` indexed
+	# in data-frame order, so the names permuted whenever the two differed.
+	# GitHub PR #7.
+	X.rename.pos <- match(X, colnames(data))
+	if (anyNA(X.rename.pos)) stop("Some variable(s) specified are not in the data")
+	other_names <- setdiff(colnames(data), X)
+	prefix <- "X"
+	while (any(paste0(prefix, seq_along(X)) %in% other_names)) {
+		prefix <- paste0(prefix, "_")
+	}
+	new_names <- paste0(prefix, seq_along(X))
+	colnames(data)[X.rename.pos] <- new_names
 	if (is.null(X.expand) == FALSE)
 	{
 	  mapping <- setNames(new_names, X)

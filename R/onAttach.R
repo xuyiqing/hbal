@@ -2,6 +2,7 @@
 #' @description Function to load package description.
 #' @param lib   libname
 #' @param pkg   package name
+#' @return No return value, called for the side effect of printing the package startup message.
 #' @importFrom utils packageDescription
 #' @references Xu, Y., & Yang, E. (2022). Hierarchically Regularized Entropy Balancing. Political Analysis, 1-8. doi:10.1017/pan.2022.12
 

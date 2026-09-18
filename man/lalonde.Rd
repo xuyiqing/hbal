@@ -22,6 +22,15 @@ A data frame with 2675 rows and 13 columns.
   \item{nodegr}{indicator for no high school degree}
 }
 }
+\source{
+National Supported Work (NSW) demonstration data from LaLonde (1986), with
+the treated units as re-analyzed by Dehejia and Wahba (1999) and PSID-1
+controls. Taken from the replication archive of Xu and Yang (2022): Xu, Y.,
+and Yang, E. Replication Data for: Hierarchically Regularized Entropy
+Balancing. Harvard Dataverse, \doi{10.7910/DVN/QI2WP9}. That archive is
+released under the Creative Commons CC0 1.0 Universal Public Domain
+Dedication.
+}
 \description{
 Data on the treated units is from Dehejia and Wahba (1999), containing 185 individuals; data on the control units is from Panel Study
 of Income Dynamics (PSID-1), containing 2,490 individuals.

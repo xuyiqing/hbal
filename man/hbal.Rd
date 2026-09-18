@@ -11,7 +11,7 @@ hbal(data, Treat, X, Y = NULL, w = NULL,
      ds = FALSE, group.exact = NULL, group.alpha = NULL,
      term.alpha = NULL, constraint.tolerance = 1e-3, print.level = 0,
      grouping = NULL, group.labs = NULL, linear.exact = TRUE, shuffle.treat = TRUE,
-     exclude = NULL,force = FALSE, seed = 94035)
+     exclude = NULL,force = FALSE, seed = NULL)
 }
 \arguments{
 \item{data}{a dataframe that contains the treatment, outcome, and covariates.}
@@ -34,7 +34,11 @@ hbal(data, Treat, X, Y = NULL, w = NULL,
 
 \item{max.iterations}{maximum number of iterations. Default is 200.}
 
-\item{cv}{whether to use cross validation. Default is \code{TRUE}.}
+\item{cv}{whether to use cross-validation to select the ridge
+penalties. The default, \code{NULL}, is treated as \code{FALSE}: no
+cross-validation is run and, unless \code{group.alpha} is supplied, every
+penalty is 0, which asks for exact balance. Set \code{cv = TRUE} to choose
+the penalties by cross-validation.}
 
 \item{folds}{number of folds for cross validation. Only used when cv is \code{TRUE}.}
 
@@ -62,16 +66,33 @@ hbal(data, Treat, X, Y = NULL, w = NULL,
 
 \item{force}{binary indicator of whether to expand covariates when there are too many}
 
-\item{seed}{random seed to be set. Set random seed when cv=\code{TRUE} for reproducibility.}
+\item{seed}{random seed passed to \code{set.seed()} at the start
+of the cross-validation when \code{cv = TRUE}. The default, \code{NULL}, leaves
+the random number generator untouched, so repeated cross-validated fits can
+differ. Supply a seed for reproducible results. \code{seed = 94035} was the
+default in hbal 1.2.15 and earlier and reproduces the cross-validated results
+of those versions exactly. Ignored when no cross-validation is run.}
 }
 \value{
-An list object of class \code{hbal} with the following elements:
-\item{coefs}{vector that contains coefficients from the reweighting algorithm.}
-\item{mat}{matrix of serially expanded covariates if expand=\code{TRUE}. Otherwise, the original covariate matrix is returned.}
-\item{penalty}{vector of ridge penalties used for each covariate} 
-\item{weights}{vector that contains the control group weights assigned by hbal.}
-\item{W}{vector of treatment status}
-\item{Y}{vector of outcome}
+A list object of class \code{hbal} with the elements below. Rows of \code{data}
+with a missing value in the treatment, the outcome, any covariate or the
+weighting variable are dropped before estimation, so every per-unit element has
+one entry per retained row, in the order of \code{data}.
+\item{converged}{integer, 1 if the entropy-balancing algorithm converged within \code{max.iterations} and 0 otherwise. \code{att} warns when it is 0.}
+\item{weights}{numeric vector over all units: the hbal weight of each control unit and the base weight of each treated unit.}
+\item{weights.co}{numeric vector over the control units: their entropy-balancing weights, normalized to sum to the total base weight of the treated units.}
+\item{coefs}{numeric vector of the Lagrangian multipliers returned by the reweighting algorithm, one per column of \code{mat} plus one for the normalizing constraint.}
+\item{Treatment}{numeric vector of the treatment indicator, 1 for treated and 0 for control.}
+\item{mat}{numeric matrix of the covariates actually balanced on, on their original scale, after series expansion (\code{expand.degree}), removal of collinear columns and double selection (\code{ds}). Its column names are the covariate names with a position suffix.}
+\item{grouping}{named numeric vector giving the number of columns of \code{mat} in each covariate group; the names are the group labels.}
+\item{group.penalty}{named numeric vector with one ridge penalty per covariate group: chosen by cross-validation when \code{cv = TRUE}, taken from \code{group.alpha} when that is supplied, and 0 otherwise.}
+\item{term.penalty}{named numeric vector with one ridge penalty per column of \code{mat}.}
+\item{bal.tab}{numeric matrix with one row per column of \code{mat} and the columns \code{Tr.Mean}, \code{Co.Mean}, \code{W.Co.Mean}, \code{Std.Diff.(O)} and \code{Std.Diff.(W)}, rounded to two decimals.}
+\item{base.weights}{numeric vector of the base weights: the variable named by \code{w}, or 1 for every unit when \code{w} is \code{NULL}.}
+\item{Treat}{character string, the name of the treatment variable.}
+\item{Outcome}{numeric vector of the outcome. Present only when \code{Y} is supplied.}
+\item{Y}{character string, the name of the outcome variable. Present only when \code{Y} is supplied.}
+\item{call}{the matched call.}
 }
 \description{
 \code{hbal} performs hierarchically regularized entropy balancing 
@@ -83,9 +104,14 @@ balancing conditions.
 hbal performs hierarchically regularized entropy balancing such that the covariate distributions of the control group match those of the treatment group. hbal automatically expands the covariate space to include higher order terms and uses cross-validation to select variable penalties for the balancing conditions.
 }
 \details{
-In the simplest set-up, user can just pass in \{Treatment, X, Y\}. The default settings will serially expand
-X to include higher order terms, hierarchically residualize these terms, perform double selection to only keep the relevant
-variables and use cross-validation to select penalities for different groupings of the covariates.
+In the simplest set-up, the user can just pass in \{Treat, X, Y\}. With the
+default settings \code{hbal} seeks exact balance on the covariates as supplied: there
+is no series expansion (\code{expand.degree = 1}), no double selection
+(\code{ds = FALSE}) and no cross-validation (\code{cv} resolves to \code{FALSE}), and
+every ridge penalty is 0. Set \code{expand.degree} to 2 or 3 to serially expand X to
+include higher order terms and hierarchically residualize them, \code{ds = TRUE} to
+perform double selection and keep only the relevant variables, and \code{cv = TRUE} to
+select penalties for the different groupings of the covariates by cross-validation.
 }
 \examples{
 # Example 1
@@ -102,21 +128,22 @@ summary(hbal::att(out))
 
 # Example 2
 ## Simulation from Kang and Shafer (2007).
-library(MASS)
-set.seed(1984)
-n <- 500
-X <- mvrnorm(n, mu = rep(0, 4), Sigma = diag(4))
-prop <- 1 / (1 + exp(X[,1] - 0.5 * X[,2] + 0.25*X[,3] + 0.1 * X[,4]))
-# Treatment indicator
-treat <- rbinom(n, 1, prop)
-# Outcome
-y <- 210 + 27.4*X[,1] + 13.7*X[,2] + 13.7*X[,3] + 13.7*X[,4] + rnorm(n)
-# Observed covariates
-X.mis <- cbind(exp(X[,1]/2), X[,2]*(1+exp(X[,1]))^(-1)+10, 
-    (X[,1]*X[,3]/25+.6)^3, (X[,2]+X[,4]+20)^2)
-dat <- data.frame(treat=treat, X.mis, Y=y)
-out <- hbal(Treat = 'treat', X = c('X1', 'X2', 'X3', 'X4'), Y='Y', data=dat)
-summary(att(out))
+if (requireNamespace("MASS", quietly = TRUE)) {
+  set.seed(1984)
+  n <- 500
+  X <- MASS::mvrnorm(n, mu = rep(0, 4), Sigma = diag(4))
+  prop <- 1 / (1 + exp(X[,1] - 0.5 * X[,2] + 0.25*X[,3] + 0.1 * X[,4]))
+  # Treatment indicator
+  treat <- rbinom(n, 1, prop)
+  # Outcome
+  y <- 210 + 27.4*X[,1] + 13.7*X[,2] + 13.7*X[,3] + 13.7*X[,4] + rnorm(n)
+  # Observed covariates
+  X.mis <- cbind(exp(X[,1]/2), X[,2]*(1+exp(X[,1]))^(-1)+10,
+      (X[,1]*X[,3]/25+.6)^3, (X[,2]+X[,4]+20)^2)
+  dat <- data.frame(treat=treat, X.mis, Y=y)
+  out <- hbal(Treat = 'treat', X = c('X1', 'X2', 'X3', 'X4'), Y='Y', data=dat)
+  summary(att(out))
+}
 }
 \references{
 Xu, Y., & Yang, E. (2022). Hierarchically Regularized Entropy Balancing. Political Analysis, 1-8. doi:10.1017/pan.2022.12

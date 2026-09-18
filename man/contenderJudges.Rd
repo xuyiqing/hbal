@@ -9,15 +9,21 @@ A data frame with 10171 rows and 10 columns.
 \describe{
   \item{presIdeoVote}{ideological alignment of judges' votes with the sitting President (outcome)}
   \item{treatFinal0}{treatment indicator for vacancy period}
-  \item{judgeJCS}{judge’s Judicial Common Space (JCS)score}
+  \item{judgeJCS}{judge's Judicial Common Space (JCS)score}
   \item{presDist}{Ideological distribution of the sitting President}
   \item{panelDistJCS}{ideological composition of the panel with whom the judge sat}
   \item{circmed}{median JCS score of the circuit judges}
   \item{sctmed}{JCS score of the median justice on the Supreme Court}
   \item{coarevtc}{indicator for whether the case decision was reversed by the circuit court}
-  \item{casepub}{indicator for the publication status of thecourt’s opinion}
+  \item{casepub}{indicator for the publication status of thecourt's opinion}
   \item{judge}{name of the judge}
 }
+}
+\source{
+Black, R. C., and Owens, R. J. Replication data for: Courting the President:
+How Circuit Court Judges Alter Their Behavior for Promotion to the Supreme
+Court. Harvard Dataverse, \doi{10.7910/DVN/25302}. That deposit is released
+under the Creative Commons CC0 1.0 Universal Public Domain Dedication.
 }
 \description{
 Data on the contender judges from Black and Owens (2016): Courting the president: how circuit court judges alter their behavior for promotion to the Supreme Court

@@ -12,16 +12,21 @@
 #' \describe{
 #'   \item{presIdeoVote}{ideological alignment of judges' votes with the sitting President (outcome)}
 #'   \item{treatFinal0}{treatment indicator for vacancy period}
-#'   \item{judgeJCS}{judge’s Judicial Common Space (JCS)score}
+#'   \item{judgeJCS}{judge's Judicial Common Space (JCS)score}
 #'   \item{presDist}{Ideological distribution of the sitting President}
 #'   \item{panelDistJCS}{ideological composition of the panel with whom the judge sat}
 #'   \item{circmed}{median JCS score of the circuit judges}
 #'   \item{sctmed}{JCS score of the median justice on the Supreme Court}
 #'   \item{coarevtc}{indicator for whether the case decision was reversed by the circuit court}
-#'   \item{casepub}{indicator for the publication status of thecourt’s opinion}
+#'   \item{casepub}{indicator for the publication status of thecourt's opinion}
 #'   \item{judge}{name of the judge}
 #' }
-#' @references 
+#' @source
+#' Black, R. C., and Owens, R. J. Replication data for: Courting the President:
+#' How Circuit Court Judges Alter Their Behavior for Promotion to the Supreme
+#' Court. Harvard Dataverse, \doi{10.7910/DVN/25302}. That deposit is released
+#' under the Creative Commons CC0 1.0 Universal Public Domain Dedication.
+#' @references
 #' \itemize{
 #'   \item Black, R. C., and Owens, R. J. (2016). Courting the president: how circuit court judges alter their behavior for promotion to the Supreme Court. American Journal of Political Science, 60(1), 30-43.
 #' }

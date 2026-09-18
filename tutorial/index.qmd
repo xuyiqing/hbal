@@ -1,0 +1,101 @@
+# Welcome {.unnumbered}
+
+This manual serves as a user guide for the **hbal** package in R, which implements hierarchically regularized entropy balancing. For the technical details, see @XuYang2022.
+
+**hbal** is suitable for estimating the average treatment effect on the treated (ATT) with a binary treatment under strong ignorability. It is an extension of entropy balancing: it automatically expands the covariate space to include higher-order terms (squared and cubic terms and interactions), then seeks approximate balance on the expanded covariates using ridge penalties with a hierarchical structure, chosen by cross-validation.
+
+## Installation
+
+You can install **hbal** in three ways. The CRAN release is the stable version:
+
+```{r install-cran, eval = FALSE}
+install.packages("hbal")
+```
+
+The `main` branch on GitHub mirrors the CRAN release:
+
+```{r install-github-stable, eval = FALSE}
+install.packages("devtools") # if not already installed
+devtools::install_github("xuyiqing/hbal")
+```
+
+The `dev` branch carries the up-to-date development version. New features and fixes land there first and reach CRAN with the next release. This manual is written against the development version, so if an example here does not run on your CRAN install, install from `dev`:
+
+```{r install-github-dev, eval = FALSE}
+devtools::install_github("xuyiqing/hbal@dev")
+```
+
+Installing from GitHub compiles the package's C++ code. That needs a compiler: Rtools on Windows, or the Xcode command-line tools on macOS.
+
+```{r check-version}
+# Check installed version
+installed.packages()["hbal", "Version"]
+```
+
+**hbal** depends on the following packages, which should be installed automatically when **hbal** is being installed. You can also install them manually.
+
+```{r install-deps, eval = FALSE}
+install_all <- function(packages) {
+  installed_pkgs <- installed.packages()[, "Package"]
+  for (pkg in packages) {
+    if (!pkg %in% installed_pkgs) {
+      install.packages(pkg)
+    }
+  }
+}
+packages <- c("estimatr", "glmnet", "ggplot2", "gridExtra", "gtable",
+              "nloptr", "Rcpp", "RcppEigen", "stringr", "generics")
+install_all(packages)
+```
+
+## Quick reference
+
+**hbal** provides two main functions:
+
+- `hbal()`: performs hierarchically regularized entropy balancing.
+- `att()`: calculates the average treatment effect on the treated (ATT) from an `hbal` object returned by `hbal()`.
+
+And two S3 methods:
+
+- `summary()`: summarizes the balancing results.
+- `plot()`: visualizes covariate balance before and after weighting, or the distribution of balancing weights.
+
+## Organization
+
+- [Chapter @sec-basics] --- Simulating toy data, the basic `hbal()` / `summary()` workflow, and how **hbal** relates to entropy balancing (**ebal**).
+- [Chapter @sec-att] --- Obtaining the ATT with `att()`: the default augmented balancing weights estimator (`method = "abw"`), the legacy estimators, and simulation evidence comparing them.
+- [Chapter @sec-options] --- Additional `hbal()` options: exact/approximate balancing, user-supplied penalties, controlling serial expansion, double selection, and keeping/excluding covariates.
+- [Chapter @sec-lalonde] --- Worked example on the LaLonde job-training data.
+- [Chapter @sec-black-owens] --- Worked example on @black2016courting's study of circuit court judges.
+
+## How to Cite
+
+To cite the **hbal** package, please use:
+
+> Xu, Yiqing, and Eddie Yang. 2022. "Hierarchically Regularized Entropy Balancing." *Political Analysis*. <https://doi.org/10.1017/pan.2022.12>.
+
+```bibtex
+@article{XuYang2022,
+  title = {Hierarchically Regularized Entropy Balancing},
+  author = {Xu, Yiqing and Yang, Eddie},
+  journal = {Political Analysis},
+  year = {2022},
+  doi = {10.1017/pan.2022.12}
+}
+```
+
+## Contributors
+
+- [Yiqing Xu](https://yiqingxu.org/){target="_blank"}
+- Eddie Yang
+- [StatsClaw](https://statsclaw.ai/){target="_blank"} (Agentic System for Statistical Software Development)
+
+## Report bugs
+
+Please report bugs to yiqingxu [at] stanford.edu or open an issue on [GitHub](https://github.com/xuyiqing/hbal/issues).
+
+<!-- badges: start -->
+
+[![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-green.svg)](https://www.tidyverse.org/lifecycle/#stablel) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![downloads: CRAN](https://cranlogs.r-pkg.org/badges/grand-total/hbal)](https://www.datasciencemeta.com/rpackages)
+
+<!-- badges: end -->

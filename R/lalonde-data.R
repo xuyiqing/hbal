@@ -22,7 +22,15 @@
 #'   \item{u78}{unemployment indicator for 1978}
 #'   \item{nodegr}{indicator for no high school degree}
 #' }
-#' @references 
+#' @source
+#' National Supported Work (NSW) demonstration data from LaLonde (1986), with
+#' the treated units as re-analyzed by Dehejia and Wahba (1999) and PSID-1
+#' controls. Taken from the replication archive of Xu and Yang (2022): Xu, Y.,
+#' and Yang, E. Replication Data for: Hierarchically Regularized Entropy
+#' Balancing. Harvard Dataverse, \doi{10.7910/DVN/QI2WP9}. That archive is
+#' released under the Creative Commons CC0 1.0 Universal Public Domain
+#' Dedication.
+#' @references
 #' \itemize{
 #'   \item Dehejia, R. H., and Wahba, S. (1999). Causal effects in nonexperimental studies: Reevaluating the evaluation of training programs. Journal of the American statistical Association, 94(448), 1053-1062.
 #'   \item Hazlett, C. (2020). KERNEL BALANCING. Statistica Sinica, 30(3), 1155-1189.
